@@ -3,8 +3,10 @@ use crate::{
     element::BPMNElementTrait,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 
 #[derive(Debug, Clone)]
 pub struct BPMNStartEvent {
@@ -70,10 +72,28 @@ impl BPMNObject for BPMNStartEvent {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNStartEvent {
     fn number_of_transitions(&self) -> usize {
-        0
+        1
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        if marking.pre_initial_choice_token {
+            //enabled
+            bitvec![1;0]
+        } else {
+            //not enabled
+            bitvec![0;0]
+        }
     }
 }

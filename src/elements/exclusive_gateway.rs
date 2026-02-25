@@ -3,8 +3,10 @@ use crate::{
     element::BPMNElementTrait,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 
 #[derive(Debug, Clone)]
 pub struct BPMNExclusiveGateway {
@@ -66,10 +68,37 @@ impl BPMNObject for BPMNExclusiveGateway {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNExclusiveGateway {
     fn number_of_transitions(&self) -> usize {
         self.incoming_sequence_flows.len() * self.outgoing_sequence_flows.len()
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        let mut result =
+            bitvec![0;self.incoming_sequence_flows.len() * self.outgoing_sequence_flows.len()];
+
+        for (transition_index, incoming_sequence_flow) in
+            self.incoming_sequence_flows.iter().enumerate()
+        {
+            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                for i in transition_index * self.outgoing_sequence_flows.len()
+                    ..(1 + transition_index) * self.outgoing_sequence_flows.len()
+                {
+                    result.set(i, true);
+                }
+            }
+        }
+
+        result
     }
 }

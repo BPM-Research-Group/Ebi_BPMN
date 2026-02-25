@@ -29,6 +29,7 @@ strum = "0.28.0"
 strum_macros = "0.28.0"
 itertools = "0.14.0"
 quick-xml = {version="0.39.2", features=["serialize"]}
+bitvec = "1.0.1"
 
 [profile.release]
 debug = false

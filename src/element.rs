@@ -20,8 +20,10 @@ use crate::{
     objects_searchable::Searchable,
     objects_transitionable::Transitionable,
     objects_writable::Writable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Ok, Result};
+use bitvec::vec::BitVec;
 use quick_xml::Writer;
 use strum_macros::EnumIs;
 
@@ -156,6 +158,14 @@ impl Transitionable for BPMNElement {
     fn number_of_transitions(&self) -> usize {
         enums!(self, number_of_transitions,)
     }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        enums!(self, enabled_transitions, marking, bpmn)
+    }
 }
 
 impl Writable for BPMNElement {
@@ -246,5 +256,9 @@ impl BPMNObject for BPMNElement {
 
     fn can_have_incoming_sequence_flows(&self) -> bool {
         enums!(self, can_have_incoming_sequence_flows,)
+    }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        enums!(self, outgoing_message_flows_always_have_tokens,)
     }
 }

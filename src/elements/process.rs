@@ -5,8 +5,10 @@ use crate::{
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_searchable::Searchable,
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::prelude::BitVec;
 
 #[derive(Clone, Debug)]
 pub struct BPMNProcess {
@@ -103,13 +105,22 @@ impl BPMNObject for BPMNProcess {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNProcess {
     fn number_of_transitions(&self) -> usize {
-        self.elements
-            .iter()
-            .map(|element| element.number_of_transitions())
-            .sum()
+        self.elements.number_of_transitions()
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        self.elements.enabled_transitions(marking, bpmn)
     }
 }

@@ -30,7 +30,7 @@ pub mod objects_objectable;
 pub mod objects_searchable;
 pub mod objects_transitionable;
 pub mod objects_writable;
-// pub mod semantics;
+pub mod semantics;
 pub mod sequence_flow;
 pub mod structure_checker;
 pub mod parser {

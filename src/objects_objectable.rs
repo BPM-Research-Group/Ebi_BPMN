@@ -19,4 +19,7 @@ pub trait BPMNObject {
 
     /// return whether this object could have incoming sequence flows according to the BPMN standard
     fn can_have_incoming_sequence_flows(&self) -> bool;
+
+    /// return whether the outgoing message flows of this object are always enabled
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool;
 }

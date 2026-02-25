@@ -1,8 +1,9 @@
 use crate::{
     BusinessProcessModelAndNotation, element::BPMNElementTrait, objects_objectable::BPMNObject,
-    objects_transitionable::Transitionable,
+    objects_transitionable::Transitionable, semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
@@ -76,10 +77,55 @@ impl BPMNObject for BPMNTask {
     fn outgoing_message_flows(&self) -> &[usize] {
         &self.outgoing_message_flow.as_slice()
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNTask {
     fn number_of_transitions(&self) -> usize {
         self.incoming_sequence_flows.len()
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        //check whether a message is present
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //there is a connected message flow
+            let message_flow = &bpmn.message_flows[message_flow_index];
+            let source_index = message_flow.source_element_index;
+            if let Some(source) = bpmn.index_2_element(source_index) {
+                if !source.outgoing_message_flows_always_have_tokens() {
+                    //this message must actually be there
+
+                    if marking.message_flow_2_tokens[message_flow_index] == 0 {
+                        //message is not present; all transitions are not enabled
+                        return bitvec![0; self.incoming_sequence_flows.len()];
+                    }
+                } else {
+                    //if the message flow has always tokens, we do not need to check the marking
+                }
+            } else {
+                unreachable!()
+            }
+        } else {
+            //if there is no incoming message flow, there is no restriction
+        }
+
+        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
+
+        for (transition_index, incoming_sequence_flow) in
+            self.incoming_sequence_flows.iter().enumerate()
+        {
+            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                result.set(transition_index, true);
+            }
+        }
+
+        result
     }
 }

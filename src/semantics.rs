@@ -1,63 +1,61 @@
 use crate::{
-    Activity, BusinessProcessModelAndNotation,
-    bpmn::{objects_objectable::BPMNObject, objects_transitionable::Transitionable},
+    BusinessProcessModelAndNotation, objects_objectable::BPMNObject,
+    objects_transitionable::Transitionable,
 };
 use anyhow::Result;
-use bitvec::vec::BitVec;
+use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SemState {
-    pub(crate) marking_sequence_flows: Vec<u64>,
-    marking_message_flows: Vec<u64>,
+pub struct BPMNMarking {
+    pub(crate) sequence_flow_2_tokens: Vec<u64>,
+    pub(crate) message_flow_2_tokens: Vec<u64>,
+
+    /// in case multiple start events are present, a single place is added
+    pub(crate) pre_initial_choice_token: bool,
+
+    /// in case no start events are present, every eligible element without incoming sequence flows gets a token
+    pub(crate) index_2_tokens: BitVec,
 }
 type TransitionIndex = usize;
 
 impl BusinessProcessModelAndNotation {
     /// BPMN 2.0.2 standard page 238
-    fn get_initial_state(&self) -> Option<SemState> {
+    fn get_initial_state(&self) -> Option<BPMNMarking> {
         //find start events
-        let start_events = self
+        let applicable_start_events = self
             .all_elements_ref()
             .into_iter()
-            .filter(|element| element.is_start_event())
+            .filter(|element| element.is_start_event() || element.is_timer_start_event())
             .collect::<Vec<_>>();
 
-        let marking_message_flows = vec![0; self.number_of_message_flows()];
-
         //determine the initiation mode
-        Some(if start_events.len() == 1 {
-            //starting mode: through a start event
-            let mut marking_sequence_flows = vec![0; self.number_of_sequence_flows()];
-            for start_event in start_events {
-                for sequence_flow in start_event.outgoing_sequence_flows() {
-                    marking_sequence_flows[*sequence_flow] += 1;
-                }
-            }
-            SemState {
-                marking_sequence_flows,
-                marking_message_flows,
-            }
-        } else if start_events.len() > 1 {
-            //starting mode: choose any of multiple start events
-            //add a place to the marking
-            let mut marking_sequence_flows = vec![0; self.number_of_sequence_flows() + 1];
-            marking_sequence_flows[self.number_of_sequence_flows()] = 1;
-            SemState {
-                marking_sequence_flows,
-                marking_message_flows,
+        Some(if applicable_start_events.len() >= 1 {
+            //initiation mode 1: through one or more start events
+            BPMNMarking {
+                sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
+                message_flow_2_tokens: vec![0; self.number_of_message_flows()],
+                pre_initial_choice_token: true,
+                index_2_tokens: bitvec![0;0],
             }
         } else {
-            //starting mode: (almost) every element without an incoming sequence flow is executed
+            //initiation mode 2: eligible elements without incoming sequence flows all get a token
             //add corresponding places to the marking
             todo!()
+
+            //reminder: put message on message flow from collapsed pool to message start event
         })
     }
 
-    fn execute_transition(&self, state: &mut SemState, transition: TransitionIndex) -> Result<()> {
+    fn execute_transition(
+        &self,
+        state: &mut BPMNMarking,
+        transition: TransitionIndex,
+    ) -> Result<()> {
         todo!()
     }
 
-    fn is_final_state(&self, state: &SemState) -> bool {
+    fn is_final_state(&self, state: &BPMNMarking) -> bool {
         self.get_enabled_transitions(state).is_empty()
     }
 
@@ -69,11 +67,11 @@ impl BusinessProcessModelAndNotation {
         todo!()
     }
 
-    fn get_enabled_transitions(&self, state: &SemState) -> Vec<TransitionIndex> {
-        let mut result = BitVec::new();
-        for element in self.all_elements_ref() {
-            element.enabled_transitions(state, &mut result);
-        }
+    fn get_enabled_transitions(&self, state: &BPMNMarking) -> Vec<TransitionIndex> {
+        //recurse to elements
+        let result = self.elements.enabled_transitions(state, self);
+
+        //transform to list of indices
         let mut result2 = Vec::new();
         for index in result.iter_ones() {
             result2.push(index);

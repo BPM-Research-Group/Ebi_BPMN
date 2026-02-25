@@ -166,7 +166,9 @@ impl Closeable for TagSubProcess {
                             BPMNCollapsedSubProcess {
                                 index,
                                 id,
-                                name,
+                                activity: state
+                                    .activity_key
+                                    .process_activity(&name.unwrap_or("".to_string())),
                                 incoming_sequence_flows: vec![],
                                 outgoing_sequence_flows: vec![],
                                 incoming_message_flows: vec![],

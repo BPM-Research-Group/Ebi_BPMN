@@ -4,8 +4,10 @@ use crate::{
     elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 use strum_macros::EnumIs;
 
 #[derive(Debug, Clone)]
@@ -162,10 +164,32 @@ impl BPMNObject for BPMNEventBasedGateway {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNEventBasedGateway {
     fn number_of_transitions(&self) -> usize {
         self.incoming_sequence_flows.len()
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
+
+        for (transition_index, incoming_sequence_flow) in
+            self.incoming_sequence_flows.iter().enumerate()
+        {
+            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                result.set(transition_index, true);
+            }
+        }
+
+        result
     }
 }

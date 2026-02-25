@@ -3,8 +3,10 @@ use crate::{
     element::BPMNElementTrait,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, prelude::BitVec};
 
 #[derive(Debug, Clone)]
 pub struct BPMNParallelGateway {
@@ -66,10 +68,36 @@ impl BPMNObject for BPMNParallelGateway {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNParallelGateway {
     fn number_of_transitions(&self) -> usize {
         1
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        if self.incoming_sequence_flows.is_empty() {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow at the end of the marking
+            if marking.index_2_tokens[self.index] {
+                return bitvec![0;1];
+            }
+        } else {
+            //otherwise, every incoming sequence flow must have a token
+            for incoming_sequence_flow in &self.incoming_sequence_flows {
+                if marking.sequence_flow_2_tokens[*incoming_sequence_flow] == 0 {
+                    return bitvec![0;1];
+                }
+            }
+        }
+        bitvec![1;1]
     }
 }

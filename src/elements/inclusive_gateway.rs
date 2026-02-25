@@ -65,6 +65,10 @@ impl BPMNObject for BPMNInclusiveGateway {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
 }
 
 impl Transitionable for BPMNInclusiveGateway {

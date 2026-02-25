@@ -1,9 +1,12 @@
 use crate::{
+    BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 
 #[derive(Clone, Debug)]
 pub struct BPMNCollapsedPool {
@@ -65,13 +68,26 @@ impl BPMNObject for BPMNCollapsedPool {
     fn outgoing_message_flows(&self) -> &[usize] {
         &self.outgoing_message_flows
     }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
+    }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        true
     }
 }
 
 impl Transitionable for BPMNCollapsedPool {
     fn number_of_transitions(&self) -> usize {
         0
+    }
+
+    fn enabled_transitions(
+        &self,
+        _marking: &BPMNMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        bitvec![0;0]
     }
 }
