@@ -12,9 +12,6 @@ use quick_xml::{
 };
 use std::{io::BufRead, str::FromStr};
 
-pub const FILE_FORMAT_SPECIFICATION_LATEX: &str = "A Business Process Model and Notation (BPMN) model follows the OMG 2.0.2 standard~\\cite{omg2011bpmn}.
-    Currently, a sub-set of elements is supported.";
-
 impl BusinessProcessModelAndNotation {
     pub fn import_from_reader(reader: &mut dyn BufRead) -> Result<Self>
     where
