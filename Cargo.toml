@@ -1,0 +1,42 @@
+[package]
+name = "ebi_bpmn"
+version = "0.0.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+keywords = ["stochastic-processes", "process-mining", "business-processes", "BPMN"]
+categories = ["command-line-utilities"]
+description = "Objects for Ebi - a stochastic process mining utility"
+homepage = "https://ebitools.org"
+repository = "https://github.com/BPM-Research-Group/Ebi_objects"
+readme = "README.md"
+exclude = ["/testfiles", "/manual", ".github/", ".*"]
+
+[lib]
+name = "ebi_bpmn"
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = [ ]
+testactivities = [ "ebi_activity_key/testactivities" ]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ebi_derive = "0.2.8"
+ebi_activity_key = "0.0.1"
+anyhow = "1.0.102"
+strum = "0.28.0"
+strum_macros = "0.28.0"
+itertools = "0.14.0"
+quick-xml = {version="0.39.2", features=["serialize"]}
+
+[profile.release]
+debug = false
+strip = true
+panic = 'abort'
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[dev-dependencies]
+ebi_bpmn = { path = ".", default-features = false, features = ["testactivities"] }

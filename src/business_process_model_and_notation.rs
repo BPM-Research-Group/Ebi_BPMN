@@ -1,0 +1,125 @@
+use crate::{
+    element::BPMNElement,
+    elements::{participant::BPMNParticipant, task::BPMNTask},
+    message_flow::BPMNMessageFlow,
+    objects_elementable::Elementable,
+    objects_objectable::BPMNObject,
+    objects_searchable::Searchable,
+    sequence_flow::BPMNSequenceFlow,
+};
+#[cfg(any(test, feature = "testactivities"))]
+use ebi_activity_key::TestActivityKey;
+use ebi_activity_key::{ActivityKey, ActivityKeyTranslator, TranslateActivityKey};
+use ebi_derive::ActivityKey;
+use std::fmt::{Display, Formatter};
+
+#[derive(Clone, ActivityKey, Debug)]
+pub struct BusinessProcessModelAndNotation {
+    pub(crate) activity_key: ActivityKey,
+
+    pub collaboration_index: Option<usize>,
+    pub collaboration_id: Option<String>,
+    pub definitions_index: usize,
+    pub definitions_id: String,
+
+    /// white-box pools/participants
+    pub participants: Vec<BPMNParticipant>,
+    pub elements: Vec<BPMNElement>,
+    pub sequence_flows: Vec<BPMNSequenceFlow>,
+    pub message_flows: Vec<BPMNMessageFlow>,
+}
+
+impl BusinessProcessModelAndNotation {
+    fn number_of_elements(&self) -> usize {
+        self.all_elements_ref().len()
+    }
+
+    pub fn number_of_sequence_flows(&self) -> usize {
+        self.sequence_flows.len()
+    }
+
+    pub fn number_of_message_flows(&self) -> usize {
+        self.message_flows.len()
+    }
+
+    pub fn all_elements_ref(&self) -> Vec<&BPMNElement> {
+        self.elements.all_elements_ref()
+    }
+
+    /// find an element with the given index
+    pub fn index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        self.elements.index_2_element(index)
+    }
+
+    /// find the object of the given index
+    pub fn index_2_object(&self, index: usize) -> Option<&dyn BPMNObject> {
+        self.elements.index_2_object(index)
+    }
+}
+
+impl Display for BusinessProcessModelAndNotation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "BPMN model with {} elements", self.number_of_elements())
+    }
+}
+
+impl TranslateActivityKey for BusinessProcessModelAndNotation {
+    fn translate_using_activity_key(&mut self, to_activity_key: &mut ActivityKey) {
+        let translator = ActivityKeyTranslator::new(&self.activity_key, to_activity_key);
+
+        //gather indices of elements
+        let mut indices = vec![];
+        for element in self.all_elements_ref() {
+            if element.is_task() {
+                indices.push(element.index());
+            }
+        }
+
+        //adjust activities
+        for index in indices {
+            if let Some(BPMNElement::Task(BPMNTask { activity, .. })) =
+                self.elements.index_2_element_mut(index)
+            {
+                *activity = translator.translate_activity(&activity);
+            } else {
+                unreachable!()
+            }
+        }
+
+        self.activity_key = to_activity_key.clone();
+    }
+}
+
+#[cfg(any(test, feature = "testactivities"))]
+impl TestActivityKey for BusinessProcessModelAndNotation {
+    fn test_activity_key(&self) {
+        for element in self.all_elements_ref() {
+            if let BPMNElement::Task(BPMNTask { activity, .. }) = element {
+                self.activity_key.assert_activity_is_of_key(activity);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::BusinessProcessModelAndNotation;
+    use ebi_activity_key::TranslateActivityKey;
+    use ebi_activity_key::has_activity_key::TestActivityKey;
+    use std::fs::{self};
+
+    #[test]
+    fn bpmn_pool_translate() {
+        let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
+        let mut bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        bpmn.test_activity_key();
+
+        let fin2 = fs::read_to_string("testfiles/model.bpmn").unwrap();
+        let mut bpmn2 = fin2.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        bpmn.translate_using_activity_key(&mut bpmn2.activity_key);
+
+        bpmn.test_activity_key();
+    }
+}
