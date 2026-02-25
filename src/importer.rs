@@ -16,7 +16,7 @@ pub const FILE_FORMAT_SPECIFICATION_LATEX: &str = "A Business Process Model and 
     Currently, a sub-set of elements is supported.";
 
 impl BusinessProcessModelAndNotation {
-    fn import_from_reader(reader: &mut dyn BufRead) -> Result<Self>
+    pub fn import_from_reader(reader: &mut dyn BufRead) -> Result<Self>
     where
         Self: Sized,
     {
