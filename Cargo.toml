@@ -1,13 +1,13 @@
 [package]
 name = "ebi_bpmn"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = ["stochastic-processes", "process-mining", "business-processes", "BPMN"]
 categories = ["command-line-utilities"]
 description = "Objects for Ebi - a stochastic process mining utility"
 homepage = "https://ebitools.org"
-repository = "https://github.com/BPM-Research-Group/Ebi_objects"
+repository = "https://github.com/BPM-Research-Group/Ebi_BPMN"
 readme = "README.md"
 exclude = ["/testfiles", "/manual", ".github/", ".*"]
 

@@ -19,6 +19,8 @@ pub mod elements {
     pub mod process;
     pub mod start_event;
     pub mod task;
+    pub mod timer_intermediate_catch_event;
+    pub mod timer_start_event;
 }
 pub mod exporter;
 pub mod importer;
@@ -52,6 +54,7 @@ pub mod parser {
     pub mod tag_start_event;
     pub mod tag_subprocess;
     pub mod tag_task;
+    pub mod tag_timer_event_definition;
     pub mod tags;
 }
 pub mod writer {
@@ -75,6 +78,8 @@ pub mod writer {
     pub mod start_event;
     pub mod sub_process;
     pub mod task;
+    pub mod timer_intermediate_catch_event;
+    pub mod timer_start_event;
 }
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;

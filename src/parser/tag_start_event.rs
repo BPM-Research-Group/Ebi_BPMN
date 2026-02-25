@@ -1,13 +1,16 @@
 use crate::{
     element::BPMNElement,
-    elements::{message_start_event::BPMNMessageStartEvent, start_event::BPMNStartEvent},
+    elements::{
+        message_start_event::BPMNMessageStartEvent, start_event::BPMNStartEvent,
+        timer_start_event::BPMNTimerStartEvent,
+    },
     parser::{
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub struct TagStartEvent {}
@@ -40,6 +43,7 @@ impl Openable for TagStartEvent {
             index,
             id,
             message_marker_id: None,
+            timer_marker_id: None,
         })
     }
 }
@@ -53,22 +57,42 @@ impl Closeable for TagStartEvent {
                     index,
                     id,
                     message_marker_id,
+                    timer_marker_id,
                 } = opened_tag
                 {
-                    if let Some(message_marker_id) = message_marker_id {
-                        elements.push(BPMNElement::MessageStartEvent(BPMNMessageStartEvent {
-                            index,
-                            id,
-                            message_marker_id,
-                            outgoing_sequence_flows: vec![],
-                            incoming_message_flow: None,
-                        }));
-                    } else {
-                        elements.push(BPMNElement::StartEvent(BPMNStartEvent {
-                            index,
-                            id,
-                            outgoing_sequence_flows: vec![],
-                        }));
+                    match (message_marker_id, timer_marker_id) {
+                        (None, None) => {
+                            //no marker
+                            elements.push(BPMNElement::StartEvent(BPMNStartEvent {
+                                index,
+                                id,
+                                outgoing_sequence_flows: vec![],
+                            }));
+                        }
+                        (None, Some(timer_marker_id)) => {
+                            //timer marker
+                            elements.push(BPMNElement::TimerStartEvent(BPMNTimerStartEvent {
+                                index,
+                                id,
+                                timer_marker_id,
+                                outgoing_sequence_flows: vec![],
+                            }));
+                        }
+                        (Some(message_marker_id), None) => {
+                            //message marker
+                            elements.push(BPMNElement::MessageStartEvent(BPMNMessageStartEvent {
+                                index,
+                                id,
+                                message_marker_id,
+                                outgoing_sequence_flows: vec![],
+                                incoming_message_flow: None,
+                            }));
+                        }
+                        (Some(_), Some(_)) => {
+                            return Err(anyhow!(
+                                "a start event cannot be both a timer and a message event"
+                            ));
+                        }
                     }
                     Ok(())
                 } else {

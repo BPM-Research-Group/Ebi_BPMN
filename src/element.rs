@@ -12,6 +12,8 @@ use crate::{
         message_intermediate_throw_event::BPMNMessageIntermediateThrowEvent,
         message_start_event::BPMNMessageStartEvent, parallel_gateway::BPMNParallelGateway,
         process::BPMNProcess, start_event::BPMNStartEvent, task::BPMNTask,
+        timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
+        timer_start_event::BPMNTimerStartEvent,
     },
     objects_elementable::Elementable,
     objects_objectable::BPMNObject,
@@ -42,6 +44,8 @@ pub enum BPMNElement {
     Process(BPMNProcess),
     StartEvent(BPMNStartEvent),
     Task(BPMNTask),
+    TimerIntermediateCatchEvent(BPMNTimerIntermediateCatchEvent),
+    TimerStartEvent(BPMNTimerStartEvent),
 }
 
 pub trait BPMNElementTrait {
@@ -88,6 +92,8 @@ macro_rules! enums {
             BPMNElement::Process(x) => BPMNProcess::$fn(x, $($v),*),
             BPMNElement::StartEvent(x) => BPMNStartEvent::$fn(x, $($v),*),
             BPMNElement::Task(x) => BPMNTask::$fn(x, $($v),*),
+            BPMNElement::TimerIntermediateCatchEvent(x) => BPMNTimerIntermediateCatchEvent::$fn(x, $($v),*),
+            BPMNElement::TimerStartEvent(x) => BPMNTimerStartEvent::$fn(x, $($v),*),
         }
     };
 }

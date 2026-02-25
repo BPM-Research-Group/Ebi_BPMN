@@ -8,6 +8,7 @@ For now, this library focuses on the behaviour of BPMN models; not on the data o
 
 * Start, end and intermediate None events
 * Start, end and intermediate message events
+* Start and intermediate timer events
 * Exclusive, inclusive, parallel and event-based gateways
 * Expanded and collapsed pools
 * Message flows

@@ -21,6 +21,7 @@ use crate::{
         tag_start_event::TagStartEvent,
         tag_subprocess::TagSubProcess,
         tag_task::TagTask,
+        tag_timer_event_definition::TagTimerEventDefinition,
     },
     sequence_flow::BPMNSequenceFlow,
 };
@@ -49,6 +50,7 @@ pub(crate) enum Tag {
     SubProcess,
     StartEvent,
     Task,
+    TimerEventDefinition,
 }
 
 impl Recognisable for Tag {
@@ -75,6 +77,7 @@ impl Recognisable for Tag {
                 Tag::EventBasedGateway => TagEventBasedGateway::recognise_tag(e, state),
                 Tag::SubProcess => TagSubProcess::recognise_tag(e, state),
                 Tag::Participant => TagParticipant::recognise_tag(e, state),
+                Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state),
             };
             if x.is_some() {
                 return x;
@@ -107,6 +110,7 @@ impl Openable for Tag {
             Tag::EventBasedGateway => TagEventBasedGateway::open_tag(tag, e, state),
             Tag::SubProcess => TagSubProcess::open_tag(tag, e, state),
             Tag::Participant => TagParticipant::open_tag(tag, e, state),
+            Tag::TimerEventDefinition => TagTimerEventDefinition::open_tag(tag, e, state),
         }
     }
 }
@@ -150,6 +154,7 @@ pub(crate) enum OpenedTag {
         index: usize,
         id: String,
         message_marker_id: Option<String>,
+        timer_marker_id: Option<String>,
     },
     IntermediateThrowEvent {
         index: usize,
@@ -198,11 +203,15 @@ pub(crate) enum OpenedTag {
         index: usize,
         id: String,
         message_marker_id: Option<String>,
+        timer_marker_id: Option<String>,
     },
     Task {
         index: usize,
         id: String,
         activity: Activity,
+    },
+    TimerEventDefinition {
+        id: String,
     },
 }
 
@@ -241,6 +250,9 @@ impl Closeable for OpenedTag {
             }
             OpenedTag::SubProcess { .. } => TagSubProcess::close_tag(opened_tag, e, state),
             OpenedTag::Participant { .. } => TagParticipant::close_tag(opened_tag, e, state),
+            OpenedTag::TimerEventDefinition { .. } => {
+                TagTimerEventDefinition::close_tag(opened_tag, e, state)
+            }
         }
     }
 }

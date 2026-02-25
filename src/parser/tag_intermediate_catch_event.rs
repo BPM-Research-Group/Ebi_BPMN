@@ -3,6 +3,7 @@ use crate::{
     elements::{
         intermediate_catch_event::BPMNIntermediateCatchEvent,
         message_intermediate_catch_event::BPMNMessageIntermediateCatchEvent,
+        timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
     },
     parser::{
         parser_state::ParserState,
@@ -43,6 +44,7 @@ impl Openable for TagIntermediateCatchEvent {
             index,
             id,
             message_marker_id: None,
+            timer_marker_id: None,
         })
     }
 }
@@ -56,28 +58,47 @@ impl Closeable for TagIntermediateCatchEvent {
                     index,
                     id,
                     message_marker_id,
+                    timer_marker_id,
                 } = opened_tag
                 {
-                    if let Some(message_marker_id) = message_marker_id {
-                        elements.push(BPMNElement::MessageIntermediateCatchEvent(
-                            BPMNMessageIntermediateCatchEvent {
-                                index,
-                                id,
-                                message_marker_id,
-                                incoming_sequence_flows: vec![],
-                                outgoing_sequence_flows: vec![],
-                                incoming_message_flow: None,
-                            },
-                        ));
-                    } else {
-                        elements.push(BPMNElement::IntermediateCatchEvent(
-                            BPMNIntermediateCatchEvent {
-                                index,
-                                id,
-                                incoming_sequence_flows: vec![],
-                                outgoing_sequence_flows: vec![],
-                            },
-                        ));
+                    match (message_marker_id, timer_marker_id) {
+                        (None, None) => {
+                            //no marker
+                            elements.push(BPMNElement::IntermediateCatchEvent(
+                                BPMNIntermediateCatchEvent {
+                                    index,
+                                    id,
+                                    incoming_sequence_flows: vec![],
+                                    outgoing_sequence_flows: vec![],
+                                },
+                            ));
+                        }
+                        (None, Some(timer_marker_id)) => {
+                            //timer marker
+                            elements.push(BPMNElement::TimerIntermediateCatchEvent(
+                                BPMNTimerIntermediateCatchEvent {
+                                    index,
+                                    id,
+                                    timer_marker_id,
+                                    incoming_sequence_flows: vec![],
+                                    outgoing_sequence_flows: vec![],
+                                },
+                            ));
+                        }
+                        (Some(message_marker_id), None) => {
+                            //message marker
+                            elements.push(BPMNElement::MessageIntermediateCatchEvent(
+                                BPMNMessageIntermediateCatchEvent {
+                                    index,
+                                    id,
+                                    message_marker_id,
+                                    incoming_sequence_flows: vec![],
+                                    outgoing_sequence_flows: vec![],
+                                    incoming_message_flow: None,
+                                },
+                            ));
+                        }
+                        (Some(_), Some(_)) => todo!(),
                     }
                     Ok(())
                 } else {

@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    elements::task::BPMNTask,
+    elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
 };
@@ -61,7 +61,8 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                         | BPMNElement::MessageStartEvent(_)
                         | BPMNElement::ParallelGateway(_)
                         | BPMNElement::Process(_)
-                        | BPMNElement::StartEvent(_) => {
+                        | BPMNElement::StartEvent(_)
+                        | BPMNElement::TimerStartEvent(_) => {
                             return Err(anyhow!(
                                 "element `{}` not allowed as a target of a sequence flow from an event-based gateway (standard page 297)",
                                 target.id()
@@ -76,6 +77,12 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                                 ));
                             }
                             configuration = Configuration::Events;
+                        }
+
+                        BPMNElement::TimerIntermediateCatchEvent(
+                            BPMNTimerIntermediateCatchEvent { .. },
+                        ) => {
+                            //always allowed
                         }
 
                         BPMNElement::Task(BPMNTask {
