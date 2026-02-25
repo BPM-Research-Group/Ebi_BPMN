@@ -30,7 +30,7 @@ pub struct BusinessProcessModelAndNotation {
 }
 
 impl BusinessProcessModelAndNotation {
-    fn number_of_elements(&self) -> usize {
+    pub fn number_of_elements(&self) -> usize {
         self.all_elements_ref().len()
     }
 

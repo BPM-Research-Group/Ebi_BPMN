@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "ebi_bpmn"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "ebi_activity_key",
@@ -86,9 +86,9 @@ dependencies = [
 
 [[package]]
 name = "ebi_derive"
-version = "0.2.8"
+version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acbb09054a902e8da287dc7eacbf6cff0a7e88b7793a5723e325ad83f5ee130b"
+checksum = "1277ad700e42976df7be0a59add349710a40ac6ed5634a569f9a21707fe5b0ee"
 dependencies = [
  "darling",
  "quote",
