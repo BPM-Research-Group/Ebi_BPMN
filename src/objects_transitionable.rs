@@ -32,3 +32,35 @@ impl Transitionable for Vec<BPMNElement> {
         result
     }
 }
+
+#[macro_export]
+macro_rules! number_of_transitions_xor_join_only {
+    ($s:ident) => {
+        $s.incoming_sequence_flows.len().max(1)
+    };
+}
+
+#[macro_export]
+macro_rules! enabledness_xor_join_only {
+    ($s:ident, $marking:ident) => {
+        {
+            let mut result = bitvec![0;$s.number_of_transitions()];
+            if $s.incoming_sequence_flows.len() >= 1 {
+                //we are in initiation mode 1
+                for (transition_index, incoming_sequence_flow) in
+                    $s.incoming_sequence_flows.iter().enumerate()
+                {
+                    if $marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                        result.set(transition_index, true);
+                    }
+                }
+            } else {
+                //we are in initiation mode 2
+                if $marking.element_index_2_tokens[$s.index] {
+                    result.set(0, true);
+                }
+            }
+            result
+        }
+    };
+}

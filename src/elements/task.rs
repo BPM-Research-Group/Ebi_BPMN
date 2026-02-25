@@ -1,5 +1,6 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, objects_objectable::BPMNObject,
+    BusinessProcessModelAndNotation, element::BPMNElementTrait, enabledness_xor_join_only,
+    number_of_transitions_xor_join_only, objects_objectable::BPMNObject,
     objects_transitionable::Transitionable, semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
@@ -85,7 +86,7 @@ impl BPMNObject for BPMNTask {
 
 impl Transitionable for BPMNTask {
     fn number_of_transitions(&self) -> usize {
-        self.incoming_sequence_flows.len()
+        number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
@@ -104,7 +105,7 @@ impl Transitionable for BPMNTask {
 
                     if marking.message_flow_2_tokens[message_flow_index] == 0 {
                         //message is not present; all transitions are not enabled
-                        return bitvec![0; self.incoming_sequence_flows.len()];
+                        return bitvec![0;self.number_of_transitions()];
                     }
                 } else {
                     //if the message flow has always tokens, we do not need to check the marking
@@ -116,16 +117,6 @@ impl Transitionable for BPMNTask {
             //if there is no incoming message flow, there is no restriction
         }
 
-        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
-
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                result.set(transition_index, true);
-            }
-        }
-
-        result
+        enabledness_xor_join_only!(self, marking)
     }
 }

@@ -76,7 +76,7 @@ impl BPMNObject for BPMNExclusiveGateway {
 
 impl Transitionable for BPMNExclusiveGateway {
     fn number_of_transitions(&self) -> usize {
-        self.incoming_sequence_flows.len() * self.outgoing_sequence_flows.len()
+        self.incoming_sequence_flows.len().max(1) * self.outgoing_sequence_flows.len().max(1)
     }
 
     fn enabled_transitions(
@@ -84,20 +84,49 @@ impl Transitionable for BPMNExclusiveGateway {
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> BitVec {
-        let mut result =
-            bitvec![0;self.incoming_sequence_flows.len() * self.outgoing_sequence_flows.len()];
+        let mut result = bitvec![0;self.number_of_transitions()];
 
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                for i in transition_index * self.outgoing_sequence_flows.len()
-                    ..(1 + transition_index) * self.outgoing_sequence_flows.len()
+        let outgoing = self.outgoing_sequence_flows.len().max(1);
+
+        match (
+            self.incoming_sequence_flows.len() > 0,
+            self.outgoing_sequence_flows.len() > 0,
+        ) {
+            (true, true) => {
+                //join & split
+                for (incoming_index, incoming_sequence_flow) in
+                    self.incoming_sequence_flows.iter().enumerate()
                 {
-                    result.set(i, true);
+                    if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                        for i in incoming_index * outgoing..(1 + incoming_index) * outgoing {
+                            result.set(i, true);
+                        }
+                    }
                 }
             }
-        }
+            (true, false) => {
+                //join only
+                for (incoming_index, incoming_sequence_flow) in
+                    self.incoming_sequence_flows.iter().enumerate()
+                {
+                    if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                        result.set(incoming_index, true);
+                    }
+                }
+            }
+            (false, true) => {
+                //split only; we are in initiation mode 2.
+                if marking.element_index_2_tokens[self.index] {
+                    result.fill(true);
+                }
+            }
+            (false, false) => {
+                //no flows at all; we are in initiation mode 2.
+                if marking.element_index_2_tokens[self.index] {
+                    result.set(0, true);
+                }
+            }
+        };
 
         result
     }

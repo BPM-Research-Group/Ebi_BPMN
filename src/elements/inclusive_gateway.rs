@@ -3,8 +3,10 @@ use crate::{
     element::BPMNElementTrait,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::vec::BitVec;
 
 #[derive(Debug, Clone)]
 pub struct BPMNInclusiveGateway {
@@ -74,5 +76,13 @@ impl BPMNObject for BPMNInclusiveGateway {
 impl Transitionable for BPMNInclusiveGateway {
     fn number_of_transitions(&self) -> usize {
         2usize.pow(self.outgoing_sequence_flows.len() as u32) - 1
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        todo!()
     }
 }

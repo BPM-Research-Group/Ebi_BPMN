@@ -15,7 +15,7 @@ pub struct BPMNMarking {
     pub(crate) pre_initial_choice_token: bool,
 
     /// in case no start events are present, every eligible element without incoming sequence flows gets a token
-    pub(crate) index_2_tokens: BitVec,
+    pub(crate) element_index_2_tokens: BitVec,
 }
 type TransitionIndex = usize;
 
@@ -36,7 +36,7 @@ impl BusinessProcessModelAndNotation {
                 sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
                 message_flow_2_tokens: vec![0; self.number_of_message_flows()],
                 pre_initial_choice_token: true,
-                index_2_tokens: bitvec![0;0],
+                element_index_2_tokens: bitvec![0;0],
             }
         } else {
             //initiation mode 2: eligible elements without incoming sequence flows all get a token
@@ -86,7 +86,8 @@ impl BusinessProcessModelAndNotation {
 
 #[cfg(test)]
 mod tests {
-    use crate::{BusinessProcessModelAndNotation, bpmn::semantics::SemState};
+    use crate::{BusinessProcessModelAndNotation, semantics::BPMNMarking};
+    use bitvec::bitvec;
     use std::fs::{self};
 
     #[test]
@@ -96,11 +97,13 @@ mod tests {
 
         assert_eq!(
             bpmn.get_initial_state(),
-            Some(SemState {
-                marking_sequence_flows: vec![0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                marking_message_flows: vec![]
+            Some(BPMNMarking {
+                sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                message_flow_2_tokens: vec![],
+                pre_initial_choice_token: true,
+                element_index_2_tokens: bitvec![0;0]
             })
         );
-        assert_eq!(bpmn.get_number_of_transitions(), 12)
+        assert_eq!(bpmn.get_number_of_transitions(), 13)
     }
 }

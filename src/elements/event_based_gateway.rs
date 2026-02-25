@@ -2,6 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
+    enabledness_xor_join_only, number_of_transitions_xor_join_only,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
     semantics::BPMNMarking,
@@ -172,7 +173,7 @@ impl BPMNObject for BPMNEventBasedGateway {
 
 impl Transitionable for BPMNEventBasedGateway {
     fn number_of_transitions(&self) -> usize {
-        self.incoming_sequence_flows.len()
+        number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
@@ -180,16 +181,6 @@ impl Transitionable for BPMNEventBasedGateway {
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> BitVec {
-        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
-
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                result.set(transition_index, true);
-            }
-        }
-
-        result
+        enabledness_xor_join_only!(self, marking)
     }
 }

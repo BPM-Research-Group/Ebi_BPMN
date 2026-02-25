@@ -3,8 +3,10 @@ use crate::{
     element::{BPMNElement, BPMNElementTrait},
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_transitionable::Transitionable,
+    semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
+use bitvec::{bitvec, vec::BitVec};
 
 #[derive(Debug, Clone)]
 pub struct BPMNExpandedSubProcess {
@@ -83,7 +85,41 @@ impl BPMNObject for BPMNExpandedSubProcess {
 
 impl Transitionable for BPMNExpandedSubProcess {
     fn number_of_transitions(&self) -> usize {
-        //one transition to start, one transition to finish
-        2
+        //behaves like an XOR-join to start
+        self.incoming_sequence_flows.len().max(1)
+        //one transition to end
+        + 1
+        //and its inner transitions
+        + self.elements.number_of_transitions()
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> BitVec {
+        //start transitions
+        let mut result = bitvec![0;self.number_of_transitions()];
+
+        for (transition_index, incoming_sequence_flow) in
+            self.incoming_sequence_flows.iter().enumerate()
+        {
+            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                result.set(transition_index, true);
+            }
+        }
+
+        let children_enabled_transitions = self.elements.enabled_transitions(marking, bpmn);
+
+        //end transition
+        if children_enabled_transitions.not_any() {
+            //child has no enabled transitions -> terminated
+            result.set(self.incoming_sequence_flows.len(), true);
+        }
+
+        //recurse
+        result.extend(children_enabled_transitions);
+
+        result
     }
 }

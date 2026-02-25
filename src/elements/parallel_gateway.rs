@@ -87,7 +87,7 @@ impl Transitionable for BPMNParallelGateway {
         if self.incoming_sequence_flows.is_empty() {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow at the end of the marking
-            if marking.index_2_tokens[self.index] {
+            if marking.element_index_2_tokens[self.index] {
                 return bitvec![0;1];
             }
         } else {
