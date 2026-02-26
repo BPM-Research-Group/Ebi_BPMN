@@ -26,3 +26,44 @@ impl BusinessProcessModelAndNotation {
         Ok(())
     }
 }
+
+#[macro_export]
+macro_rules! verify_structural_correctness_initiation_mode {
+    ($process:ident, $bpmn:ident) => {
+        //verify initiation and termination
+        if $process
+            .initiation_mode($bpmn)?
+            .is_choice_between_start_events()
+        {
+            //there must be end events
+            if $process.end_events_without_recursing().is_empty() {
+                return Err(anyhow!(
+                    "process `{}` has start events but no end events",
+                    $process.id
+                ));
+            }
+
+            //all elements must have incoming and outgoing arcs
+            for element in &$process.elements {
+                if element.can_have_incoming_sequence_flows() {
+                    if element.incoming_sequence_flows().is_empty() {
+                        return Err(anyhow!(
+                            "given that there are start events in process `{}`, element `{}` should have an incoming sequence flow",
+                            $process.id,
+                            element.id()
+                        ));
+                    }
+                }
+                if element.can_have_outgoing_sequence_flows() {
+                    if element.outgoing_sequence_flows().is_empty() {
+                        return Err(anyhow!(
+                            "given that there are start events in process `{}`, element `{}` should have an outgoing sequence flow",
+                            $process.id,
+                            element.id()
+                        ));
+                    }
+                }
+            }
+        }
+    };
+}

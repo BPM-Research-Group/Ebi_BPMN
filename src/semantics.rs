@@ -1,9 +1,12 @@
 use crate::{
-    BusinessProcessModelAndNotation, objects_objectable::BPMNObject,
+    BusinessProcessModelAndNotation,
+    element::BPMNElement,
+    elements::process::BPMNProcess,
+    objects_objectable::BPMNObject,
+    objects_startable::{InitiationMode, Startable},
     objects_transitionable::Transitionable,
 };
 use anyhow::Result;
-use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -15,36 +18,45 @@ pub struct BPMNMarking {
     pub(crate) pre_initial_choice_token: bool,
 
     /// in case no start events are present, every eligible element without incoming sequence flows gets a token
-    pub(crate) element_index_2_tokens: BitVec,
+    pub(crate) element_index_2_tokens: Vec<u64>,
 }
 type TransitionIndex = usize;
 
 impl BusinessProcessModelAndNotation {
     /// BPMN 2.0.2 standard page 238
-    fn get_initial_state(&self) -> Option<BPMNMarking> {
-        //find start events
-        let applicable_start_events = self
-            .all_elements_ref()
-            .into_iter()
-            .filter(|element| element.is_start_event() || element.is_timer_start_event())
-            .collect::<Vec<_>>();
+    pub fn get_initial_state(&self) -> Result<BPMNMarking> {
+        //gather the initiation mode
+        let mut mode = InitiationMode::ParallelElements(vec![]);
+        for element in &self.elements {
+            if let BPMNElement::Process(process) = element {
+                mode = mode + process.initiation_mode(self)?;
+            }
+        }
 
         //determine the initiation mode
-        Some(if applicable_start_events.len() >= 1 {
+        if let InitiationMode::ParallelElements(elements) = mode {
+            //initiation mode 2: eligible elements without incoming sequence flows all get a token
+
+            let mut element_index_2_tokens = vec![0; self.number_of_elements()];
+            for element in elements {
+                element_index_2_tokens[element.index()] = 1;
+            }
+
+            Ok(BPMNMarking {
+                sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
+                message_flow_2_tokens: vec![0; self.number_of_message_flows()],
+                pre_initial_choice_token: false,
+                element_index_2_tokens,
+            })
+        } else {
             //initiation mode 1: through one or more start events
-            BPMNMarking {
+            Ok(BPMNMarking {
                 sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
                 message_flow_2_tokens: vec![0; self.number_of_message_flows()],
                 pre_initial_choice_token: true,
-                element_index_2_tokens: bitvec![0;0],
-            }
-        } else {
-            //initiation mode 2: eligible elements without incoming sequence flows all get a token
-            //add corresponding places to the marking
-            todo!()
-
-            //reminder: put message on message flow from collapsed pool to message start event
-        })
+                element_index_2_tokens: vec![],
+            })
+        }
     }
 
     fn execute_transition(
@@ -55,8 +67,8 @@ impl BusinessProcessModelAndNotation {
         todo!()
     }
 
-    fn is_final_state(&self, state: &BPMNMarking) -> bool {
-        self.get_enabled_transitions(state).is_empty()
+    fn is_final_state(&self, state: &BPMNMarking) -> Result<bool> {
+        Ok(self.get_enabled_transitions(state)?.is_empty())
     }
 
     fn is_transition_silent(&self, transition: TransitionIndex) -> bool {
@@ -67,16 +79,16 @@ impl BusinessProcessModelAndNotation {
         todo!()
     }
 
-    fn get_enabled_transitions(&self, state: &BPMNMarking) -> Vec<TransitionIndex> {
+    fn get_enabled_transitions(&self, state: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
         //recurse to elements
-        let result = self.elements.enabled_transitions(state, self);
+        let result = self.elements.enabled_transitions(state, self)?;
 
         //transform to list of indices
         let mut result2 = Vec::new();
         for index in result.iter_ones() {
             result2.push(index);
         }
-        result2
+        Ok(result2)
     }
 
     fn get_number_of_transitions(&self) -> usize {
@@ -87,23 +99,46 @@ impl BusinessProcessModelAndNotation {
 #[cfg(test)]
 mod tests {
     use crate::{BusinessProcessModelAndNotation, semantics::BPMNMarking};
-    use bitvec::bitvec;
     use std::fs::{self};
 
     #[test]
     fn bpmn_semantics() {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+        assert_eq!(bpmn.get_number_of_transitions(), 13);
+
+        let state = bpmn.get_initial_state().unwrap();
 
         assert_eq!(
-            bpmn.get_initial_state(),
-            Some(BPMNMarking {
+            state,
+            BPMNMarking {
                 sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 message_flow_2_tokens: vec![],
                 pre_initial_choice_token: true,
-                element_index_2_tokens: bitvec![0;0]
-            })
+                element_index_2_tokens: vec![]
+            }
         );
-        assert_eq!(bpmn.get_number_of_transitions(), 13)
+        assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 1);
+    }
+
+    
+    fn bpmn_lanes_semantics() {
+        let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+        assert_eq!(bpmn.get_number_of_transitions(), 12);
+
+        let state = bpmn.get_initial_state().unwrap();
+
+        assert_eq!(
+            state,
+            BPMNMarking {
+                sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                message_flow_2_tokens: vec![0],
+                pre_initial_choice_token: true,
+                element_index_2_tokens: vec![]
+            }
+        );
+        println!("{:?}", bpmn.get_enabled_transitions(&state).unwrap());
+        assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 2);
     }
 }

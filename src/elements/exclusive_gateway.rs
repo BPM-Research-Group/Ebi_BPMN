@@ -49,6 +49,17 @@ impl BPMNObject for BPMNExclusiveGateway {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &self.incoming_sequence_flows
     }
@@ -65,12 +76,20 @@ impl BPMNObject for BPMNExclusiveGateway {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        true
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(self.incoming_sequence_flows().len() == 0)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        true
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -83,7 +102,7 @@ impl Transitionable for BPMNExclusiveGateway {
         &self,
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         let mut result = bitvec![0;self.number_of_transitions()];
 
         let outgoing = self.outgoing_sequence_flows.len().max(1);
@@ -116,18 +135,18 @@ impl Transitionable for BPMNExclusiveGateway {
             }
             (false, true) => {
                 //split only; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.index] {
+                if marking.element_index_2_tokens[self.index] >= 1 {
                     result.fill(true);
                 }
             }
             (false, false) => {
                 //no flows at all; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.index] {
+                if marking.element_index_2_tokens[self.index] >= 1 {
                     result.set(0, true);
                 }
             }
         };
 
-        result
+        Ok(result)
     }
 }

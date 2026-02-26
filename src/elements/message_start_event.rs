@@ -62,6 +62,26 @@ impl BPMNObject for BPMNMessageStartEvent {
         &self.id
     }
 
+    fn is_unconstrained_start_event(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.outgoing_message_flows_always_have_tokens() {
+                //a message from a collapsed pool is always there
+                Ok(true)
+            } else {
+                //otherwise, the message must be there = the instance has already started
+                Ok(false)
+            }
+        } else {
+            //there is no constraining message, so this message start event can start a process instance
+            Ok(true)
+        }
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }
@@ -78,12 +98,20 @@ impl BPMNObject for BPMNMessageStartEvent {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        false
+    fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        self.is_unconstrained_start_event(bpmn)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        false
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -95,23 +123,44 @@ impl Transitionable for BPMNMessageStartEvent {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
-        _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
-        if let Some(incoming_message_flow) = self.incoming_message_flow {
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<BitVec> {
+        if let Some(message_flow_index) = self.incoming_message_flow {
             //Two cases apply:
-            //1) the source of the message always has tokens -> leave enablement to the environment (will put a token on the incoming message flow)
-            //2) the source of the message is normal -> normal enablement
-            // in both cases, we are enabled if there is a message on the incoming message flow
-            if marking.message_flow_2_tokens[incoming_message_flow] == 0 {
-                //enabled
-                return bitvec![0;1];
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.outgoing_message_flows_always_have_tokens() {
+                //1) the source of the message always has tokens
+                //we are enabled when specifically enabled by the environment
+                if marking.element_index_2_tokens[self.index] >= 1 {
+                    //enabled
+                    Ok(bitvec![1;1])
+                } else {
+                    //disabled
+                    Ok(bitvec![0;1])
+                }
             } else {
-                //not enabled
-                return bitvec![1;1];
+                //2) the source of the message is normal -> normal enablement
+                // we are enabled if there is a message on the incoming message flow
+                if marking.message_flow_2_tokens[message_flow_index] >= 1 {
+                    //enabled
+                    Ok(bitvec![1;1])
+                } else {
+                    //not enabled
+                    Ok(bitvec![0;1])
+                }
             }
         } else {
-            //model is not structurally correct
-            unreachable!()
+            //model does not have an incoming message flow; treat as a regular start event
+            if marking.pre_initial_choice_token {
+                //enabled by initial choice token
+                Ok(bitvec![1;1])
+            } else if marking.element_index_2_tokens[self.index] >= 1 {
+                //enabled by element token
+                Ok(bitvec![1;1])
+            } else {
+                //not enabled
+                Ok(bitvec![0;1])
+            }
         }
     }
 }

@@ -163,7 +163,7 @@ impl Transitionable for BPMNElement {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         enums!(self, enabled_transitions, marking, bpmn)
     }
 }
@@ -238,6 +238,14 @@ impl BPMNObject for BPMNElement {
         enums!(self, id,)
     }
 
+    fn is_unconstrained_start_event(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        enums!(self, is_unconstrained_start_event, bpmn)
+    }
+
+    fn is_end_event(&self) -> bool {
+        enums!(self, is_end_event,)
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         enums!(self, incoming_sequence_flows,)
     }
@@ -254,11 +262,19 @@ impl BPMNObject for BPMNElement {
         enums!(self, outgoing_message_flows,)
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        enums!(self, can_have_incoming_sequence_flows,)
+    fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        enums!(self, can_start_process_instance, bpmn)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         enums!(self, outgoing_message_flows_always_have_tokens,)
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        enums!(self, can_have_incoming_sequence_flows,)
+    }
+
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        enums!(self, can_have_outgoing_sequence_flows,)
     }
 }

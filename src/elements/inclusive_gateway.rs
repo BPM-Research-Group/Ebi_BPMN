@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
@@ -6,7 +8,7 @@ use crate::{
     semantics::BPMNMarking,
 };
 use anyhow::{Result, anyhow};
-use bitvec::vec::BitVec;
+use bitvec::{bitvec, vec::BitVec};
 
 #[derive(Debug, Clone)]
 pub struct BPMNInclusiveGateway {
@@ -48,6 +50,17 @@ impl BPMNObject for BPMNInclusiveGateway {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &self.incoming_sequence_flows
     }
@@ -64,12 +77,20 @@ impl BPMNObject for BPMNInclusiveGateway {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        true
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(self.incoming_sequence_flows().len() == 0)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        true
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -82,7 +103,55 @@ impl Transitionable for BPMNInclusiveGateway {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
-        todo!()
+    ) -> Result<BitVec> {
+        if self.incoming_sequence_flows.len() == 0 {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow
+            if marking.element_index_2_tokens[self.index] >= 1 {
+                //enabled
+                return Ok(bitvec![1;self.number_of_transitions()]);
+            } else {
+                //not enabled
+                return Ok(bitvec![0;self.number_of_transitions()]);
+            }
+        } else {
+            //gather a list of incoming sequence flows that do not have a token
+            let mut empty_sequence_flows = bitvec![0;bpmn.number_of_sequence_flows()];
+            for sequence_flow in &self.incoming_sequence_flows {
+                if marking.sequence_flow_2_tokens[*sequence_flow] == 0 {
+                    empty_sequence_flows.set(*sequence_flow, true);
+                }
+            }
+
+            if empty_sequence_flows.count_ones() == self.incoming_sequence_flows.len() {
+                //not enabled as there is no token
+                return Ok(bitvec![0;self.number_of_transitions()]);
+            }
+
+            //perform a backwards search to find tokens that may still come to the gateway
+            let mut queue = VecDeque::new();
+            queue.extend(empty_sequence_flows.iter_ones());
+            let mut seen_sequence_flows = empty_sequence_flows;
+            while let Some(sequence_flow) = queue.pop_front() {
+                if marking.sequence_flow_2_tokens[sequence_flow] >= 1 {
+                    //we encountered a token on our search, so the gateway is not enabled
+                    return Ok(bitvec![0;self.number_of_transitions()]);
+                }
+
+                let source_index = bpmn.sequence_flows[sequence_flow].source_index;
+                let source = bpmn
+                    .index_2_element(source_index)
+                    .ok_or_else(|| anyhow!("source not found"))?;
+                for next_sequence_flow in source.incoming_sequence_flows() {
+                    if !seen_sequence_flows[*next_sequence_flow] {
+                        queue.push_back(*next_sequence_flow);
+                        seen_sequence_flows.set(*next_sequence_flow, false);
+                    }
+                }
+            }
+
+            //enabled
+            return Ok(bitvec![1;self.number_of_transitions()]);
+        }
     }
 }

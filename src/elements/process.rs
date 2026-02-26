@@ -4,8 +4,9 @@ use crate::{
     objects_elementable::Elementable,
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
     objects_searchable::Searchable,
+    objects_startable::Startable,
     objects_transitionable::Transitionable,
-    semantics::BPMNMarking,
+    semantics::BPMNMarking, verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
@@ -40,9 +41,14 @@ impl Searchable for BPMNProcess {
 
 impl BPMNElementTrait for BPMNProcess {
     fn verify_structural_correctness(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+        //check children individually
         for element in &self.elements {
             element.verify_structural_correctness(bpmn)?
         }
+
+        //verify initiation and termination
+        verify_structural_correctness_initiation_mode!(self, bpmn);
+
         Ok(())
     }
 
@@ -86,6 +92,17 @@ impl BPMNObject for BPMNProcess {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }
@@ -102,11 +119,19 @@ impl BPMNObject for BPMNProcess {
         &EMPTY_FLOWS
     }
 
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
 
-    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
         false
     }
 }
@@ -120,7 +145,28 @@ impl Transitionable for BPMNProcess {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         self.elements.enabled_transitions(marking, bpmn)
+    }
+}
+
+impl Startable for BPMNProcess {
+    fn unconstrained_start_events_without_recursing(
+        &self,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<&BPMNElement>> {
+        self.elements
+            .unconstrained_start_events_without_recursing(bpmn)
+    }
+
+    fn end_events_without_recursing(&self) -> Vec<&BPMNElement> {
+        self.elements.end_events_without_recursing()
+    }
+
+    fn start_elements_without_recursing(
+        &self,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<&BPMNElement>> {
+        self.elements.start_elements_without_recursing(bpmn)
     }
 }

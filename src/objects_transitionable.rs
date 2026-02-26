@@ -1,4 +1,5 @@
 use crate::{BusinessProcessModelAndNotation, element::BPMNElement, semantics::BPMNMarking};
+use anyhow::Result;
 use bitvec::{bitvec, prelude::Lsb0, vec::BitVec};
 
 /// A trait that provides semantics to BPMN elements, by means of transitions.
@@ -12,7 +13,7 @@ pub trait Transitionable {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec;
+    ) -> Result<BitVec>;
 }
 
 impl Transitionable for Vec<BPMNElement> {
@@ -24,12 +25,12 @@ impl Transitionable for Vec<BPMNElement> {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         let mut result = bitvec![];
         for element in self {
-            result.extend(element.enabled_transitions(marking, bpmn))
+            result.extend(element.enabled_transitions(marking, bpmn)?)
         }
-        result
+        Ok(result)
     }
 }
 
@@ -56,11 +57,12 @@ macro_rules! enabledness_xor_join_only {
                 }
             } else {
                 //we are in initiation mode 2
-                if $marking.element_index_2_tokens[$s.index] {
+                if $marking.element_index_2_tokens[$s.index] >= 1 {
+                    //enabled
                     result.set(0, true);
                 }
             }
-            result
+            Ok(result)
         }
     };
 }

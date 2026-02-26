@@ -18,7 +18,7 @@ pub struct BPMNStartEvent {
 impl BPMNElementTrait for BPMNStartEvent {
     fn add_incoming_sequence_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
-            "message start events cannot have incoming sequence flows"
+            "start events cannot have incoming sequence flows"
         ))
     }
 
@@ -29,13 +29,13 @@ impl BPMNElementTrait for BPMNStartEvent {
 
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
-            "message start events cannot have incoming message flows"
+            "start events cannot have incoming message flows"
         ))
     }
 
     fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
-            "message start events cannot have outgoing message flows"
+            "start events cannot have outgoing message flows"
         ))
     }
 
@@ -51,6 +51,17 @@ impl BPMNObject for BPMNStartEvent {
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(true)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
     }
 
     fn incoming_sequence_flows(&self) -> &[usize] {
@@ -69,12 +80,20 @@ impl BPMNObject for BPMNStartEvent {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        false
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(true)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        false
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -87,13 +106,17 @@ impl Transitionable for BPMNStartEvent {
         &self,
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         if marking.pre_initial_choice_token {
-            //enabled
-            bitvec![1;0]
+            //enabled by initial choice token
+            println!("enabled by initial choice token");
+            Ok(bitvec![1;1])
+        } else if marking.element_index_2_tokens[self.index] >= 1 {
+            //enabled by element token
+            Ok(bitvec![1;1])
         } else {
             //not enabled
-            bitvec![0;0]
+            Ok(bitvec![0;1])
         }
     }
 }

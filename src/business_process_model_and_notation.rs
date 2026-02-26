@@ -7,6 +7,7 @@ use crate::{
     objects_searchable::Searchable,
     sequence_flow::BPMNSequenceFlow,
 };
+use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
 use ebi_activity_key::TestActivityKey;
 use ebi_activity_key::{ActivityKey, ActivityKeyTranslator, TranslateActivityKey};
@@ -54,6 +55,20 @@ impl BusinessProcessModelAndNotation {
     /// find the object of the given index
     pub fn index_2_object(&self, index: usize) -> Option<&dyn BPMNObject> {
         self.elements.index_2_object(index)
+    }
+
+    pub fn message_flow_index_2_source(&self, message_flow_index: usize) -> Result<&BPMNElement> {
+        let message_flow = self
+            .message_flows
+            .get(message_flow_index)
+            .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
+        self.index_2_element(message_flow.source_element_index)
+            .ok_or_else(|| {
+                anyhow!(
+                    "the source of message flow `{}` was not found",
+                    message_flow.id
+                )
+            })
     }
 }
 

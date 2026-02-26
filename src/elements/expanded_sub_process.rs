@@ -2,8 +2,10 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     objects_objectable::{BPMNObject, EMPTY_FLOWS},
+    objects_startable::Startable,
     objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -42,9 +44,14 @@ impl BPMNElementTrait for BPMNExpandedSubProcess {
     }
 
     fn verify_structural_correctness(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+        //recurse on elements
         for element in &self.elements {
             element.verify_structural_correctness(bpmn)?
         }
+
+        //verify initiation and termination
+        verify_structural_correctness_initiation_mode!(self, bpmn);
+
         Ok(())
     }
 }
@@ -56,6 +63,17 @@ impl BPMNObject for BPMNExpandedSubProcess {
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
     }
 
     fn incoming_sequence_flows(&self) -> &[usize] {
@@ -74,12 +92,20 @@ impl BPMNObject for BPMNExpandedSubProcess {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        true
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(self.incoming_sequence_flows().len() == 0)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        true
+    }
+
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -97,7 +123,7 @@ impl Transitionable for BPMNExpandedSubProcess {
         &self,
         marking: &BPMNMarking,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         //start transitions
         let mut result = bitvec![0;self.number_of_transitions()];
 
@@ -109,7 +135,7 @@ impl Transitionable for BPMNExpandedSubProcess {
             }
         }
 
-        let children_enabled_transitions = self.elements.enabled_transitions(marking, bpmn);
+        let children_enabled_transitions = self.elements.enabled_transitions(marking, bpmn)?;
 
         //end transition
         if children_enabled_transitions.not_any() {
@@ -120,6 +146,27 @@ impl Transitionable for BPMNExpandedSubProcess {
         //recurse
         result.extend(children_enabled_transitions);
 
-        result
+        Ok(result)
+    }
+}
+
+impl Startable for BPMNExpandedSubProcess {
+    fn unconstrained_start_events_without_recursing(
+        &self,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<&BPMNElement>> {
+        self.elements
+            .unconstrained_start_events_without_recursing(bpmn)
+    }
+
+    fn end_events_without_recursing(&self) -> Vec<&BPMNElement> {
+        self.elements.end_events_without_recursing()
+    }
+
+    fn start_elements_without_recursing(
+        &self,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<&BPMNElement>> {
+        self.elements.start_elements_without_recursing(bpmn)
     }
 }

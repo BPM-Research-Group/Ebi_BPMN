@@ -54,6 +54,17 @@ impl BPMNObject for BPMNTimerStartEvent {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(true)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }
@@ -70,13 +81,23 @@ impl BPMNObject for BPMNTimerStartEvent {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        false
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(true)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
     }
+    
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        false
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
+    }
+
+    
 }
 
 impl Transitionable for BPMNTimerStartEvent {
@@ -88,13 +109,16 @@ impl Transitionable for BPMNTimerStartEvent {
         &self,
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         if marking.pre_initial_choice_token {
-            //enabled
-            bitvec![1;0]
+            //enabled by initial choice token
+            Ok(bitvec![1;1])
+        } else if marking.element_index_2_tokens[self.index] >= 1 {
+            //enabled by element token
+            Ok(bitvec![1;1])
         } else {
             //not enabled
-            bitvec![0;0]
+            Ok(bitvec![0;1])
         }
     }
 }

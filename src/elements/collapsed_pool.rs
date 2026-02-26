@@ -53,6 +53,17 @@ impl BPMNObject for BPMNCollapsedPool {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }
@@ -69,12 +80,20 @@ impl BPMNObject for BPMNCollapsedPool {
         &self.outgoing_message_flows
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        false
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(self.incoming_sequence_flows().len() == 0)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         true
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        false
+    }
+
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        false
     }
 }
 
@@ -87,7 +106,7 @@ impl Transitionable for BPMNCollapsedPool {
         &self,
         _marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
-        bitvec![0;0]
+    ) -> Result<BitVec> {
+        Ok(bitvec![0;0])
     }
 }

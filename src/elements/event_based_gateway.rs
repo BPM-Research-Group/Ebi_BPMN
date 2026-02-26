@@ -146,6 +146,17 @@ impl BPMNObject for BPMNEventBasedGateway {
         &self.id
     }
 
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
     fn incoming_sequence_flows(&self) -> &[usize] {
         &self.incoming_sequence_flows
     }
@@ -162,12 +173,20 @@ impl BPMNObject for BPMNEventBasedGateway {
         &EMPTY_FLOWS
     }
 
-    fn can_have_incoming_sequence_flows(&self) -> bool {
-        true
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(self.incoming_sequence_flows().len() == 0)
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        true
+    }
+    
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        true
     }
 }
 
@@ -180,7 +199,7 @@ impl Transitionable for BPMNEventBasedGateway {
         &self,
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> BitVec {
+    ) -> Result<BitVec> {
         enabledness_xor_join_only!(self, marking)
     }
 }

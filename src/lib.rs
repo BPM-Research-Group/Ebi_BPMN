@@ -25,6 +25,7 @@ pub mod elements {
 pub mod exporter;
 pub mod importer;
 pub mod message_flow;
+pub mod objects_startable;
 pub mod objects_elementable;
 pub mod objects_objectable;
 pub mod objects_searchable;
