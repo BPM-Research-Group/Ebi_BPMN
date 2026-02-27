@@ -1,4 +1,4 @@
-use crate::{elements::process::BPMNProcess, objects_writable::Writable};
+use crate::{elements::process::BPMNProcess, traits::writable::Writable};
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 
 impl Writable for BPMNProcess {

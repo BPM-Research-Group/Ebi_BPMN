@@ -1,5 +1,5 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElement, objects_objectable::BPMNObject,
+    BusinessProcessModelAndNotation, element::BPMNElement, traits::objectable::BPMNObject,
 };
 use anyhow::Result;
 use std::ops::Add;

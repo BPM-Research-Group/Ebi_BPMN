@@ -2,9 +2,11 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -94,7 +96,7 @@ impl BPMNObject for BPMNMessageIntermediateThrowEvent {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }

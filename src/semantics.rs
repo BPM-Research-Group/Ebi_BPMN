@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    elements::process::BPMNProcess,
-    objects_objectable::BPMNObject,
-    objects_startable::{InitiationMode, Startable},
-    objects_transitionable::Transitionable,
+    traits::{
+        objectable::BPMNObject,
+        startable::{InitiationMode, Startable},
+        transitionable::Transitionable,
+    },
 };
 use anyhow::Result;
 use ebi_activity_key::Activity;
@@ -14,8 +17,11 @@ pub struct BPMNMarking {
     pub(crate) sequence_flow_2_tokens: Vec<u64>,
     pub(crate) message_flow_2_tokens: Vec<u64>,
 
-    /// in case multiple start events are present, a single place is added
-    pub(crate) pre_initial_choice_token: bool,
+    /// in case multiple start events are present, a single root token is added
+    pub(crate) root_initial_choice_token: bool,
+
+    // in case multiple start events are present in a sub-process, root tokens are added
+    pub(crate) sub_initial_choice_tokens: HashMap<usize, usize>,
 
     /// in case no start events are present, every eligible element without incoming sequence flows gets a token
     pub(crate) element_index_2_tokens: Vec<u64>,
@@ -45,7 +51,8 @@ impl BusinessProcessModelAndNotation {
             Ok(BPMNMarking {
                 sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
                 message_flow_2_tokens: vec![0; self.number_of_message_flows()],
-                pre_initial_choice_token: false,
+                root_initial_choice_token: false,
+                sub_initial_choice_tokens: HashMap::new(),
                 element_index_2_tokens,
             })
         } else {
@@ -53,7 +60,8 @@ impl BusinessProcessModelAndNotation {
             Ok(BPMNMarking {
                 sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
                 message_flow_2_tokens: vec![0; self.number_of_message_flows()],
-                pre_initial_choice_token: true,
+                root_initial_choice_token: true,
+                sub_initial_choice_tokens: HashMap::new(),
                 element_index_2_tokens: vec![],
             })
         }
@@ -99,7 +107,10 @@ impl BusinessProcessModelAndNotation {
 #[cfg(test)]
 mod tests {
     use crate::{BusinessProcessModelAndNotation, semantics::BPMNMarking};
-    use std::fs::{self};
+    use std::{
+        collections::HashMap,
+        fs::{self},
+    };
 
     #[test]
     fn bpmn_semantics() {
@@ -114,14 +125,15 @@ mod tests {
             BPMNMarking {
                 sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 message_flow_2_tokens: vec![],
-                pre_initial_choice_token: true,
+                root_initial_choice_token: true,
+                sub_initial_choice_tokens: HashMap::new(),
                 element_index_2_tokens: vec![]
             }
         );
         assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 1);
     }
 
-    
+    #[test]
     fn bpmn_lanes_semantics() {
         let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
@@ -134,7 +146,8 @@ mod tests {
             BPMNMarking {
                 sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                 message_flow_2_tokens: vec![0],
-                pre_initial_choice_token: true,
+                root_initial_choice_token: true,
+                sub_initial_choice_tokens: HashMap::new(),
                 element_index_2_tokens: vec![]
             }
         );

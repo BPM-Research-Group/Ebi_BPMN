@@ -1,4 +1,4 @@
-use crate::{elements::participant::BPMNParticipant, objects_writable::Writable};
+use crate::{elements::participant::BPMNParticipant, traits::writable::Writable};
 
 impl Writable for BPMNParticipant {
     fn write<W: std::io::Write>(

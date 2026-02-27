@@ -1,6 +1,8 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, objects_objectable::BPMNObject,
-    objects_transitionable::Transitionable, semantics::BPMNMarking,
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    semantics::BPMNMarking,
+    traits::{objectable::BPMNObject, transitionable::Transitionable},
 };
 use anyhow::Result;
 use bitvec::{bitvec, vec::BitVec};
@@ -90,7 +92,7 @@ impl BPMNObject for BPMNCollapsedSubProcess {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }

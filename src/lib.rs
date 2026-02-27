@@ -25,12 +25,6 @@ pub mod elements {
 pub mod exporter;
 pub mod importer;
 pub mod message_flow;
-pub mod objects_startable;
-pub mod objects_elementable;
-pub mod objects_objectable;
-pub mod objects_searchable;
-pub mod objects_transitionable;
-pub mod objects_writable;
 pub mod semantics;
 pub mod sequence_flow;
 pub mod structure_checker;
@@ -57,6 +51,13 @@ pub mod parser {
     pub mod tag_task;
     pub mod tag_timer_event_definition;
     pub mod tags;
+}
+pub mod traits {
+    pub mod objectable;
+    pub mod searchable;
+    pub mod startable;
+    pub mod transitionable;
+    pub mod writable;
 }
 pub mod writer {
     pub mod collapsed_pool;

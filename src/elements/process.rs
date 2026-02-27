@@ -1,12 +1,14 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    objects_elementable::Elementable,
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_searchable::Searchable,
-    objects_startable::Startable,
-    objects_transitionable::Transitionable,
-    semantics::BPMNMarking, verify_structural_correctness_initiation_mode,
+    semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        startable::Startable,
+        transitionable::Transitionable,
+        searchable::Searchable,
+    },
+    verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
@@ -37,6 +39,18 @@ impl Searchable for BPMNProcess {
             }
         }
     }
+
+    fn all_elements_ref(&self) -> Vec<&BPMNElement> {
+        self.elements.all_elements_ref()
+    }
+
+    fn index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        self.elements.index_2_element(index)
+    }
+
+    fn index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
+        self.elements.index_2_element_mut(index)
+    }
 }
 
 impl BPMNElementTrait for BPMNProcess {
@@ -66,20 +80,6 @@ impl BPMNElementTrait for BPMNProcess {
 
     fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> anyhow::Result<()> {
         Err(anyhow!("processes cannot have outgoing message flows"))
-    }
-}
-
-impl Elementable for BPMNProcess {
-    fn all_elements_ref(&self) -> Vec<&BPMNElement> {
-        self.elements.all_elements_ref()
-    }
-
-    fn index_2_element(&self, index: usize) -> Option<&BPMNElement> {
-        self.elements.index_2_element(index)
-    }
-
-    fn index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
-        self.elements.index_2_element_mut(index)
     }
 }
 

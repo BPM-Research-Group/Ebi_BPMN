@@ -1,4 +1,4 @@
-use crate::{elements::collapsed_pool::BPMNCollapsedPool, objects_writable::Writable};
+use crate::{elements::collapsed_pool::BPMNCollapsedPool, traits::writable::Writable};
 
 impl Writable for BPMNCollapsedPool {
     fn write<W: std::io::Write>(

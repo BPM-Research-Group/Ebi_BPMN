@@ -1,5 +1,5 @@
 use crate::{
-    BusinessProcessModelAndNotation, elements::task::BPMNTask, objects_writable::Writable,
+    BusinessProcessModelAndNotation, elements::task::BPMNTask, traits::writable::Writable,
 };
 use quick_xml::events::BytesText;
 

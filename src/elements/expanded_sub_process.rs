@@ -1,10 +1,12 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_startable::Startable,
-    objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        startable::Startable,
+        transitionable::Transitionable,
+    },
     verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Result, anyhow};

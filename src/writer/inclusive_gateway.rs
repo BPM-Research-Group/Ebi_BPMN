@@ -1,4 +1,6 @@
-use crate::{elements::inclusive_gateway::BPMNInclusiveGateway, objects_writable::Writable};
+use crate::{
+    elements::inclusive_gateway::BPMNInclusiveGateway, traits::writable::Writable,
+};
 use quick_xml::events::BytesText;
 
 impl Writable for BPMNInclusiveGateway {

@@ -1,5 +1,5 @@
 use crate::{
-    elements::message_start_event::BPMNMessageStartEvent, objects_writable::Writable,
+    elements::message_start_event::BPMNMessageStartEvent, traits::writable::Writable,
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

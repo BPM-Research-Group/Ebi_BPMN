@@ -1,4 +1,4 @@
-use crate::{elements::timer_start_event::BPMNTimerStartEvent, objects_writable::Writable};
+use crate::{elements::timer_start_event::BPMNTimerStartEvent, traits::writable::Writable};
 use quick_xml::events::{BytesStart, BytesText, Event};
 
 impl Writable for BPMNTimerStartEvent {

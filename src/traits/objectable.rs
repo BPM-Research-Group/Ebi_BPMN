@@ -3,6 +3,7 @@ use anyhow::Result;
 
 pub(crate) static EMPTY_FLOWS: Vec<usize> = vec![];
 
+/// provides methods to interact with BPMN objects. Cannot be implemented on Vec<...>.
 pub trait BPMNObject {
     /// return the global index
     fn index(&self) -> usize;

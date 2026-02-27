@@ -1,4 +1,6 @@
-use crate::{elements::event_based_gateway::BPMNEventBasedGateway, objects_writable::Writable};
+use crate::{
+    elements::event_based_gateway::BPMNEventBasedGateway, traits::writable::Writable,
+};
 use quick_xml::events::BytesText;
 
 impl Writable for BPMNEventBasedGateway {

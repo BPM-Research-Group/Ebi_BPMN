@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -87,7 +89,7 @@ impl BPMNObject for BPMNExclusiveGateway {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }

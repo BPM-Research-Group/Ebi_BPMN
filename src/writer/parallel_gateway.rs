@@ -1,4 +1,4 @@
-use crate::{elements::parallel_gateway::BPMNParallelGateway, objects_writable::Writable};
+use crate::{elements::parallel_gateway::BPMNParallelGateway, traits::writable::Writable};
 use quick_xml::events::BytesText;
 
 impl Writable for BPMNParallelGateway {

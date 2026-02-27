@@ -1,4 +1,4 @@
-use crate::{elements::message_end_event::BPMNMessageEndEvent, objects_writable::Writable};
+use crate::{elements::message_end_event::BPMNMessageEndEvent, traits::writable::Writable};
 use quick_xml::events::{BytesStart, BytesText, Event};
 
 impl Writable for BPMNMessageEndEvent {

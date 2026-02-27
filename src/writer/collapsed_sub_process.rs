@@ -1,4 +1,6 @@
-use crate::{elements::collapsed_sub_process::BPMNCollapsedSubProcess, objects_writable::Writable};
+use crate::{
+    elements::collapsed_sub_process::BPMNCollapsedSubProcess, traits::writable::Writable,
+};
 use quick_xml::events::BytesText;
 
 impl Writable for BPMNCollapsedSubProcess {

@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -17,9 +19,7 @@ pub struct BPMNStartEvent {
 
 impl BPMNElementTrait for BPMNStartEvent {
     fn add_incoming_sequence_flow(&mut self, _flow_index: usize) -> Result<()> {
-        Err(anyhow!(
-            "start events cannot have incoming sequence flows"
-        ))
+        Err(anyhow!("start events cannot have incoming sequence flows"))
     }
 
     fn add_outgoing_sequence_flow(&mut self, flow_index: usize) -> Result<()> {
@@ -28,15 +28,11 @@ impl BPMNElementTrait for BPMNStartEvent {
     }
 
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
-        Err(anyhow!(
-            "start events cannot have incoming message flows"
-        ))
+        Err(anyhow!("start events cannot have incoming message flows"))
     }
 
     fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> Result<()> {
-        Err(anyhow!(
-            "start events cannot have outgoing message flows"
-        ))
+        Err(anyhow!("start events cannot have outgoing message flows"))
     }
 
     fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
@@ -91,7 +87,7 @@ impl BPMNObject for BPMNStartEvent {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }
@@ -107,7 +103,7 @@ impl Transitionable for BPMNStartEvent {
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        if marking.pre_initial_choice_token {
+        if marking.root_initial_choice_token {
             //enabled by initial choice token
             println!("enabled by initial choice token");
             Ok(bitvec![1;1])

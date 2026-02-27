@@ -1,7 +1,8 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElement,
-    elements::collapsed_pool::BPMNCollapsedPool, objects_objectable::BPMNObject,
-    objects_writable::Writable,
+    BusinessProcessModelAndNotation,
+    element::BPMNElement,
+    elements::collapsed_pool::BPMNCollapsedPool,
+    traits::{objectable::BPMNObject, writable::Writable},
 };
 use anyhow::Result;
 use quick_xml::{

@@ -6,6 +6,7 @@ use anyhow::Result;
 use quick_xml::Writer;
 use std::io::Write;
 
+/// Methods to write to XML
 pub(crate) trait Writable {
     fn write<W: Write>(
         &self,

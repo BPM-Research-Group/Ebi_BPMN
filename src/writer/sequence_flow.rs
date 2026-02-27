@@ -1,5 +1,6 @@
 use crate::{
-    objects_objectable::BPMNObject, objects_writable::Writable, sequence_flow::BPMNSequenceFlow,
+    sequence_flow::BPMNSequenceFlow,
+    traits::{objectable::BPMNObject, writable::Writable},
 };
 use anyhow::anyhow;
 use quick_xml::events::{BytesStart, Event};

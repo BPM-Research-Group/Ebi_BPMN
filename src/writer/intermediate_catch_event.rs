@@ -1,5 +1,6 @@
 use crate::{
-    elements::intermediate_catch_event::BPMNIntermediateCatchEvent, objects_writable::Writable,
+    elements::intermediate_catch_event::BPMNIntermediateCatchEvent,
+    traits::writable::Writable,
 };
 use quick_xml::events::BytesText;
 

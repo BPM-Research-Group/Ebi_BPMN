@@ -2,10 +2,8 @@ use crate::{
     element::BPMNElement,
     elements::{participant::BPMNParticipant, task::BPMNTask},
     message_flow::BPMNMessageFlow,
-    objects_elementable::Elementable,
-    objects_objectable::BPMNObject,
-    objects_searchable::Searchable,
     sequence_flow::BPMNSequenceFlow,
+    traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]

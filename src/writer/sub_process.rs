@@ -1,5 +1,5 @@
 use crate::{
-    elements::expanded_sub_process::BPMNExpandedSubProcess, objects_writable::Writable,
+    elements::expanded_sub_process::BPMNExpandedSubProcess, traits::writable::Writable,
 };
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 

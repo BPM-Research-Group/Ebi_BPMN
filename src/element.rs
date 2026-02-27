@@ -15,12 +15,11 @@ use crate::{
         timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent,
     },
-    objects_elementable::Elementable,
-    objects_objectable::BPMNObject,
-    objects_searchable::Searchable,
-    objects_transitionable::Transitionable,
-    objects_writable::Writable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::BPMNObject, transitionable::Transitionable, writable::Writable,
+        searchable::Searchable,
+    },
 };
 use anyhow::{Ok, Result};
 use bitvec::vec::BitVec;
@@ -152,42 +151,7 @@ impl Searchable for BPMNElement {
             None
         }
     }
-}
 
-impl Transitionable for BPMNElement {
-    fn number_of_transitions(&self) -> usize {
-        enums!(self, number_of_transitions,)
-    }
-
-    fn enabled_transitions(
-        &self,
-        marking: &BPMNMarking,
-        bpmn: &BusinessProcessModelAndNotation,
-    ) -> Result<BitVec> {
-        enums!(self, enabled_transitions, marking, bpmn)
-    }
-}
-
-impl Writable for BPMNElement {
-    fn write<W: std::io::Write>(
-        &self,
-        x: &mut Writer<W>,
-        bpmn: &BusinessProcessModelAndNotation,
-    ) -> anyhow::Result<()> {
-        enums!(self, write, x, bpmn)?;
-
-        //write outgoing sequence flows
-        self.outgoing_sequence_flows()
-            .iter()
-            .map(|sequence_flow| &bpmn.sequence_flows[*sequence_flow])
-            .collect::<Vec<_>>()
-            .write(x, bpmn)?;
-
-        Ok(())
-    }
-}
-
-impl Elementable for BPMNElement {
     fn all_elements_ref(&self) -> Vec<&BPMNElement> {
         if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
@@ -226,6 +190,39 @@ impl Elementable for BPMNElement {
         } else {
             None
         }
+    }
+}
+
+impl Transitionable for BPMNElement {
+    fn number_of_transitions(&self) -> usize {
+        enums!(self, number_of_transitions,)
+    }
+
+    fn enabled_transitions(
+        &self,
+        marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<BitVec> {
+        enums!(self, enabled_transitions, marking, bpmn)
+    }
+}
+
+impl Writable for BPMNElement {
+    fn write<W: std::io::Write>(
+        &self,
+        x: &mut Writer<W>,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> anyhow::Result<()> {
+        enums!(self, write, x, bpmn)?;
+
+        //write outgoing sequence flows
+        self.outgoing_sequence_flows()
+            .iter()
+            .map(|sequence_flow| &bpmn.sequence_flows[*sequence_flow])
+            .collect::<Vec<_>>()
+            .write(x, bpmn)?;
+
+        Ok(())
     }
 }
 

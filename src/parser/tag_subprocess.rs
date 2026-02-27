@@ -5,8 +5,6 @@ use crate::{
         expanded_sub_process::BPMNExpandedSubProcess,
     },
     importer::parse_attribute,
-    objects_elementable::Elementable,
-    objects_searchable::Searchable,
     parser::{
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
@@ -14,6 +12,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
     sequence_flow::BPMNSequenceFlow,
+    traits::searchable::Searchable,
 };
 use anyhow::{Context, Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};

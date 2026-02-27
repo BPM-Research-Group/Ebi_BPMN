@@ -1,6 +1,6 @@
 use crate::{
     elements::timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
-    objects_writable::Writable,
+    traits::writable::Writable,
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

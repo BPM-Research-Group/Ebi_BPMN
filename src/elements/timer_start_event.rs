@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    objects_objectable::{BPMNObject, EMPTY_FLOWS},
-    objects_transitionable::Transitionable,
     semantics::BPMNMarking,
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -88,16 +90,14 @@ impl BPMNObject for BPMNTimerStartEvent {
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         false
     }
-    
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }
-
-    
 }
 
 impl Transitionable for BPMNTimerStartEvent {
@@ -110,7 +110,7 @@ impl Transitionable for BPMNTimerStartEvent {
         marking: &BPMNMarking,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        if marking.pre_initial_choice_token {
+        if marking.root_initial_choice_token {
             //enabled by initial choice token
             Ok(bitvec![1;1])
         } else if marking.element_index_2_tokens[self.index] >= 1 {

@@ -1,7 +1,9 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, enabledness_xor_join_only,
-    number_of_transitions_xor_join_only, objects_objectable::BPMNObject,
-    objects_transitionable::Transitionable, semantics::BPMNMarking,
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    semantics::BPMNMarking,
+    traits::{objectable::BPMNObject, transitionable::Transitionable},
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -114,7 +116,7 @@ impl BPMNObject for BPMNTask {
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
-    
+
     fn can_have_outgoing_sequence_flows(&self) -> bool {
         true
     }

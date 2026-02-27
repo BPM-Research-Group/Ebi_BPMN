@@ -1,6 +1,6 @@
 use crate::{
     elements::message_intermediate_throw_event::BPMNMessageIntermediateThrowEvent,
-    objects_writable::Writable,
+    traits::writable::Writable,
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

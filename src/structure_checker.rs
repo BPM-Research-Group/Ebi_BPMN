@@ -1,5 +1,6 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, objects_objectable::BPMNObject,
+    BusinessProcessModelAndNotation, element::BPMNElementTrait,
+    traits::objectable::BPMNObject,
 };
 use anyhow::{Context, Result, anyhow};
 
