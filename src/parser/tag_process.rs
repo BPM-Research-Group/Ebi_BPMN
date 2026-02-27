@@ -75,28 +75,39 @@ impl Closeable for TagProcess {
                     let source_index = sub_elements
                         .id_2_pool_and_index(&source_id)
                         .ok_or_else(|| {
-                            anyhow!(
-                                "id `{}` mentioned but not declared in sequence flow `{}`",
-                                source_id,
-                                id
-                            )
+                            //attempt to give a more helpful error with other found tags
+                            if let Some(tag) = state.not_recognised_id_2_tag.get(&source_id) {
+                                anyhow!(
+                                    "Could not find source `{}` of sequence flow `{}`.\nHowever, a tag with name `{}` was found with this id. That tag is perhaps not supported or is not in an expected location.",
+                                    source_id,
+                                    id, 
+                                    tag
+                                )
+                            } else {
+                                anyhow!(
+                                    "Could not find source `{}` of sequence flow `{}`.",
+                                    source_id,
+                                    id
+                                )
+                            }
                         })?
                         .1;
                     //register the sequence flow in the source element
-                    let source = sub_elements.index_2_element_mut(source_index).ok_or_else(
-                        || {
-                            anyhow!(
-                                "could not find object of id `{}` mentioned in sequence flow `{}`",
-                                source_id,
-                                id
-                            )
-                        },
-                    )?;
+                    let source =
+                        sub_elements
+                            .index_2_element_mut(source_index)
+                            .ok_or_else(|| {
+                                anyhow!(
+                                    "Could not find source with id `{}` of sequence flow `{}`.",
+                                    source_id,
+                                    id
+                                )
+                            })?;
                     source
                         .add_outgoing_sequence_flow(new_flow_index)
                         .with_context(|| {
                             anyhow!(
-                                "could not add sequence flow `{}` to element with id `{}`",
+                                "Could not add sequence flow `{}` to its source element `{}`.",
                                 id,
                                 source_id,
                             )
@@ -105,18 +116,28 @@ impl Closeable for TagProcess {
                     let target_index = sub_elements
                         .id_2_pool_and_index(&target_id)
                         .ok_or_else(|| {
+                            //attempt to give a more helpful error message
+                            if let Some(tag) = state.not_recognised_id_2_tag.get(&target_id) {
+                                anyhow!(
+                                    "Could not find target `{}` of sequence flow `{}`.\nHowever, a tag with name `{}` was found with this id. That tag is perhaps not supported or is not in an expected location.",
+                                    target_id,
+                                    id, 
+                                    tag
+                                )
+                            } else {
                             anyhow!(
-                                "id `{}` mentioned but not declared in sequence flow `{}`",
+                                "Could not find target `{}` of sequence flow `{}`.",
                                 target_id,
                                 id
                             )
+                        }
                         })?
                         .1;
                     //register the sequence flow in the target element
                     let target = sub_elements.index_2_element_mut(target_index).ok_or_else(
                         || {
                             anyhow!(
-                                "could not find object of id `{}` mentioned in sequence flow `{}`",
+                                "Could not target `{}` of sequence flow `{}`.",
                                 source_id,
                                 id
                             )
@@ -126,9 +147,9 @@ impl Closeable for TagProcess {
                         .add_incoming_sequence_flow(new_flow_index)
                         .with_context(|| {
                             anyhow!(
-                                "could not add sequence flow `{}` to element with id `{}`",
+                                "Could not add sequence flow `{}` to its target element `{}`",
                                 id,
-                                source_id,
+                                target_id,
                             )
                         })?;
 

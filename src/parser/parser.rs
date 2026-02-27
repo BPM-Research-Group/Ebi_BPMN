@@ -1,7 +1,10 @@
-use crate::parser::{
-    parser_state::ParserState,
-    parser_traits::{Closeable, Openable, Recognisable},
-    tags::{OpenedTag, Tag},
+use crate::{
+    importer::parse_attribute,
+    parser::{
+        parser_state::ParserState,
+        parser_traits::{Closeable, Openable, Recognisable},
+        tags::{OpenedTag, Tag},
+    },
 };
 use anyhow::{Context, Result, anyhow};
 use quick_xml::{
@@ -21,6 +24,13 @@ pub(crate) fn open_tag(state: &mut ParserState, e: &BytesStart) -> Result<()> {
         state.open_tags.push(opened_tag);
     } else {
         state.open_tags.push(OpenedTag::Unknown);
+
+        //save id'ed tags for more helpful error messages
+        if let Some(id) = parse_attribute(e, "id") {
+            state
+                .not_recognised_id_2_tag
+                .insert(id, String::from_utf8_lossy(e.name().as_ref()).to_string());
+        }
     }
 
     state

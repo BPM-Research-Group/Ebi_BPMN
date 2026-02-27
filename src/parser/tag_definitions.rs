@@ -76,11 +76,21 @@ impl Closeable for Definitions {
                 //obtain source
                 let (source_pool_index, source_element_index) =
                     elements.id_2_pool_and_index(&source_id).ok_or_else(|| {
-                        anyhow!(
-                            "could not find source `{}` of message flow `{}`",
-                            source_id,
-                            id
-                        )
+                        //source not found; try whether there's an unrecognised tag with that id
+                        if let Some(tag) = state.not_recognised_id_2_tag.get(&source_id) {
+                            anyhow!(
+                                "Could not find source `{}` of message flow `{}`.\nHowever, a tag with name `{}` was found with this id. That tag is perhaps not supported or is not in an expected location.",
+                                source_id,
+                                id,
+                                tag
+                            )
+                        } else {
+                            anyhow!(
+                                "Could not find source `{}` of message flow `{}`.",
+                                source_id,
+                                id
+                            )
+                        }
                     })?;
 
                 //link to source element or pool
@@ -100,11 +110,20 @@ impl Closeable for Definitions {
                 //obtain target
                 let (target_pool_index, target_element_index) =
                     elements.id_2_pool_and_index(&target_id).ok_or_else(|| {
+                        if let Some(tag) = state.not_recognised_id_2_tag.get(&target_id) {
+                            anyhow!(
+                                "Could not find target `{}` of message flow `{}`.\nHowever, a tag with name `{}` was found with this id. That tag is perhaps not supported or is not in an expected location.",
+                                source_id,
+                                id,
+                                tag
+                            )
+                        } else {
                         anyhow!(
-                            "could not find target `{}` of message flow `{}`",
+                            "Could not find target `{}` of message flow `{}`.",
                             target_id,
                             id
                         )
+                    }
                     })?;
 
                 //link to target element or pool

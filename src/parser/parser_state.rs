@@ -17,6 +17,8 @@ pub(crate) struct ParserState {
 
     pub(crate) draft_definitionss: Vec<DraftDefinitions>,
     pub(crate) participants: Vec<BPMNParticipant>,
+
+    pub(crate) not_recognised_id_2_tag: HashMap<String, String>,
 }
 
 impl ParserState {
@@ -28,6 +30,7 @@ impl ParserState {
             open_tags: vec![],
             draft_definitionss: vec![],
             participants: vec![],
+            not_recognised_id_2_tag: HashMap::new(),
         }
     }
 
