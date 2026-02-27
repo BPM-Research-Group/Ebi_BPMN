@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         transitionable::Transitionable,
@@ -9,6 +10,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNTimerIntermediateCatchEvent {
@@ -102,24 +104,27 @@ impl BPMNObject for BPMNTimerIntermediateCatchEvent {
 
 impl Transitionable for BPMNTimerIntermediateCatchEvent {
     fn number_of_transitions(&self) -> usize {
-        self.incoming_sequence_flows.len()
+        number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
+        Ok(enabledness_xor_join_only!(self, marking))
+    }
 
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                result.set(transition_index, true);
-            }
-        }
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        None
+    }
 
-        Ok(result)
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "timer intermediate catch event `{}`; internal transition {}",
+            self.id(),
+            transition_index
+        ))
     }
 }

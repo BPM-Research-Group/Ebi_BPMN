@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    enabled_transitions_start_event,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         transitionable::Transitionable,
@@ -9,6 +10,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNTimerStartEvent {
@@ -102,23 +104,30 @@ impl BPMNObject for BPMNTimerStartEvent {
 
 impl Transitionable for BPMNTimerStartEvent {
     fn number_of_transitions(&self) -> usize {
-        0
+        1
     }
 
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        parent_index: Option<usize>,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        if marking.root_initial_choice_token {
-            //enabled by initial choice token
-            Ok(bitvec![1;1])
-        } else if marking.element_index_2_tokens[self.index] >= 1 {
-            //enabled by element token
-            Ok(bitvec![1;1])
-        } else {
-            //not enabled
-            Ok(bitvec![0;1])
-        }
+        Ok(enabled_transitions_start_event!(
+            self,
+            marking,
+            parent_index
+        ))
+    }
+
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        None
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "timer start event `{}`; internal transition {}",
+            self.id, transition_index
+        ))
     }
 }

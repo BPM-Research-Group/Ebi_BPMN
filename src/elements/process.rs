@@ -1,17 +1,18 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        searchable::Searchable,
         startable::Startable,
         transitionable::Transitionable,
-        searchable::Searchable,
     },
     verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
+use ebi_activity_key::Activity;
 
 #[derive(Clone, Debug)]
 pub struct BPMNProcess {
@@ -144,9 +145,19 @@ impl Transitionable for BPMNProcess {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        parent_index: Option<usize>,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        self.elements.enabled_transitions(marking, bpmn)
+        self.elements
+            .enabled_transitions(marking, parent_index, bpmn)
+    }
+
+    fn transition_activity(&self, transition_index: TransitionIndex) -> Option<Activity> {
+        self.elements.transition_activity(transition_index)
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        self.elements.transition_debug(transition_index)
     }
 }
 

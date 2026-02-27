@@ -15,14 +15,15 @@ use crate::{
         timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent,
     },
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
-        objectable::BPMNObject, transitionable::Transitionable, writable::Writable,
-        searchable::Searchable,
+        objectable::BPMNObject, searchable::Searchable, transitionable::Transitionable,
+        writable::Writable,
     },
 };
 use anyhow::{Ok, Result};
 use bitvec::vec::BitVec;
+use ebi_activity_key::Activity;
 use quick_xml::Writer;
 use strum_macros::EnumIs;
 
@@ -64,9 +65,6 @@ pub trait BPMNElementTrait {
 
     ///Add an outgoing message flow to the element. Returns whether successful.
     fn add_outgoing_message_flow(&mut self, flow_index: usize) -> Result<()>;
-
-    // Extend `result` by pushing whether each transition is enabled.
-    // fn enabled_transitions(&self, state: &SemState, result: &mut BitVec);
 }
 
 macro_rules! enums {
@@ -201,9 +199,18 @@ impl Transitionable for BPMNElement {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        parent_index: Option<usize>,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        enums!(self, enabled_transitions, marking, bpmn)
+        enums!(self, enabled_transitions, marking, parent_index, bpmn)
+    }
+
+    fn transition_activity(&self, transition_index: TransitionIndex) -> Option<Activity> {
+        enums!(self, transition_activity, transition_index)
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        enums!(self, transition_debug, transition_index)
     }
 }
 

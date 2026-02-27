@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    enabled_transitions_start_event,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         transitionable::Transitionable,
@@ -9,6 +10,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNMessageStartEvent {
@@ -125,6 +127,7 @@ impl Transitionable for BPMNMessageStartEvent {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        parent_index: Option<usize>,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if let Some(message_flow_index) = self.incoming_message_flow {
@@ -153,16 +156,23 @@ impl Transitionable for BPMNMessageStartEvent {
             }
         } else {
             //model does not have an incoming message flow; treat as a regular start event
-            if marking.root_initial_choice_token {
-                //enabled by initial choice token
-                Ok(bitvec![1;1])
-            } else if marking.element_index_2_tokens[self.index] >= 1 {
-                //enabled by element token
-                Ok(bitvec![1;1])
-            } else {
-                //not enabled
-                Ok(bitvec![0;1])
-            }
+            Ok(enabled_transitions_start_event!(
+                self,
+                marking,
+                parent_index
+            ))
         }
+    }
+
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        None
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "message start event `{}`; internal transition {}",
+            self.id,
+            transition_index
+        ))
     }
 }

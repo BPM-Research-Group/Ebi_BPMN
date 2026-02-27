@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         transitionable::Transitionable,
@@ -9,6 +9,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNExclusiveGateway {
@@ -103,6 +104,7 @@ impl Transitionable for BPMNExclusiveGateway {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         let mut result = bitvec![0;self.number_of_transitions()];
@@ -150,5 +152,17 @@ impl Transitionable for BPMNExclusiveGateway {
         };
 
         Ok(result)
+    }
+
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        None
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "exclusive gateway `{}`; internal transition {}",
+            self.id,
+            transition_index
+        ))
     }
 }

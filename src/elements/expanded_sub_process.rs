@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    semantics::BPMNMarking,
+    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         startable::Startable,
@@ -11,6 +12,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNExpandedSubProcess {
@@ -114,7 +116,7 @@ impl BPMNObject for BPMNExpandedSubProcess {
 impl Transitionable for BPMNExpandedSubProcess {
     fn number_of_transitions(&self) -> usize {
         //behaves like an XOR-join to start
-        self.incoming_sequence_flows.len().max(1)
+        number_of_transitions_xor_join_only!(self)
         //one transition to end
         + 1
         //and its inner transitions
@@ -124,31 +126,70 @@ impl Transitionable for BPMNExpandedSubProcess {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        //start transitions
-        let mut result = bitvec![0;self.number_of_transitions()];
+        //start transitions: like an xor join
+        let mut result = enabledness_xor_join_only!(self, marking);
 
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                result.set(transition_index, true);
-            }
-        }
-
-        let children_enabled_transitions = self.elements.enabled_transitions(marking, bpmn)?;
+        //gather children transitions
+        let children_enabled_transitions =
+            self.elements
+                .enabled_transitions(marking, Some(self.index), bpmn)?;
 
         //end transition
         if children_enabled_transitions.not_any() {
             //child has no enabled transitions -> terminated
-            result.set(self.incoming_sequence_flows.len(), true);
+            result.push(true);
+        } else {
+            //not enabled
+            result.push(false);
         }
 
         //recurse
         result.extend(children_enabled_transitions);
 
         Ok(result)
+    }
+
+    fn transition_activity(&self, mut transition_index: TransitionIndex) -> Option<Activity> {
+        //start transition
+        if transition_index < self.incoming_sequence_flows.len().max(1) {
+            return None;
+        }
+        transition_index -= self.incoming_sequence_flows.len().max(1);
+
+        if transition_index == 0 {
+            //end transition
+            return None;
+        }
+        transition_index -= 1;
+
+        //recurse on children
+        self.elements.transition_activity(transition_index)
+    }
+
+    fn transition_debug(&self, mut transition_index: TransitionIndex) -> Option<String> {
+        //start transition
+        if transition_index < self.incoming_sequence_flows.len().max(1) {
+            return Some(format!(
+                "expanded sub-process `{}`; start internal transition {}",
+                self.id, transition_index
+            ));
+        }
+        transition_index -= self.incoming_sequence_flows.len().max(1);
+
+        if transition_index == 0 {
+            //end transition
+            return Some(format!(
+                "expanded sub-process `{}`; end transition",
+                self.id
+            ));
+        }
+        transition_index -= 1;
+
+        //recurse on children
+        self.elements.transition_debug(transition_index)
     }
 }
 

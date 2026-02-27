@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{objectable::BPMNObject, transitionable::Transitionable},
 };
 use anyhow::{Result, anyhow};
@@ -90,18 +90,14 @@ impl BPMNObject for BPMNTask {
     fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
         if self.outgoing_sequence_flows().len() == 0 {
             Ok(false)
-        } else if let Some(message_flow) = self.incoming_message_flow {
-            let message_flow = &bpmn.message_flows[message_flow];
-            if let Some(source) = bpmn.index_2_element(message_flow.source_element_index) {
-                if source.is_collapsed_pool() {
-                    //a message from a collapsed pool is always there
-                    Ok(true)
-                } else {
-                    //otherwise, the message must be there = the instance has already started
-                    Ok(false)
-                }
+        } else if let Some(message_flow_index) = self.incoming_message_flow {
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.is_collapsed_pool() {
+                //a message from a collapsed pool is always there
+                Ok(true)
             } else {
-                Err(anyhow!("cannot find source"))
+                //otherwise, the message must be there = the instance has already started
+                Ok(false)
             }
         } else {
             //there is no constraining message, so this message start event can start a process instance
@@ -130,6 +126,7 @@ impl Transitionable for BPMNTask {
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //check whether a message is present
@@ -151,6 +148,18 @@ impl Transitionable for BPMNTask {
             //if there is no incoming message flow, there is no restriction
         }
 
-        enabledness_xor_join_only!(self, marking)
+        Ok(enabledness_xor_join_only!(self, marking))
+    }
+
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        Some(self.activity)
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "task `{}`; internal transition {}",
+            self.id,
+            transition_index
+        ))
     }
 }

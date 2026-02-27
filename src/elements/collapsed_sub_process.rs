@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{objectable::BPMNObject, transitionable::Transitionable},
 };
 use anyhow::Result;
@@ -100,26 +101,29 @@ impl BPMNObject for BPMNCollapsedSubProcess {
 
 impl Transitionable for BPMNCollapsedSubProcess {
     fn number_of_transitions(&self) -> usize {
-        self.incoming_sequence_flows.len()
+        number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
         marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //a collapsed sub-process behaves according to the sequence flows
         //messages do not influence enablement
-        let mut result = bitvec![0;self.incoming_sequence_flows.len()];
+        Ok(enabledness_xor_join_only!(self, marking))
+    }
 
-        for (transition_index, incoming_sequence_flow) in
-            self.incoming_sequence_flows.iter().enumerate()
-        {
-            if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                result.set(transition_index, true);
-            }
-        }
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        Some(self.activity)
+    }
 
-        Ok(result)
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "collapsed sub-process `{}`; internal transition {}",
+            self.id,
+            transition_index
+        ))
     }
 }

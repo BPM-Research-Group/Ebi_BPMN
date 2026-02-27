@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         transitionable::Transitionable,
@@ -9,6 +9,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
+use ebi_activity_key::Activity;
 
 #[derive(Clone, Debug)]
 pub struct BPMNCollapsedPool {
@@ -107,8 +108,21 @@ impl Transitionable for BPMNCollapsedPool {
     fn enabled_transitions(
         &self,
         _marking: &BPMNMarking,
+        _parent_index: Option<usize>,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(bitvec![0;0])
+    }
+
+    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+        None
+    }
+
+    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+        Some(format!(
+            "collapsed pool `{}`; internal transition {}",
+            self.id,
+            transition_index
+        ))
     }
 }
