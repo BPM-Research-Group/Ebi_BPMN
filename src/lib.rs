@@ -53,6 +53,7 @@ pub mod parser {
     pub mod tags;
 }
 pub mod traits {
+    pub mod processable;
     pub mod objectable;
     pub mod searchable;
     pub mod startable;

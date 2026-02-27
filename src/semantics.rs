@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use crate::{
     BusinessProcessModelAndNotation,
@@ -14,19 +14,20 @@ use ebi_activity_key::Activity;
 
 pub type TransitionIndex = usize;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct BPMNMarking {
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct BPMNSubMarking {
     pub(crate) sequence_flow_2_tokens: Vec<u64>,
-    pub(crate) message_flow_2_tokens: Vec<u64>,
-
-    /// in case multiple start events are present, a single root token is added
-    pub(crate) root_initial_choice_token: bool,
-
-    // in case multiple start events are present in a sub-process, root tokens are added
-    pub(crate) sub_initial_choice_tokens: HashMap<usize, usize>,
-
-    /// in case no start events are present, every eligible element without incoming sequence flows gets a token
+    pub(crate) initial_choice_token: bool,
     pub(crate) element_index_2_tokens: Vec<u64>,
+    pub(crate) element_index_2_sub_markings: Vec<Vec<BPMNSubMarking>>,
+    pub(crate) root_marking: Rc<BPMNMarking>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct BPMNMarking {
+    pub(crate) message_flow_2_tokens: Vec<u64>,
+    pub(crate) element_index_2_sub_markings: Vec<BPMNSubMarking>,
+    pub(crate) root_initial_choice_token: bool,
 }
 
 impl BusinessProcessModelAndNotation {
@@ -40,31 +41,14 @@ impl BusinessProcessModelAndNotation {
             }
         }
 
-        //determine the initiation mode
-        if let InitiationMode::ParallelElements(elements) = mode {
-            //initiation mode 2: eligible elements without incoming sequence flows all get a token
-
-            let mut element_index_2_tokens = vec![0; self.number_of_elements()];
-            for element in elements {
-                element_index_2_tokens[element.index()] = 1;
-            }
-
+        if mode.is_choice_between_start_events() {
             Ok(BPMNMarking {
-                sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
-                message_flow_2_tokens: vec![0; self.number_of_message_flows()],
-                root_initial_choice_token: false,
-                sub_initial_choice_tokens: HashMap::new(),
-                element_index_2_tokens,
+                message_flow_2_tokens: vec![0; self.message_flows.len()],
+                element_index_2_sub_markings: vec![],
+                root_initial_choice_token: true,
             })
         } else {
-            //initiation mode 1: through one or more start events
-            Ok(BPMNMarking {
-                sequence_flow_2_tokens: vec![0; self.number_of_sequence_flows()],
-                message_flow_2_tokens: vec![0; self.number_of_message_flows()],
-                root_initial_choice_token: true,
-                sub_initial_choice_tokens: HashMap::new(),
-                element_index_2_tokens: vec![0; self.number_of_elements()],
-            })
+            todo!()
         }
     }
 

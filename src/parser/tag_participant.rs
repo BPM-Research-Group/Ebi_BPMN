@@ -44,7 +44,7 @@ impl Openable for TagParticipant {
         let process_id = parse_attribute(e, "processRef");
 
         Ok(OpenedTag::Participant {
-            index,
+            global_index: index,
             id,
             name,
             process_id,
@@ -63,7 +63,7 @@ impl Closeable for TagParticipant {
                 collapsed_pools, ..
             }) => {
                 if let OpenedTag::Participant {
-                    index,
+                    global_index,
                     id,
                     name,
                     process_id,
@@ -73,16 +73,18 @@ impl Closeable for TagParticipant {
                         //this is an expanded pool
                         //not a BPMN element (that's the process), but we need to keep track of it anyway
                         state.participants.push(BPMNParticipant {
-                            index,
+                            global_index,
                             id,
                             name,
                             process_id,
                         });
                     } else {
                         //this is a collapsed pool
+                        let local_index = collapsed_pools.len();
                         collapsed_pools.push(BPMNCollapsedPool {
-                            index,
+                            global_index,
                             id,
+                            local_index,
                             name,
                             incoming_message_flows: vec![],
                             outgoing_message_flows: vec![],

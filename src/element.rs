@@ -15,10 +15,11 @@ use crate::{
         timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent,
     },
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
-        objectable::BPMNObject, searchable::Searchable, transitionable::Transitionable,
-        writable::Writable,
+        objectable::BPMNObject, processable::Processable, searchable::Searchable,
+        transitionable::Transitionable, writable::Writable,
     },
 };
 use anyhow::{Ok, Result};
@@ -52,7 +53,11 @@ pub enum BPMNElement {
 
 pub trait BPMNElementTrait {
     ///verify that structural requirements specific to this element are fulfilled
-    fn verify_structural_correctness(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<()>;
+    fn verify_structural_correctness(
+        &self,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()>;
 
     ///Add an incoming sequence flow to the element. Returns whether successful.
     fn add_incoming_sequence_flow(&mut self, flow_index: usize) -> Result<()>;
@@ -114,14 +119,18 @@ impl BPMNElementTrait for BPMNElement {
         enums!(self, add_outgoing_message_flow, flow_index)
     }
 
-    fn verify_structural_correctness(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
-        enums!(self, verify_structural_correctness, bpmn)
+    fn verify_structural_correctness(
+        &self,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        enums!(self, verify_structural_correctness, parent, bpmn)
     }
 }
 
 impl Searchable for BPMNElement {
-    fn index_2_object(&self, search_index: usize) -> Option<&dyn BPMNObject> {
-        if self.index() == search_index {
+    fn index_2_object(&self, search_index: GlobalIndex) -> Option<&dyn BPMNObject> {
+        if self.global_index() == search_index {
             Some(self)
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
@@ -132,16 +141,16 @@ impl Searchable for BPMNElement {
         }
     }
 
-    fn id_2_pool_and_index(&self, search_id: &str) -> Option<(Option<usize>, usize)> {
+    fn id_2_pool_and_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {
-            Some((Some(self.index()), self.index()))
+            Some((Some(self.local_index()), self.global_index()))
         } else if self.id() == search_id {
-            Some((None, self.index()))
+            Some((None, self.global_index()))
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
         {
             if let Some((_, index)) = elements.id_2_pool_and_index(search_id) {
-                Some((Some(self.index()), index))
+                Some((Some(self.local_index()), index))
             } else {
                 None
             }
@@ -166,8 +175,8 @@ impl Searchable for BPMNElement {
         }
     }
 
-    fn index_2_element(&self, index: usize) -> Option<&BPMNElement> {
-        if self.index() == index {
+    fn index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
+        if self.global_index() == index {
             Some(self)
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
@@ -178,8 +187,8 @@ impl Searchable for BPMNElement {
         }
     }
 
-    fn index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
-        if self.index() == index {
+    fn index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
+        if self.global_index() == index {
             Some(self)
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
@@ -192,25 +201,33 @@ impl Searchable for BPMNElement {
 }
 
 impl Transitionable for BPMNElement {
-    fn number_of_transitions(&self) -> usize {
-        enums!(self, number_of_transitions,)
+    fn number_of_transitions(&self, marking: &BPMNSubMarking) -> usize {
+        enums!(self, number_of_transitions, marking)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        enums!(self, enabled_transitions, marking, parent_index, bpmn)
+        enums!(self, enabled_transitions, marking, parent, bpmn)
     }
 
-    fn transition_activity(&self, transition_index: TransitionIndex) -> Option<Activity> {
-        enums!(self, transition_activity, transition_index)
+    fn transition_activity(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
+        enums!(self, transition_activity, transition_index, marking)
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
-        enums!(self, transition_debug, transition_index)
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+    ) -> Option<String> {
+        enums!(self, transition_debug, transition_index, marking)
     }
 }
 
@@ -218,28 +235,26 @@ impl Writable for BPMNElement {
     fn write<W: std::io::Write>(
         &self,
         x: &mut Writer<W>,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> anyhow::Result<()> {
-        enums!(self, write, x, bpmn)?;
-
-        //write outgoing sequence flows
-        self.outgoing_sequence_flows()
-            .iter()
-            .map(|sequence_flow| &bpmn.sequence_flows[*sequence_flow])
-            .collect::<Vec<_>>()
-            .write(x, bpmn)?;
+        enums!(self, write, x, parent, bpmn)?;
 
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNElement {
-    fn index(&self) -> usize {
-        enums!(self, index,)
+    fn global_index(&self) -> GlobalIndex {
+        enums!(self, global_index,)
     }
 
     fn id(&self) -> &str {
         enums!(self, id,)
+    }
+
+    fn local_index(&self) -> usize {
+        enums!(self, local_index,)
     }
 
     fn is_unconstrained_start_event(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {

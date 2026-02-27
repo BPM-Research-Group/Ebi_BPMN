@@ -26,12 +26,14 @@ pub trait Startable {
         &'a self,
         bpmn: &'a BusinessProcessModelAndNotation,
     ) -> Result<InitiationMode<'a>> {
-        let start_elements = self.unconstrained_start_events_without_recursing(bpmn)?;
-        if start_elements.is_empty() {
-            let start_elements = self.start_elements_without_recursing(bpmn)?;
-            return Ok(InitiationMode::ParallelElements(start_elements));
+        if self
+            .unconstrained_start_events_without_recursing(bpmn)?
+            .is_empty()
+        {
+            let parallel_elements = self.start_elements_without_recursing(bpmn)?;
+            return Ok(InitiationMode::ParallelElements(parallel_elements));
         } else {
-            return Ok(InitiationMode::ChoiceBetweenStartEvents(start_elements));
+            return Ok(InitiationMode::ChoiceBetweenStartEvents());
         }
     }
 }
@@ -72,7 +74,7 @@ impl Startable for Vec<BPMNElement> {
 
 #[derive(EnumIs)]
 pub enum InitiationMode<'a> {
-    ChoiceBetweenStartEvents(Vec<&'a BPMNElement>),
+    ChoiceBetweenStartEvents(),
     ParallelElements(Vec<&'a BPMNElement>),
 }
 
@@ -82,20 +84,15 @@ impl<'a> Add for InitiationMode<'a> {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (
-                InitiationMode::ChoiceBetweenStartEvents(mut bpmnelements1),
-                InitiationMode::ChoiceBetweenStartEvents(bpmnelements2),
-            ) => {
-                bpmnelements1.extend(bpmnelements2);
-                InitiationMode::ChoiceBetweenStartEvents(bpmnelements1)
+                InitiationMode::ChoiceBetweenStartEvents(),
+                InitiationMode::ChoiceBetweenStartEvents(),
+            ) => InitiationMode::ChoiceBetweenStartEvents(),
+            (InitiationMode::ChoiceBetweenStartEvents(), InitiationMode::ParallelElements(_)) => {
+                InitiationMode::ChoiceBetweenStartEvents()
             }
-            (
-                InitiationMode::ChoiceBetweenStartEvents(bpmnelements1),
-                InitiationMode::ParallelElements(_),
-            ) => InitiationMode::ChoiceBetweenStartEvents(bpmnelements1),
-            (
-                InitiationMode::ParallelElements(_),
-                InitiationMode::ChoiceBetweenStartEvents(bpmnelements2),
-            ) => InitiationMode::ChoiceBetweenStartEvents(bpmnelements2),
+            (InitiationMode::ParallelElements(_), InitiationMode::ChoiceBetweenStartEvents()) => {
+                InitiationMode::ChoiceBetweenStartEvents()
+            }
             (
                 InitiationMode::ParallelElements(mut bpmnelements1),
                 InitiationMode::ParallelElements(bpmnelements2),

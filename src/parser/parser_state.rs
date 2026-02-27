@@ -21,6 +21,8 @@ pub(crate) struct ParserState {
     pub(crate) not_recognised_id_2_tag: HashMap<String, String>,
 }
 
+pub(crate) type GlobalIndex = (usize, ());
+
 impl ParserState {
     pub(crate) fn new() -> Self {
         Self {
@@ -49,7 +51,6 @@ impl ParserState {
                 collaboration_id,
                 elements,
                 message_flows,
-                sequence_flows,
             } = draft_definition;
             //construct result
             let result = BusinessProcessModelAndNotation {
@@ -61,7 +62,6 @@ impl ParserState {
                 participants: self.participants,
                 elements,
                 message_flows,
-                sequence_flows,
             };
 
             //check structural correctness
@@ -78,14 +78,14 @@ impl ParserState {
         }
     }
 
-    pub(crate) fn read_and_add_id(&mut self, e: &BytesStart) -> Result<(usize, String)> {
+    pub(crate) fn read_and_add_id(&mut self, e: &BytesStart) -> Result<(GlobalIndex, String)> {
         let new_index = self.ids.len();
         if let Some(id) = parse_attribute(e, "id") {
             match self.ids.entry(id.clone()) {
                 Entry::Occupied(_) => Err(anyhow!("two elements have the id `{}`", id)),
                 Entry::Vacant(vacant_entry) => {
                     vacant_entry.insert(new_index);
-                    Ok((new_index, id))
+                    Ok(((new_index, ()), id))
                 }
             }
         } else {

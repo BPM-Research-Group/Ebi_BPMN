@@ -40,7 +40,7 @@ impl Openable for TagIntermediateThrowEvent {
         let (index, id) = state.read_and_add_id(e)?;
 
         Ok(OpenedTag::IntermediateThrowEvent {
-            index,
+            global_index: index,
             id,
             message_marker_id: None,
         })
@@ -53,16 +53,18 @@ impl Closeable for TagIntermediateThrowEvent {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
                 if let OpenedTag::IntermediateThrowEvent {
-                    index,
+                    global_index,
                     id,
                     message_marker_id,
                 } = opened_tag
                 {
+                    let local_index = elements.len();
                     if let Some(message_marker_id) = message_marker_id {
                         elements.push(BPMNElement::MessageIntermediateThrowEvent(
                             BPMNMessageIntermediateThrowEvent {
-                                index,
+                                global_index,
                                 id,
+                                local_index,
                                 message_marker_id,
                                 incoming_sequence_flows: vec![],
                                 outgoing_sequence_flows: vec![],
@@ -72,8 +74,9 @@ impl Closeable for TagIntermediateThrowEvent {
                     } else {
                         elements.push(BPMNElement::IntermediateThrowEvent(
                             BPMNIntermediateThrowEvent {
-                                index,
+                                global_index,
                                 id,
+                                local_index,
                                 incoming_sequence_flows: vec![],
                                 outgoing_sequence_flows: vec![],
                             },

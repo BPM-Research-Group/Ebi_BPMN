@@ -41,7 +41,7 @@ impl Openable for TagIntermediateCatchEvent {
         let (index, id) = state.read_and_add_id(e)?;
 
         Ok(OpenedTag::IntermediateCatchEvent {
-            index,
+            global_index: index,
             id,
             message_marker_id: None,
             timer_marker_id: None,
@@ -55,19 +55,21 @@ impl Closeable for TagIntermediateCatchEvent {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
                 if let OpenedTag::IntermediateCatchEvent {
-                    index,
+                    global_index,
                     id,
                     message_marker_id,
                     timer_marker_id,
                 } = opened_tag
                 {
+                    let local_index = elements.len();
                     match (message_marker_id, timer_marker_id) {
                         (None, None) => {
                             //no marker
                             elements.push(BPMNElement::IntermediateCatchEvent(
                                 BPMNIntermediateCatchEvent {
-                                    index,
+                                    global_index,
                                     id,
+                                    local_index,
                                     incoming_sequence_flows: vec![],
                                     outgoing_sequence_flows: vec![],
                                 },
@@ -77,8 +79,9 @@ impl Closeable for TagIntermediateCatchEvent {
                             //timer marker
                             elements.push(BPMNElement::TimerIntermediateCatchEvent(
                                 BPMNTimerIntermediateCatchEvent {
-                                    index,
+                                    global_index,
                                     id,
+                                    local_index,
                                     timer_marker_id,
                                     incoming_sequence_flows: vec![],
                                     outgoing_sequence_flows: vec![],
@@ -89,8 +92,9 @@ impl Closeable for TagIntermediateCatchEvent {
                             //message marker
                             elements.push(BPMNElement::MessageIntermediateCatchEvent(
                                 BPMNMessageIntermediateCatchEvent {
-                                    index,
+                                    global_index,
                                     id,
+                                    local_index,
                                     message_marker_id,
                                     incoming_sequence_flows: vec![],
                                     outgoing_sequence_flows: vec![],

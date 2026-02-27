@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -13,8 +15,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Clone, Debug)]
 pub struct BPMNCollapsedPool {
-    pub index: usize,
+    pub global_index: GlobalIndex,
     pub id: String,
+    pub local_index: usize,
     pub name: Option<String>,
     pub incoming_message_flows: Vec<usize>,
     pub outgoing_message_flows: Vec<usize>,
@@ -23,6 +26,7 @@ pub struct BPMNCollapsedPool {
 impl BPMNElementTrait for BPMNCollapsedPool {
     fn verify_structural_correctness(
         &self,
+        _parent: &dyn Processable,
         _bpmn: &crate::BusinessProcessModelAndNotation,
     ) -> Result<()> {
         Ok(())
@@ -48,12 +52,16 @@ impl BPMNElementTrait for BPMNCollapsedPool {
 }
 
 impl BPMNObject for BPMNCollapsedPool {
-    fn index(&self) -> usize {
-        self.index
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn local_index(&self) -> usize {
+        self.local_index
     }
 
     fn is_unconstrained_start_event(
@@ -101,28 +109,35 @@ impl BPMNObject for BPMNCollapsedPool {
 }
 
 impl Transitionable for BPMNCollapsedPool {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         0
     }
 
     fn enabled_transitions(
         &self,
-        _marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        _marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(bitvec![0;0])
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "collapsed pool `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

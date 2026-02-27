@@ -1,6 +1,5 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait,
-    traits::objectable::BPMNObject,
+    BusinessProcessModelAndNotation, element::BPMNElementTrait, traits::objectable::BPMNObject,
 };
 use anyhow::{Context, Result, anyhow};
 
@@ -9,7 +8,7 @@ impl BusinessProcessModelAndNotation {
         //check elements
         for element in self.all_elements_ref() {
             element
-                .verify_structural_correctness(self)
+                .verify_structural_correctness(self, self)
                 .with_context(|| anyhow!("element `{}`", element.id()))?;
         }
 

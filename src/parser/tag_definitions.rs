@@ -2,12 +2,11 @@ use crate::{
     element::{BPMNElement, BPMNElementTrait},
     message_flow::BPMNMessageFlow,
     parser::{
-        parser_state::ParserState,
+        parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_message_flow::DraftMessageFlow,
         tags::{OpenedTag, Tag},
     },
-    sequence_flow::BPMNSequenceFlow,
     traits::searchable::Searchable,
 };
 use anyhow::{Context, Result, anyhow};
@@ -37,12 +36,11 @@ impl Openable for Definitions {
         let (index, id) = state.read_and_add_id(e)?;
 
         Ok(OpenedTag::Definitions {
-            index,
+            global_index: index,
             id,
             collaboration_index: None,
             collaboration_id: None,
             draft_message_flows: vec![],
-            sequence_flows: vec![],
             elements: vec![],
         })
     }
@@ -53,12 +51,11 @@ impl Closeable for Definitions {
         //finalise the message flows
 
         if let OpenedTag::Definitions {
-            index,
+            global_index,
             id,
             collaboration_index,
             collaboration_id,
             draft_message_flows,
-            sequence_flows,
             mut elements,
         } = opened_tag
         {
@@ -67,7 +64,7 @@ impl Closeable for Definitions {
             for draft_message_flows in draft_message_flows {
                 let new_message_flow_index = message_flows.len();
                 let DraftMessageFlow {
-                    index,
+                    global_index,
                     id,
                     source_id,
                     target_id,
@@ -141,7 +138,7 @@ impl Closeable for Definitions {
                 }
 
                 message_flows.push(BPMNMessageFlow {
-                    index,
+                    global_index,
                     id,
                     source_element_index,
                     source_pool_index: source_pool_index
@@ -153,13 +150,12 @@ impl Closeable for Definitions {
             }
 
             state.draft_definitionss.push(DraftDefinitions {
-                index,
+                global_index,
                 id,
                 collaboration_index,
                 collaboration_id,
                 elements,
                 message_flows,
-                sequence_flows,
             });
 
             Ok(())
@@ -170,11 +166,10 @@ impl Closeable for Definitions {
 }
 
 pub(crate) struct DraftDefinitions {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
-    pub(crate) collaboration_index: Option<usize>,
+    pub(crate) collaboration_index: Option<GlobalIndex>,
     pub(crate) collaboration_id: Option<String>,
     pub(crate) elements: Vec<BPMNElement>,
     pub(crate) message_flows: Vec<BPMNMessageFlow>,
-    pub(crate) sequence_flows: Vec<BPMNSequenceFlow>,
 }

@@ -34,10 +34,10 @@ impl Openable for TagEndEvent {
     where
         Self: Sized,
     {
-        let (index, id) = state.read_and_add_id(e)?;
+        let (global_index, id) = state.read_and_add_id(e)?;
 
         Ok(OpenedTag::EndEvent {
-            index,
+            global_index,
             id,
             message_marker_id: None,
         })
@@ -50,23 +50,26 @@ impl Closeable for TagEndEvent {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
                 if let OpenedTag::EndEvent {
-                    index,
+                    global_index,
                     id,
                     message_marker_id,
                 } = opened_tag
                 {
+                    let local_index = elements.len();
                     if let Some(message_marker_id) = message_marker_id {
                         elements.push(BPMNElement::MessageEndEvent(BPMNMessageEndEvent {
-                            index,
+                            global_index,
                             id,
+                            local_index,
                             message_marker_id,
                             incoming_sequence_flows: vec![],
                             outgoing_message_flow: None,
                         }));
                     } else {
                         elements.push(BPMNElement::EndEvent(BPMNEndEvent {
-                            index,
+                            global_index,
                             id,
+                            local_index,
                             incoming_sequence_flows: vec![],
                         }));
                     }

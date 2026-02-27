@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -13,8 +15,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNExclusiveGateway {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
 }
@@ -38,14 +41,22 @@ impl BPMNElementTrait for BPMNExclusiveGateway {
         Err(anyhow!("gateways cannot have outgoing message flows"))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNExclusiveGateway {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -97,17 +108,17 @@ impl BPMNObject for BPMNExclusiveGateway {
 }
 
 impl Transitionable for BPMNExclusiveGateway {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         self.incoming_sequence_flows.len().max(1) * self.outgoing_sequence_flows.len().max(1)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        let mut result = bitvec![0;self.number_of_transitions()];
+        let mut result = bitvec![0;self.number_of_transitions(marking)];
 
         let outgoing = self.outgoing_sequence_flows.len().max(1);
 
@@ -139,13 +150,13 @@ impl Transitionable for BPMNExclusiveGateway {
             }
             (false, true) => {
                 //split only; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.index] >= 1 {
+                if marking.element_index_2_tokens[self.local_index] >= 1 {
                     result.fill(true);
                 }
             }
             (false, false) => {
                 //no flows at all; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.index] >= 1 {
+                if marking.element_index_2_tokens[self.local_index] >= 1 {
                     result.set(0, true);
                 }
             }
@@ -154,15 +165,22 @@ impl Transitionable for BPMNExclusiveGateway {
         Ok(result)
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "exclusive gateway `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

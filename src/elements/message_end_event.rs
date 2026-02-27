@@ -2,9 +2,11 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -14,8 +16,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNMessageEndEvent {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) message_marker_id: String,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_message_flow: Option<usize>,
@@ -47,14 +50,22 @@ impl BPMNElementTrait for BPMNMessageEndEvent {
         Ok(())
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNMessageEndEvent {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -106,28 +117,35 @@ impl BPMNObject for BPMNMessageEndEvent {
 }
 
 impl Transitionable for BPMNMessageEndEvent {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(enabledness_xor_join_only!(self, marking))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "message end event `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

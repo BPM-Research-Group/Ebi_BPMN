@@ -1,4 +1,4 @@
-use crate::BusinessProcessModelAndNotation;
+use crate::{BusinessProcessModelAndNotation, parser::parser_state::GlobalIndex};
 use anyhow::Result;
 
 pub(crate) static EMPTY_FLOWS: Vec<usize> = vec![];
@@ -6,7 +6,10 @@ pub(crate) static EMPTY_FLOWS: Vec<usize> = vec![];
 /// provides methods to interact with BPMN objects. Cannot be implemented on Vec<...>.
 pub trait BPMNObject {
     /// return the global index
-    fn index(&self) -> usize;
+    fn global_index(&self) -> GlobalIndex;
+
+    /// return the index within its parent
+    fn local_index(&self) -> usize;
 
     /// return the id
     fn id(&self) -> &str;

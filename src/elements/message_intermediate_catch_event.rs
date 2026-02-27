@@ -2,9 +2,11 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -14,8 +16,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNMessageIntermediateCatchEvent {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) message_marker_id: String,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
@@ -47,14 +50,22 @@ impl BPMNElementTrait for BPMNMessageIntermediateCatchEvent {
         ))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNMessageIntermediateCatchEvent {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -118,14 +129,14 @@ impl BPMNObject for BPMNMessageIntermediateCatchEvent {
 }
 
 impl Transitionable for BPMNMessageIntermediateCatchEvent {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //check whether the message is present
@@ -135,7 +146,7 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
             if !source.outgoing_message_flows_always_have_tokens() {
                 //this message must actually be there
 
-                if marking.message_flow_2_tokens[message_flow_index] == 0 {
+                if marking.root_marking.message_flow_2_tokens[message_flow_index] == 0 {
                     //message is not present; all transitions are not enabled
                     return Ok(bitvec![0; self.incoming_sequence_flows.len()]);
                 }
@@ -150,11 +161,19 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         Ok(enabledness_xor_join_only!(self, marking))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "message intermediate catch event `{}`; internal transition {}",
             self.id, transition_index

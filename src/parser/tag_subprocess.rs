@@ -11,6 +11,7 @@ use crate::{
         tag_sequence_flow::DraftSequenceFlow,
         tags::{OpenedTag, Tag},
     },
+    process_internal_sequence_flows,
     sequence_flow::BPMNSequenceFlow,
     traits::searchable::Searchable,
 };
@@ -45,7 +46,7 @@ impl Openable for TagSubProcess {
 
         let name = parse_attribute(e, "name");
         Ok(OpenedTag::SubProcess {
-            index,
+            global_index: index,
             id,
             name,
             elements: vec![],
@@ -57,98 +58,16 @@ impl Openable for TagSubProcess {
 impl Closeable for TagSubProcess {
     fn close_tag(opened_tag: OpenedTag, _e: &BytesEnd, state: &mut ParserState) -> Result<()> {
         if let OpenedTag::SubProcess {
-            index,
+            global_index,
             id,
             name,
             mut elements,
             draft_sequence_flows,
         } = opened_tag
         {
-            //first, process the sequence flows
-            {
-                //find the definitions tag
-                if let Some(OpenedTag::Definitions { sequence_flows, .. }) =
-                    state.open_tags.iter_mut().find(|tag| tag.is_definitions())
-                {
-                    for draft_sequence_flow in draft_sequence_flows {
-                        let DraftSequenceFlow {
-                            index,
-                            id,
-                            source_id,
-                            target_id,
-                        } = draft_sequence_flow;
-                        let new_flow_index = sequence_flows.len();
-                        let source_index = elements
-                            .id_2_pool_and_index(&source_id)
-                            .ok_or_else(|| {
-                                anyhow!(
-                                    "id `{}` mentioned but not declared in sequence flow `{}`",
-                                    source_id,
-                                    id
-                                )
-                            })?
-                            .1;
-                        //register the sequence flow in the source element
-                        let source = elements.index_2_element_mut(source_index).ok_or_else(|| {
-                        anyhow!(
-                            "could not find object of id `{}` mentioned in sequence flow `{}`",
-                            source_id,
-                            id
-                        )
-                        })?;
-
-                        source
-                            .add_outgoing_sequence_flow(new_flow_index)
-                            .with_context(|| {
-                                anyhow!(
-                                    "could not add sequence flow `{}` to element with id `{}`",
-                                    id,
-                                    source_id,
-                                )
-                            })?;
-
-                        let target_index = elements
-                            .id_2_pool_and_index(&target_id)
-                            .ok_or_else(|| {
-                                anyhow!(
-                                    "id `{}` mentioned but not declared in sequence flow `{}`",
-                                    target_id,
-                                    id
-                                )
-                            })?
-                            .1;
-
-                        //register the sequence flow in the target element
-                        let target = elements.index_2_element_mut(target_index).ok_or_else(|| {
-                        anyhow!(
-                            "could not find object of id `{}` mentioned in sequence flow `{}`",
-                            target_id,
-                            id
-                        )
-                        })?;
-
-                        target
-                            .add_incoming_sequence_flow(new_flow_index)
-                            .with_context(|| {
-                                anyhow!(
-                                    "could not add sequence flow `{}` to element with id `{}`",
-                                    id,
-                                    target_id,
-                                )
-                            })?;
-
-                        sequence_flows.push(BPMNSequenceFlow {
-                            index,
-                            id,
-                            flow_index: new_flow_index,
-                            source_index,
-                            target_index,
-                        });
-                    }
-                } else {
-                    unreachable!()
-                }
-            }
+            //process the internal sequence flows
+            let sequence_flows =
+                process_internal_sequence_flows!(draft_sequence_flows, elements, state);
 
             match state.open_tags.iter_mut().last() {
                 Some(OpenedTag::Process {
@@ -161,10 +80,12 @@ impl Closeable for TagSubProcess {
                 }) => {
                     if elements.is_empty() {
                         //create a collapsed sub-process
+                        let local_index = super_elements.len();
                         super_elements.push(BPMNElement::CollapsedSubProcess(
                             BPMNCollapsedSubProcess {
-                                index,
+                                global_index,
                                 id,
+                                local_index,
                                 activity: state
                                     .activity_key
                                     .process_activity(&name.unwrap_or("".to_string())),
@@ -176,13 +97,15 @@ impl Closeable for TagSubProcess {
                         ));
                     } else {
                         //create an expanded sub-process
-
+                        let local_index = super_elements.len();
                         super_elements.push(BPMNElement::ExpandedSubProcess(
                             BPMNExpandedSubProcess {
-                                index,
+                                global_index,
                                 id,
+                                local_index,
                                 name,
                                 elements,
+                                sequence_flows,
                                 incoming_sequence_flows: vec![],
                                 outgoing_sequence_flows: vec![],
                             },

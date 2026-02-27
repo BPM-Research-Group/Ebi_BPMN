@@ -1,9 +1,11 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -13,8 +15,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNStartEvent {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
 }
 
@@ -36,14 +39,22 @@ impl BPMNElementTrait for BPMNStartEvent {
         Err(anyhow!("start events cannot have outgoing message flows"))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNStartEvent {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -96,8 +107,8 @@ impl BPMNObject for BPMNStartEvent {
 
 #[macro_export]
 macro_rules! enabled_transitions_start_event {
-    ($self:ident, $marking:ident,$parent_index:ident) => {
-        if $parent_index.is_none() && $marking.root_initial_choice_token {
+    ($self:ident, $marking:ident,$parent:ident) => {
+        if $parent.is_none() && $marking.root_initial_choice_token {
             //enabled by root initial choice token
             bitvec![1;1]
         } else if let Some(parent_index) = $parent_index
@@ -120,14 +131,14 @@ macro_rules! enabled_transitions_start_event {
 }
 
 impl Transitionable for BPMNStartEvent {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         1
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(enabled_transitions_start_event!(
@@ -137,11 +148,19 @@ impl Transitionable for BPMNStartEvent {
         ))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "start event `{}`; internal transition {}",
             self.id, transition_index

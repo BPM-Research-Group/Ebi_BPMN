@@ -36,7 +36,10 @@ impl Openable for TagParallelGateway {
     {
         let (index, id) = state.read_and_add_id(e)?;
 
-        Ok(OpenedTag::ParallelGateway { index, id })
+        Ok(OpenedTag::ParallelGateway {
+            global_index: index,
+            id,
+        })
     }
 }
 
@@ -45,10 +48,12 @@ impl Closeable for TagParallelGateway {
         match state.open_tags.iter_mut().last() {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
-                if let OpenedTag::ParallelGateway { index, id } = opened_tag {
+                if let OpenedTag::ParallelGateway { global_index, id } = opened_tag {
+                    let local_index = elements.len();
                     elements.push(BPMNElement::ParallelGateway(BPMNParallelGateway {
-                        index,
+                        global_index,
                         id,
+                        local_index,
                         incoming_sequence_flows: vec![],
                         outgoing_sequence_flows: vec![],
                     }));

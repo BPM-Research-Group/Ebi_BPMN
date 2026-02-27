@@ -2,8 +2,9 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    semantics::{BPMNMarking, TransitionIndex},
-    traits::{objectable::BPMNObject, transitionable::Transitionable},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
+    traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -11,8 +12,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNTask {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub activity: Activity,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
@@ -47,14 +49,22 @@ impl BPMNElementTrait for BPMNTask {
         Ok(())
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNTask {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -119,14 +129,14 @@ impl BPMNObject for BPMNTask {
 }
 
 impl Transitionable for BPMNTask {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //check whether a message is present
@@ -137,9 +147,9 @@ impl Transitionable for BPMNTask {
             if !source.outgoing_message_flows_always_have_tokens() {
                 //this message must actually be there
 
-                if marking.message_flow_2_tokens[message_flow_index] == 0 {
+                if marking.root_marking.message_flow_2_tokens[message_flow_index] == 0 {
                     //message is not present; all transitions are not enabled
-                    return Ok(bitvec![0;self.number_of_transitions()]);
+                    return Ok(bitvec![0;self.number_of_transitions(marking)]);
                 }
             } else {
                 //if the message flow has always tokens, we do not need to check the marking
@@ -151,15 +161,22 @@ impl Transitionable for BPMNTask {
         Ok(enabledness_xor_join_only!(self, marking))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         Some(self.activity)
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "task `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

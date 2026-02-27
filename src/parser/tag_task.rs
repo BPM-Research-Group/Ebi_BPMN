@@ -40,7 +40,7 @@ impl Openable for TagTask {
         let label = parse_attribute(e, "name").unwrap_or_else(|| String::new());
         let activity = state.activity_key.process_activity(&label);
         Ok(OpenedTag::Task {
-            index,
+            global_index: index,
             id,
             activity,
         })
@@ -53,14 +53,16 @@ impl Closeable for TagTask {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
                 if let OpenedTag::Task {
-                    index,
+                    global_index,
                     id,
                     activity,
                 } = opened_tag
                 {
+                    let local_index = elements.len();
                     elements.push(BPMNElement::Task(BPMNTask {
-                        index,
+                        global_index,
                         id,
+                        local_index,
                         activity,
                         incoming_sequence_flows: vec![],
                         outgoing_sequence_flows: vec![],

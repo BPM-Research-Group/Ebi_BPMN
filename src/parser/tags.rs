@@ -2,7 +2,7 @@ use crate::{
     element::BPMNElement,
     elements::collapsed_pool::BPMNCollapsedPool,
     parser::{
-        parser_state::ParserState,
+        parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_collaboration::Collaboration,
         tag_definitions::Definitions,
@@ -23,7 +23,6 @@ use crate::{
         tag_task::TagTask,
         tag_timer_event_definition::TagTimerEventDefinition,
     },
-    sequence_flow::BPMNSequenceFlow,
 };
 use anyhow::Result;
 use ebi_activity_key::Activity;
@@ -119,45 +118,44 @@ impl Openable for Tag {
 pub(crate) enum OpenedTag {
     Unknown,
     Collaboration {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         collapsed_pools: Vec<BPMNCollapsedPool>,
         message_flows: Vec<DraftMessageFlow>,
     },
     Definitions {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
-        collaboration_index: Option<usize>,
+        collaboration_index: Option<GlobalIndex>,
         collaboration_id: Option<String>,
         draft_message_flows: Vec<DraftMessageFlow>,
-        sequence_flows: Vec<BPMNSequenceFlow>,
         elements: Vec<BPMNElement>,
     },
     EndEvent {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         message_marker_id: Option<String>,
     },
     EventBasedGateway {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
     },
     ExclusiveGateway {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
     },
     InclusiveGateway {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
     },
     IntermediateCatchEvent {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         message_marker_id: Option<String>,
         timer_marker_id: Option<String>,
     },
     IntermediateThrowEvent {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         message_marker_id: Option<String>,
     },
@@ -165,48 +163,48 @@ pub(crate) enum OpenedTag {
         id: String,
     },
     MessageFlow {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         source_id: String,
         target_id: String,
     },
     ParallelGateway {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
     },
     Participant {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         name: Option<String>,
         process_id: Option<String>,
     },
     Process {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         elements: Vec<BPMNElement>,
         draft_sequence_flows: Vec<DraftSequenceFlow>,
     },
     SequenceFlow {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         source_ref: String,
         target_ref: String,
     },
     SubProcess {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         name: Option<String>,
         elements: Vec<BPMNElement>,
         draft_sequence_flows: Vec<DraftSequenceFlow>,
     },
     StartEvent {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         message_marker_id: Option<String>,
         timer_marker_id: Option<String>,
     },
     Task {
-        index: usize,
+        global_index: GlobalIndex,
         id: String,
         activity: Activity,
     },

@@ -2,9 +2,11 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabled_transitions_start_event,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -14,8 +16,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNMessageStartEvent {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) message_marker_id: String,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
     pub(crate) incoming_message_flow: Option<usize>,
@@ -47,7 +50,11 @@ impl BPMNElementTrait for BPMNMessageStartEvent {
         ))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         if self.incoming_message_flow.is_none() {
             return Err(anyhow!(
                 "a message start event must have an incoming message flow"
@@ -58,8 +65,12 @@ impl BPMNElementTrait for BPMNMessageStartEvent {
 }
 
 impl BPMNObject for BPMNMessageStartEvent {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -120,14 +131,14 @@ impl BPMNObject for BPMNMessageStartEvent {
 }
 
 impl Transitionable for BPMNMessageStartEvent {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         1
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if let Some(message_flow_index) = self.incoming_message_flow {
@@ -136,7 +147,7 @@ impl Transitionable for BPMNMessageStartEvent {
             if source.outgoing_message_flows_always_have_tokens() {
                 //1) the source of the message always has tokens
                 //we are enabled when specifically enabled by the environment
-                if marking.element_index_2_tokens[self.index] >= 1 {
+                if marking.element_index_2_tokens[self.local_index] >= 1 {
                     //enabled
                     Ok(bitvec![1;1])
                 } else {
@@ -146,7 +157,7 @@ impl Transitionable for BPMNMessageStartEvent {
             } else {
                 //2) the source of the message is normal -> normal enablement
                 // we are enabled if there is a message on the incoming message flow
-                if marking.message_flow_2_tokens[message_flow_index] >= 1 {
+                if marking.root_marking.message_flow_2_tokens[message_flow_index] >= 1 {
                     //enabled
                     Ok(bitvec![1;1])
                 } else {
@@ -156,23 +167,26 @@ impl Transitionable for BPMNMessageStartEvent {
             }
         } else {
             //model does not have an incoming message flow; treat as a regular start event
-            Ok(enabled_transitions_start_event!(
-                self,
-                marking,
-                parent_index
-            ))
+            Ok(enabled_transitions_start_event!(self, marking, parent))
         }
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "message start event `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

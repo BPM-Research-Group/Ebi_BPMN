@@ -2,9 +2,11 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabled_transitions_start_event,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -14,8 +16,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNTimerStartEvent {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) timer_marker_id: String,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
 }
@@ -44,14 +47,22 @@ impl BPMNElementTrait for BPMNTimerStartEvent {
         ))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNTimerStartEvent {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
@@ -103,28 +114,32 @@ impl BPMNObject for BPMNTimerStartEvent {
 }
 
 impl Transitionable for BPMNTimerStartEvent {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         1
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        Ok(enabled_transitions_start_event!(
-            self,
-            marking,
-            parent_index
-        ))
+        Ok(enabled_transitions_start_event!(self, marking, parent))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "timer start event `{}`; internal transition {}",
             self.id, transition_index

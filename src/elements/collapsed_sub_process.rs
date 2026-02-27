@@ -2,8 +2,9 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
-    semantics::{BPMNMarking, TransitionIndex},
-    traits::{objectable::BPMNObject, transitionable::Transitionable},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNSubMarking, TransitionIndex},
+    traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
 };
 use anyhow::Result;
 use bitvec::{bitvec, vec::BitVec};
@@ -11,8 +12,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNCollapsedSubProcess {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) activity: Activity,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
@@ -41,18 +43,26 @@ impl BPMNElementTrait for BPMNCollapsedSubProcess {
         Ok(())
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNCollapsedSubProcess {
-    fn index(&self) -> usize {
-        self.index
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn local_index(&self) -> usize {
+        self.local_index
     }
 
     fn is_unconstrained_start_event(
@@ -100,14 +110,14 @@ impl BPMNObject for BPMNCollapsedSubProcess {
 }
 
 impl Transitionable for BPMNCollapsedSubProcess {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //a collapsed sub-process behaves according to the sequence flows
@@ -115,15 +125,22 @@ impl Transitionable for BPMNCollapsedSubProcess {
         Ok(enabledness_xor_join_only!(self, marking))
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         Some(self.activity)
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "collapsed sub-process `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

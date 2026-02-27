@@ -1,7 +1,7 @@
 use crate::{
     importer::parse_attribute,
     parser::{
-        parser_state::ParserState,
+        parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -38,7 +38,7 @@ impl Openable for TagSequenceFlow {
         if let Some(source_ref) = parse_attribute(e, "sourceRef") {
             if let Some(target_ref) = parse_attribute(e, "targetRef") {
                 Ok(OpenedTag::SequenceFlow {
-                    index,
+                    global_index: index,
                     id,
                     source_ref,
                     target_ref,
@@ -64,14 +64,14 @@ impl Closeable for TagSequenceFlow {
                 ..
             }) => {
                 if let OpenedTag::SequenceFlow {
-                    index,
+                    global_index,
                     id,
                     source_ref,
                     target_ref,
                 } = opened_tag
                 {
                     draft_sequence_flows.push(DraftSequenceFlow {
-                        index,
+                        global_index,
                         id,
                         source_id: source_ref,
                         target_id: target_ref,
@@ -88,7 +88,7 @@ impl Closeable for TagSequenceFlow {
 
 #[derive(Clone, Debug)]
 pub(crate) struct DraftSequenceFlow {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) source_id: String,
     pub(crate) target_id: String,

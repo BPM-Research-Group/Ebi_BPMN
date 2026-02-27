@@ -35,7 +35,7 @@ impl BusinessProcessModelAndNotation {
             ))?;
 
             //expanded pools
-            self.participants.write(&mut x, self)?;
+            self.participants.write(&mut x, self, self)?;
 
             //collapsed pools
             for element in &self.elements {
@@ -54,12 +54,12 @@ impl BusinessProcessModelAndNotation {
             }
 
             //messages
-            self.message_flows.write(&mut x, self)?;
+            self.message_flows.write(&mut x, self, self)?;
 
             x.write_event(Event::End(BytesEnd::new("collaboration")))?;
         }
 
-        self.elements.write(&mut x, self)?;
+        self.elements.write(&mut x, self, self)?;
 
         x.write_event(Event::End(BytesEnd::new("definitions")))?;
 

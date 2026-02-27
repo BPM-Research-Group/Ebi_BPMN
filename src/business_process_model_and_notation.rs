@@ -1,9 +1,5 @@
 use crate::{
-    element::BPMNElement,
-    elements::{participant::BPMNParticipant, task::BPMNTask},
-    message_flow::BPMNMessageFlow,
-    sequence_flow::BPMNSequenceFlow,
-    traits::{objectable::BPMNObject, searchable::Searchable},
+    element::BPMNElement, elements::{participant::BPMNParticipant, task::BPMNTask}, message_flow::BPMNMessageFlow, parser::parser_state::GlobalIndex, traits::{objectable::BPMNObject, searchable::Searchable}
 };
 use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
@@ -24,17 +20,12 @@ pub struct BusinessProcessModelAndNotation {
     /// white-box pools/participants
     pub participants: Vec<BPMNParticipant>,
     pub elements: Vec<BPMNElement>,
-    pub sequence_flows: Vec<BPMNSequenceFlow>,
     pub message_flows: Vec<BPMNMessageFlow>,
 }
 
 impl BusinessProcessModelAndNotation {
     pub fn number_of_elements(&self) -> usize {
         self.all_elements_ref().len()
-    }
-
-    pub fn number_of_sequence_flows(&self) -> usize {
-        self.sequence_flows.len()
     }
 
     pub fn number_of_message_flows(&self) -> usize {
@@ -46,12 +37,12 @@ impl BusinessProcessModelAndNotation {
     }
 
     /// find an element with the given index
-    pub fn index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+    pub fn index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         self.elements.index_2_element(index)
     }
 
     /// find the object of the given index
-    pub fn index_2_object(&self, index: usize) -> Option<&dyn BPMNObject> {
+    pub fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
         self.elements.index_2_object(index)
     }
 
@@ -84,7 +75,7 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
         let mut indices = vec![];
         for element in self.all_elements_ref() {
             if element.is_task() {
-                indices.push(element.index());
+                indices.push(element.local_index());
             }
         }
 

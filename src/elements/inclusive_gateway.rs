@@ -3,9 +3,11 @@ use std::collections::VecDeque;
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    semantics::{BPMNMarking, TransitionIndex},
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
         transitionable::Transitionable,
     },
 };
@@ -15,8 +17,9 @@ use ebi_activity_key::Activity;
 
 #[derive(Debug, Clone)]
 pub struct BPMNInclusiveGateway {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
 }
@@ -39,18 +42,26 @@ impl BPMNElementTrait for BPMNInclusiveGateway {
         Err(anyhow!("gateways cannot have outgoing message flows"))
     }
 
-    fn verify_structural_correctness(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<()> {
+    fn verify_structural_correctness(
+        &self,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
         Ok(())
     }
 }
 
 impl BPMNObject for BPMNInclusiveGateway {
-    fn index(&self) -> usize {
-        self.index
+    fn local_index(&self) -> usize {
+        self.local_index
     }
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn global_index(&self) -> GlobalIndex {
+        self.global_index
     }
 
     fn is_unconstrained_start_event(
@@ -98,25 +109,25 @@ impl BPMNObject for BPMNInclusiveGateway {
 }
 
 impl Transitionable for BPMNInclusiveGateway {
-    fn number_of_transitions(&self) -> usize {
+    fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         2usize.pow(self.outgoing_sequence_flows.len() as u32) - 1
     }
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNMarking,
-        _parent_index: Option<usize>,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if self.incoming_sequence_flows.len() == 0 {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
-            if marking.element_index_2_tokens[self.index] >= 1 {
+            if marking.element_index_2_tokens[self.local_index] >= 1 {
                 //enabled
-                return Ok(bitvec![1;self.number_of_transitions()]);
+                return Ok(bitvec![1;self.number_of_transitions(marking)]);
             } else {
                 //not enabled
-                return Ok(bitvec![0;self.number_of_transitions()]);
+                return Ok(bitvec![0;self.number_of_transitions(marking)]);
             }
         } else {
             //gather a list of incoming sequence flows that do not have a token
@@ -142,7 +153,7 @@ impl Transitionable for BPMNInclusiveGateway {
                     return Ok(bitvec![0;self.number_of_transitions()]);
                 }
 
-                let source_index = bpmn.sequence_flows[sequence_flow].source_index;
+                let source_index = bpmn.sequence_flows_non_recursive()[sequence_flow].source_index;
                 let source = bpmn
                     .index_2_element(source_index)
                     .ok_or_else(|| anyhow!("source not found"))?;
@@ -155,19 +166,26 @@ impl Transitionable for BPMNInclusiveGateway {
             }
 
             //enabled
-            return Ok(bitvec![1;self.number_of_transitions()]);
+            return Ok(bitvec![1;self.number_of_transitions(marking)]);
         }
     }
 
-    fn transition_activity(&self, _transition_index: TransitionIndex) -> Option<Activity> {
+    fn transition_activity(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<Activity> {
         None
     }
 
-    fn transition_debug(&self, transition_index: TransitionIndex) -> Option<String> {
+    fn transition_debug(
+        &self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+    ) -> Option<String> {
         Some(format!(
             "inclusive gateway `{}`; internal transition {}",
-            self.id,
-            transition_index
+            self.id, transition_index
         ))
     }
 }

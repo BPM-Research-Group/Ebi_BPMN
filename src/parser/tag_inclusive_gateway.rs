@@ -36,7 +36,10 @@ impl Openable for TagInclusiveGateway {
     {
         let (index, id) = state.read_and_add_id(e)?;
 
-        Ok(OpenedTag::InclusiveGateway { index, id })
+        Ok(OpenedTag::InclusiveGateway {
+            global_index: index,
+            id,
+        })
     }
 }
 
@@ -45,10 +48,12 @@ impl Closeable for TagInclusiveGateway {
         match state.open_tags.iter_mut().last() {
             Some(OpenedTag::Process { elements, .. })
             | Some(OpenedTag::SubProcess { elements, .. }) => {
-                if let OpenedTag::InclusiveGateway { index, id } = opened_tag {
+                if let OpenedTag::InclusiveGateway { global_index, id } = opened_tag {
+                    let local_index = elements.len();
                     elements.push(BPMNElement::InclusiveGateway(BPMNInclusiveGateway {
-                        index,
+                        global_index,
                         id,
+                        local_index,
                         incoming_sequence_flows: vec![],
                         outgoing_sequence_flows: vec![],
                     }));

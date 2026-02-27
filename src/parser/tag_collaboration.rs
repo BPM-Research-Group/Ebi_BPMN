@@ -39,7 +39,7 @@ impl Openable for Collaboration {
         let (index, id) = state.read_and_add_id(e)?;
 
         Ok(OpenedTag::Collaboration {
-            index,
+            global_index: index,
             id,
             collapsed_pools: vec![],
             message_flows: vec![],
@@ -59,7 +59,7 @@ impl Closeable for Collaboration {
         }) = state.open_tags.get_mut(index)
         {
             if let OpenedTag::Collaboration {
-                index,
+                global_index: index,
                 id,
                 collapsed_pools: sub_collapsed_pools,
                 message_flows: sub_message_flows,

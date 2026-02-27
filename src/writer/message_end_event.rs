@@ -1,21 +1,22 @@
-use crate::{elements::message_end_event::BPMNMessageEndEvent, traits::writable::Writable};
+use crate::{
+    BusinessProcessModelAndNotation,
+    elements::message_end_event::BPMNMessageEndEvent,
+    traits::{processable::Processable, writable::Writable},
+    write_external_incoming,
+};
 use quick_xml::events::{BytesStart, BytesText, Event};
 
 impl Writable for BPMNMessageEndEvent {
     fn write<W: std::io::Write>(
         &self,
         x: &mut quick_xml::Writer<W>,
-        bpmn: &crate::BusinessProcessModelAndNotation,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> anyhow::Result<()> {
         x.create_element("endEvent")
             .with_attributes([("id", self.id.as_str())])
             .write_inner_content(|x| {
-                for incoming_sequence_flow in &self.incoming_sequence_flows {
-                    x.create_element("incoming")
-                        .write_text_content(BytesText::new(
-                            &bpmn.sequence_flows[*incoming_sequence_flow].id,
-                        ))?;
-                }
+                write_external_incoming!(x, self, parent);
                 x.write_event(Event::Empty(
                     BytesStart::new("messageEventDefinition")
                         .with_attributes([("id", self.message_marker_id.as_str())]),

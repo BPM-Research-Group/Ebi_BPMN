@@ -1,7 +1,7 @@
 use crate::{
     importer::parse_attribute,
     parser::{
-        parser_state::ParserState,
+        parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -39,7 +39,7 @@ impl Openable for TagMessageFlow {
         if let Some(source_ref) = parse_attribute(e, "sourceRef") {
             if let Some(target_ref) = parse_attribute(e, "targetRef") {
                 Ok(OpenedTag::MessageFlow {
-                    index,
+                    global_index: index,
                     id,
                     source_id: source_ref,
                     target_id: target_ref,
@@ -59,14 +59,14 @@ impl Closeable for TagMessageFlow {
         if let Some(OpenedTag::Collaboration { message_flows, .. }) = state.open_tags.get_mut(index)
         {
             if let OpenedTag::MessageFlow {
-                index,
+                global_index,
                 id,
                 source_id,
                 target_id,
             } = opened_tag
             {
                 message_flows.push(DraftMessageFlow {
-                    index,
+                    global_index,
                     id,
                     source_id,
                     target_id,
@@ -83,7 +83,7 @@ impl Closeable for TagMessageFlow {
 
 #[derive(Debug)]
 pub(crate) struct DraftMessageFlow {
-    pub(crate) index: usize,
+    pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) source_id: String,
     pub(crate) target_id: String,

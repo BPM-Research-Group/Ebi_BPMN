@@ -4,9 +4,9 @@ A BPMN library for Rust
 Contains a parser, a data structure and a writer.
 For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
 
-# Supported elements & features
+# Supported elements
 
-* Start, end and intermediate None events
+* Start, end and intermediate none events
 * Start, end and intermediate message events
 * Start and intermediate timer events
 * Exclusive, inclusive, parallel and event-based gateways
@@ -16,10 +16,14 @@ For now, this crate focuses on the behaviour of BPMN models; not on the data or 
 * Tasks
 * Expanded and collapsed sub-processes
 
-* Process instance initiation follows the BPMN standard:
- * if the model contains a single start event, then that event is fired to start a process instance;
- * if the model contains multiple start events, one of them can be chosen to start a process instance;
- * if the model contains no start events, every eligible element receives a token, and they thus start in parallel. 
+Other elements are gracefully ignored, as long as they do not have in- or outgoing message or sequence flows.
+
+# Process instance intitation
+
+In accordance with the BPMN standard, a process instance can start as follows:
+* If the model contains a single start event, then that event is fired to start a process instance.
+* If the model contains multiple start events, one of them can be chosen to start a process instance.
+* If the model contains no start events, every eligible element receives a token, and they thus start in parallel.
 
 # Deviations from the BPMN 2.0.2 standard
 
