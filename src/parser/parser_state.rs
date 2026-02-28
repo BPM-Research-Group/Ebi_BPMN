@@ -1,6 +1,5 @@
 use crate::{
     BusinessProcessModelAndNotation,
-    elements::participant::BPMNParticipant,
     importer::parse_attribute,
     parser::{tag_definitions::DraftDefinitions, tags::OpenedTag},
 };
@@ -16,7 +15,6 @@ pub(crate) struct ParserState {
     pub(crate) ids: HashMap<String, usize>,
 
     pub(crate) draft_definitionss: Vec<DraftDefinitions>,
-    pub(crate) participants: Vec<BPMNParticipant>,
 
     pub(crate) not_recognised_id_2_tag: HashMap<String, String>,
 }
@@ -31,7 +29,6 @@ impl ParserState {
             ids: HashMap::new(),
             open_tags: vec![],
             draft_definitionss: vec![],
-            participants: vec![],
             not_recognised_id_2_tag: HashMap::new(),
         }
     }
@@ -45,8 +42,8 @@ impl ParserState {
         if draft_definitionss.len() == 1 {
             let draft_definition = draft_definitionss.remove(0);
             let DraftDefinitions {
-                index,
-                id,
+                global_index: definitions_index,
+                id: definitions_id,
                 collaboration_index,
                 collaboration_id,
                 elements,
@@ -57,9 +54,8 @@ impl ParserState {
                 activity_key,
                 collaboration_index,
                 collaboration_id,
-                definitions_index: index,
-                definitions_id: id,
-                participants: self.participants,
+                definitions_index,
+                definitions_id,
                 elements,
                 message_flows,
             };

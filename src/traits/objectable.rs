@@ -44,3 +44,60 @@ pub trait BPMNObject {
     /// return whether this object can have incoming sequence flows
     fn can_have_outgoing_sequence_flows(&self) -> bool;
 }
+
+impl BPMNObject for BusinessProcessModelAndNotation {
+    fn global_index(&self) -> GlobalIndex {
+        self.definitions_index
+    }
+
+    fn local_index(&self) -> usize {
+        0
+    }
+
+    fn id(&self) -> &str {
+        &self.definitions_id
+    }
+
+    fn is_unconstrained_start_event(
+        &self,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_end_event(&self) -> bool {
+        false
+    }
+
+    fn incoming_sequence_flows(&self) -> &[usize] {
+        &EMPTY_FLOWS
+    }
+
+    fn outgoing_sequence_flows(&self) -> &[usize] {
+        &EMPTY_FLOWS
+    }
+
+    fn incoming_message_flows(&self) -> &[usize] {
+        &EMPTY_FLOWS
+    }
+
+    fn outgoing_message_flows(&self) -> &[usize] {
+        &EMPTY_FLOWS
+    }
+
+    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
+
+    fn can_have_incoming_sequence_flows(&self) -> bool {
+        false
+    }
+
+    fn can_have_outgoing_sequence_flows(&self) -> bool {
+        false
+    }
+}

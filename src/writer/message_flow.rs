@@ -14,11 +14,11 @@ impl Writable for BPMNMessageFlow {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> anyhow::Result<()> {
         let source_id = bpmn
-            .index_2_element(self.source_element_index)
+            .global_index_2_element(self.source_element_index)
             .ok_or_else(|| anyhow!("source not found"))?
             .id();
         let target_id = bpmn
-            .index_2_element(self.target_element_index)
+            .global_index_2_element(self.target_element_index)
             .ok_or_else(|| anyhow!("target not found"))?
             .id();
 

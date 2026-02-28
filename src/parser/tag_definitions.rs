@@ -72,7 +72,7 @@ impl Closeable for Definitions {
 
                 //obtain source
                 let (source_pool_index, source_element_index) =
-                    elements.id_2_pool_and_index(&source_id).ok_or_else(|| {
+                    elements.id_2_pool_and_global_index(&source_id).ok_or_else(|| {
                         //source not found; try whether there's an unrecognised tag with that id
                         if let Some(tag) = state.not_recognised_id_2_tag.get(&source_id) {
                             anyhow!(
@@ -91,7 +91,7 @@ impl Closeable for Definitions {
                     })?;
 
                 //link to source element or pool
-                if let Some(source) = elements.index_2_element_mut(source_element_index) {
+                if let Some(source) = elements.global_index_2_element_mut(source_element_index) {
                     //element
                     source
                         .add_outgoing_message_flow(new_message_flow_index)
@@ -106,7 +106,7 @@ impl Closeable for Definitions {
 
                 //obtain target
                 let (target_pool_index, target_element_index) =
-                    elements.id_2_pool_and_index(&target_id).ok_or_else(|| {
+                    elements.id_2_pool_and_global_index(&target_id).ok_or_else(|| {
                         if let Some(tag) = state.not_recognised_id_2_tag.get(&target_id) {
                             anyhow!(
                                 "Could not find target `{}` of message flow `{}`.\nHowever, a tag with name `{}` was found with this id. That tag is perhaps not supported or is not in an expected location.",
@@ -124,7 +124,7 @@ impl Closeable for Definitions {
                     })?;
 
                 //link to target element or pool
-                if let Some(target) = elements.index_2_element_mut(target_element_index) {
+                if let Some(target) = elements.global_index_2_element_mut(target_element_index) {
                     //element
                     target
                         .add_incoming_message_flow(new_message_flow_index)

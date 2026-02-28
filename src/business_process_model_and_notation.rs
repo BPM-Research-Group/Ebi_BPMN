@@ -1,5 +1,11 @@
 use crate::{
-    element::BPMNElement, elements::{participant::BPMNParticipant, task::BPMNTask}, message_flow::BPMNMessageFlow, parser::parser_state::GlobalIndex, traits::{objectable::BPMNObject, searchable::Searchable}
+    element::BPMNElement,
+    elements::task::BPMNTask,
+    message_flow::BPMNMessageFlow,
+    parser::parser_state::GlobalIndex,
+    semantics::BPMNMarking,
+    sequence_flow::BPMNSequenceFlow,
+    traits::{objectable::BPMNObject, processable::Processable, searchable::Searchable, transitionable::Transitionable},
 };
 use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
@@ -12,13 +18,11 @@ use std::fmt::{Display, Formatter};
 pub struct BusinessProcessModelAndNotation {
     pub(crate) activity_key: ActivityKey,
 
-    pub collaboration_index: Option<usize>,
+    pub collaboration_index: Option<GlobalIndex>,
     pub collaboration_id: Option<String>,
-    pub definitions_index: usize,
+    pub definitions_index: GlobalIndex,
     pub definitions_id: String,
 
-    /// white-box pools/participants
-    pub participants: Vec<BPMNParticipant>,
     pub elements: Vec<BPMNElement>,
     pub message_flows: Vec<BPMNMessageFlow>,
 }
@@ -37,8 +41,8 @@ impl BusinessProcessModelAndNotation {
     }
 
     /// find an element with the given index
-    pub fn index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
-        self.elements.index_2_element(index)
+    pub fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
+        self.elements.global_index_2_element(index)
     }
 
     /// find the object of the given index
@@ -46,18 +50,43 @@ impl BusinessProcessModelAndNotation {
         self.elements.index_2_object(index)
     }
 
+    /// return the element that is the source of the given message flow
     pub fn message_flow_index_2_source(&self, message_flow_index: usize) -> Result<&BPMNElement> {
         let message_flow = self
             .message_flows
             .get(message_flow_index)
             .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
-        self.index_2_element(message_flow.source_element_index)
+        self.global_index_2_element(message_flow.source_element_index)
             .ok_or_else(|| {
                 anyhow!(
                     "the source of message flow `{}` was not found",
                     message_flow.id
                 )
             })
+    }
+
+    /// return the sequence flow with the given global index
+    pub fn global_index_2_sequence_flow_and_parent(
+        &self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
+        self.elements
+            .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
+    }
+
+    pub fn transition_debug(&self, mut transition_index: usize, marking: &BPMNMarking) -> Option<String> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
     }
 }
 
@@ -82,7 +111,7 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
         //adjust activities
         for index in indices {
             if let Some(BPMNElement::Task(BPMNTask { activity, .. })) =
-                self.elements.index_2_element_mut(index)
+                self.elements.global_index_2_element_mut((index, ()))
             {
                 *activity = translator.translate_activity(&activity);
             } else {

@@ -1,5 +1,5 @@
 use crate::{
-    elements::{collapsed_pool::BPMNCollapsedPool, participant::BPMNParticipant},
+    elements::collapsed_pool::BPMNCollapsedPool,
     importer::parse_attribute,
     parser::{
         parser_state::ParserState,
@@ -69,15 +69,9 @@ impl Closeable for TagParticipant {
                     process_id,
                 } = opened_tag
                 {
-                    if let Some(process_id) = process_id {
+                    if process_id.is_some() {
                         //this is an expanded pool
-                        //not a BPMN element (that's the process), but we need to keep track of it anyway
-                        state.participants.push(BPMNParticipant {
-                            global_index,
-                            id,
-                            name,
-                            process_id,
-                        });
+                        //not a BPMN element (that's the process)
                     } else {
                         //this is a collapsed pool
                         let local_index = collapsed_pools.len();

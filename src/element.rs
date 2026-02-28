@@ -17,6 +17,7 @@ use crate::{
     },
     parser::parser_state::GlobalIndex,
     semantics::{BPMNSubMarking, TransitionIndex},
+    sequence_flow::BPMNSequenceFlow,
     traits::{
         objectable::BPMNObject, processable::Processable, searchable::Searchable,
         transitionable::Transitionable, writable::Writable,
@@ -141,7 +142,7 @@ impl Searchable for BPMNElement {
         }
     }
 
-    fn id_2_pool_and_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
+    fn id_2_pool_and_global_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {
             Some((Some(self.local_index()), self.global_index()))
         } else if self.id() == search_id {
@@ -149,11 +150,34 @@ impl Searchable for BPMNElement {
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
         {
-            if let Some((_, index)) = elements.id_2_pool_and_index(search_id) {
+            if let Some((_, index)) = elements.id_2_pool_and_global_index(search_id) {
                 Some((Some(self.local_index()), index))
             } else {
                 None
             }
+        } else {
+            None
+        }
+    }
+
+    fn id_2_local_index(&self, id: &str) -> Option<usize> {
+        if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
+        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
+        {
+            elements.id_2_local_index(id)
+        } else {
+            None
+        }
+    }
+
+    fn global_index_2_sequence_flow_and_parent(
+        &self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
+        if let BPMNElement::Process(process) = self {
+            process.global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
+        } else if let BPMNElement::ExpandedSubProcess(process) = self {
+            process.global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
         } else {
             None
         }
@@ -175,25 +199,35 @@ impl Searchable for BPMNElement {
         }
     }
 
-    fn index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
+    fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         if self.global_index() == index {
             Some(self)
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
         {
-            elements.index_2_element(index)
+            elements.global_index_2_element(index)
         } else {
             None
         }
     }
 
-    fn index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
+    fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
         if self.global_index() == index {
             Some(self)
         } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
         | BPMNElement::Process(BPMNProcess { elements, .. }) = self
         {
-            elements.index_2_element_mut(index)
+            elements.global_index_2_element_mut(index)
+        } else {
+            None
+        }
+    }
+
+    fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
+        if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
+        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
+        {
+            elements.local_index_2_element_mut(index)
         } else {
             None
         }

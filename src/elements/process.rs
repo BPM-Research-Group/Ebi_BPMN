@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
@@ -36,11 +38,11 @@ impl Searchable for BPMNProcess {
         self.elements.index_2_object(index)
     }
 
-    fn id_2_pool_and_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
+    fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id == id {
             Some((Some(self.local_index), self.global_index))
         } else {
-            if let Some((_, index)) = self.elements.id_2_pool_and_index(id) {
+            if let Some((_, index)) = self.elements.id_2_pool_and_global_index(id) {
                 Some((Some(self.local_index), index))
             } else {
                 None
@@ -48,16 +50,36 @@ impl Searchable for BPMNProcess {
         }
     }
 
+    fn global_index_2_sequence_flow_and_parent(
+        &self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
+        for sequence_flow in &self.sequence_flows {
+            if sequence_flow.global_index == sequence_flow_global_index {
+                return Some((sequence_flow, self));
+            }
+        }
+        None
+    }
+
+    fn id_2_local_index(&self, id: &str) -> Option<usize> {
+        self.elements.id_2_local_index(id)
+    }
+
     fn all_elements_ref(&self) -> Vec<&BPMNElement> {
         self.elements.all_elements_ref()
     }
 
-    fn index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
-        self.elements.index_2_element(index)
+    fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
+        self.elements.global_index_2_element(index)
     }
 
-    fn index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
-        self.elements.index_2_element_mut(index)
+    fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
+        self.elements.global_index_2_element_mut(index)
+    }
+
+    fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
+        self.elements.local_index_2_element_mut(index)
     }
 }
 
@@ -169,7 +191,7 @@ impl Transitionable for BPMNProcess {
     fn transition_activity(
         &self,
         transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
+        marking: &BPMNSubMarking,
     ) -> Option<Activity> {
         self.elements.transition_activity(transition_index, marking)
     }
@@ -177,7 +199,7 @@ impl Transitionable for BPMNProcess {
     fn transition_debug(
         &self,
         transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
+        marking: &BPMNSubMarking,
     ) -> Option<String> {
         self.elements.transition_debug(transition_index, marking)
     }
@@ -219,5 +241,9 @@ impl Processable for BPMNProcess {
         root_marking: Rc<BPMNMarking>,
     ) -> Result<BPMNSubMarking> {
         to_sub_marking!(self, initiation_mode, root_marking)
+    }
+
+    fn is_sub_process(&self) -> bool {
+        false
     }
 }

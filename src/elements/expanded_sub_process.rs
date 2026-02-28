@@ -8,10 +8,7 @@ use crate::{
     semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{
-        objectable::{BPMNObject, EMPTY_FLOWS},
-        processable::Processable,
-        startable::{InitiationMode, Startable},
-        transitionable::Transitionable,
+        objectable::{BPMNObject, EMPTY_FLOWS}, processable::Processable, searchable::Searchable, startable::{InitiationMode, Startable}, transitionable::Transitionable
     },
     verify_structural_correctness_initiation_mode,
 };
@@ -277,6 +274,59 @@ impl Startable for BPMNExpandedSubProcess {
     }
 }
 
+impl Searchable for BPMNExpandedSubProcess {
+    fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
+        if self.global_index == index {
+            return Some(self);
+        }
+        self.elements.index_2_object(index)
+    }
+
+    fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
+        if self.id == id {
+            Some((Some(self.local_index), self.global_index))
+        } else {
+            if let Some((_, index)) = self.elements.id_2_pool_and_global_index(id) {
+                Some((Some(self.local_index), index))
+            } else {
+                None
+            }
+        }
+    }
+
+    fn global_index_2_sequence_flow_and_parent(
+        &self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
+        for sequence_flow in &self.sequence_flows {
+            if sequence_flow.global_index == sequence_flow_global_index {
+                return Some((sequence_flow, self));
+            }
+        }
+        None
+    }
+
+    fn id_2_local_index(&self, id: &str) -> Option<usize> {
+        self.elements.id_2_local_index(id)
+    }
+
+    fn all_elements_ref(&self) -> Vec<&BPMNElement> {
+        self.elements.all_elements_ref()
+    }
+
+    fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
+        self.elements.global_index_2_element(index)
+    }
+
+    fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
+        self.elements.global_index_2_element_mut(index)
+    }
+
+    fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
+        self.elements.local_index_2_element_mut(index)
+    }
+}
+
 #[macro_export]
 macro_rules! to_sub_marking {
     ($self:ident, $initiation_mode:ident, $root_marking:ident) => {
@@ -330,5 +380,9 @@ impl Processable for BPMNExpandedSubProcess {
         root_marking: Rc<BPMNMarking>,
     ) -> Result<BPMNSubMarking> {
         to_sub_marking!(self, initiation_mode, root_marking)
+    }
+
+    fn is_sub_process(&self) -> bool {
+        true
     }
 }

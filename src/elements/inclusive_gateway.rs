@@ -1,10 +1,11 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNSubMarking, TransitionIndex},
+    sequence_flow,
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -131,36 +132,47 @@ impl Transitionable for BPMNInclusiveGateway {
             }
         } else {
             //gather a list of incoming sequence flows that do not have a token
-            let mut empty_sequence_flows = bitvec![0;bpmn.number_of_sequence_flows()];
-            for sequence_flow in &self.incoming_sequence_flows {
-                if marking.sequence_flow_2_tokens[*sequence_flow] == 0 {
-                    empty_sequence_flows.set(*sequence_flow, true);
+            let mut empty_sequence_flows: HashSet<GlobalIndex> = HashSet::new();
+            for sequence_flow_local_index in &self.incoming_sequence_flows {
+                if marking.sequence_flow_2_tokens[*sequence_flow_local_index] == 0 {
+                    let sequence_flow =
+                        &parent.sequence_flows_non_recursive()[*sequence_flow_local_index];
+                    empty_sequence_flows.insert(sequence_flow.global_index);
                 }
             }
 
-            if empty_sequence_flows.count_ones() == self.incoming_sequence_flows.len() {
+            if empty_sequence_flows.len() == self.incoming_sequence_flows.len() {
                 //not enabled as there is no token
-                return Ok(bitvec![0;self.number_of_transitions()]);
+                return Ok(bitvec![0;self.number_of_transitions(marking)]);
             }
 
             //perform a backwards search to find tokens that may still come to the gateway
             let mut queue = VecDeque::new();
-            queue.extend(empty_sequence_flows.iter_ones());
+            queue.extend(empty_sequence_flows.clone());
             let mut seen_sequence_flows = empty_sequence_flows;
-            while let Some(sequence_flow) = queue.pop_front() {
-                if marking.sequence_flow_2_tokens[sequence_flow] >= 1 {
+            while let Some(sequence_flow_global_index) = queue.pop_front() {
+                let (sequence_flow, process) = bpmn
+                    .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
+                    .ok_or_else(|| anyhow!("sequence flow not found"))?;
+                todo!();
+                //this asks the wrong marking
+                if marking.sequence_flow_2_tokens[sequence_flow.flow_index] >= 1 {
                     //we encountered a token on our search, so the gateway is not enabled
-                    return Ok(bitvec![0;self.number_of_transitions()]);
+                    return Ok(bitvec![0;self.number_of_transitions(marking)]);
                 }
 
-                let source_index = bpmn.sequence_flows_non_recursive()[sequence_flow].source_index;
-                let source = bpmn
-                    .index_2_element(source_index)
+                //get the source
+                let source = process
+                    .elements_non_recursive()
+                    .get(sequence_flow.source_index)
                     .ok_or_else(|| anyhow!("source not found"))?;
-                for next_sequence_flow in source.incoming_sequence_flows() {
-                    if !seen_sequence_flows[*next_sequence_flow] {
-                        queue.push_back(*next_sequence_flow);
-                        seen_sequence_flows.set(*next_sequence_flow, false);
+                for next_sequence_flow_index in source.incoming_sequence_flows() {
+                    let next_sequence_flow = process
+                        .sequence_flows_non_recursive()
+                        .get(*next_sequence_flow_index)
+                        .ok_or_else(|| anyhow!("next sequence flow not found"))?;
+                    if seen_sequence_flows.insert(next_sequence_flow.global_index) {
+                        queue.push_back(*&next_sequence_flow.global_index);
                     }
                 }
             }

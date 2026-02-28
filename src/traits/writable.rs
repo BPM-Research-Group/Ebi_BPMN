@@ -1,7 +1,7 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElement, elements::participant::BPMNParticipant,
-    message_flow::BPMNMessageFlow, sequence_flow::BPMNSequenceFlow,
-    traits::processable::Processable,
+    BusinessProcessModelAndNotation, element::BPMNElement,
+    elements::collapsed_pool::BPMNCollapsedPool, message_flow::BPMNMessageFlow,
+    sequence_flow::BPMNSequenceFlow, traits::processable::Processable,
 };
 use anyhow::Result;
 use quick_xml::Writer;
@@ -37,7 +37,7 @@ macro_rules! vec_writable {
 
 vec_writable!(Vec<BPMNElement>);
 vec_writable!(Vec<BPMNMessageFlow>);
-vec_writable!(Vec<BPMNParticipant>);
+vec_writable!(Vec<&BPMNCollapsedPool>);
 vec_writable!(Vec<BPMNSequenceFlow>);
 
 #[macro_export]

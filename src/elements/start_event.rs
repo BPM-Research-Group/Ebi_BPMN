@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -108,19 +108,13 @@ impl BPMNObject for BPMNStartEvent {
 #[macro_export]
 macro_rules! enabled_transitions_start_event {
     ($self:ident, $marking:ident,$parent:ident) => {
-        if $parent.is_none() && $marking.root_initial_choice_token {
+        if !$parent.is_sub_process() && $marking.root_marking.root_initial_choice_token {
             //enabled by root initial choice token
             bitvec![1;1]
-        } else if let Some(parent_index) = $parent_index
-            && *$marking
-                .sub_initial_choice_tokens
-                .get(&parent_index)
-                .unwrap_or(&0)
-                >= 1
-        {
+        } else if $parent.is_sub_process() && $marking.initial_choice_token {
             //enabled by sub-process initial choice token
             bitvec![1;1]
-        } else if $marking.element_index_2_tokens[$self.index] >= 1 {
+        } else if $marking.element_index_2_tokens[$self.local_index] >= 1 {
             //enabled by element token
             bitvec![1;1]
         } else {
@@ -141,11 +135,7 @@ impl Transitionable for BPMNStartEvent {
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        Ok(enabled_transitions_start_event!(
-            self,
-            marking,
-            parent_index
-        ))
+        Ok(enabled_transitions_start_event!(self, marking, parent))
     }
 
     fn transition_activity(

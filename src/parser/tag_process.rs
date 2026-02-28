@@ -55,14 +55,14 @@ macro_rules! process_internal_sequence_flows {
             let mut sequence_flows = Vec::with_capacity($draft_sequence_flows.len());
             for draft_sequence_flow in $draft_sequence_flows {
                 let DraftSequenceFlow {
-                    index,
+                    global_index,
                     id,
                     source_id,
                     target_id,
                 } = draft_sequence_flow;
                 let new_flow_index = sequence_flows.len();
                 let source_index = $sub_elements
-                    .id_2_pool_and_index(&source_id)
+                    .id_2_local_index(&source_id)
                     .ok_or_else(|| {
                         //attempt to give a more helpful error with other found tags
                         if let Some(tag) = $state.not_recognised_id_2_tag.get(&source_id) {
@@ -79,12 +79,11 @@ macro_rules! process_internal_sequence_flows {
                                 id
                             )
                         }
-                    })?
-                    .1;
+                    })?;
                 //register the sequence flow in the source element
                 let source =
                     $sub_elements
-                        .index_2_element_mut(source_index)
+                        .local_index_2_element_mut(source_index)
                         .ok_or_else(|| {
                             anyhow!(
                                 "Could not find source with id `{}` of sequence flow `{}`.",
@@ -103,7 +102,7 @@ macro_rules! process_internal_sequence_flows {
                     })?;
 
                 let target_index = $sub_elements
-                    .id_2_pool_and_index(&target_id)
+                    .id_2_local_index(&target_id)
                     .ok_or_else(|| {
                         //attempt to give a more helpful error message
                         if let Some(tag) = $state.not_recognised_id_2_tag.get(&target_id) {
@@ -120,10 +119,9 @@ macro_rules! process_internal_sequence_flows {
                             id
                         )
                     }
-                    })?
-                    .1;
+                    })?;
                 //register the sequence flow in the target element
-                let target = $sub_elements.index_2_element_mut(target_index).ok_or_else(
+                let target = $sub_elements.local_index_2_element_mut(target_index).ok_or_else(
                     || {
                         anyhow!(
                             "Could not target `{}` of sequence flow `{}`.",

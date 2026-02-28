@@ -93,7 +93,7 @@ pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<St
 
 #[cfg(test)]
 mod tests {
-    use crate::BusinessProcessModelAndNotation;
+    use crate::{BusinessProcessModelAndNotation, traits::processable::Processable};
     use std::fs::{self};
 
     #[test]
@@ -101,7 +101,7 @@ mod tests {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-        assert_eq!(bpmn.sequence_flows.len(), 10);
+        assert_eq!(bpmn.sequence_flows_non_recursive().len(), 10);
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
         assert_eq!(bpmn.elements.len(), 2);
-        assert_eq!(bpmn.sequence_flows.len(), 8);
+        assert_eq!(bpmn.sequence_flows_non_recursive().len(), 8);
         assert_eq!(bpmn.message_flows.len(), 2);
     }
 

@@ -35,7 +35,17 @@ impl BusinessProcessModelAndNotation {
             ))?;
 
             //expanded pools
-            self.participants.write(&mut x, self, self)?;
+            self.elements
+                .iter()
+                .filter_map(|element| {
+                    if let BPMNElement::CollapsedPool(p) = element {
+                        Some(p)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+                .write(&mut x, self, self)?;
 
             //collapsed pools
             for element in &self.elements {

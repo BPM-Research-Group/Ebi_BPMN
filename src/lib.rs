@@ -15,7 +15,6 @@ pub mod elements {
     pub mod message_intermediate_throw_event;
     pub mod message_start_event;
     pub mod parallel_gateway;
-    pub mod participant;
     pub mod process;
     pub mod start_event;
     pub mod task;
@@ -53,8 +52,8 @@ pub mod parser {
     pub mod tags;
 }
 pub mod traits {
-    pub mod processable;
     pub mod objectable;
+    pub mod processable;
     pub mod searchable;
     pub mod startable;
     pub mod transitionable;
@@ -75,7 +74,6 @@ pub mod writer {
     pub mod message_intermediate_throw_event;
     pub mod message_start_event;
     pub mod parallel_gateway;
-    pub mod participant;
     pub mod process;
     pub mod sequence_flow;
     pub mod start_event;

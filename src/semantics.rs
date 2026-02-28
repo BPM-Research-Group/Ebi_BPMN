@@ -1,16 +1,15 @@
-use std::{collections::HashMap, rc::Rc};
-
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
     traits::{
-        objectable::BPMNObject,
         startable::{InitiationMode, Startable},
         transitionable::Transitionable,
     },
 };
 use anyhow::Result;
+use bitvec::bitvec;
 use ebi_activity_key::Activity;
+use std::rc::Rc;
 
 pub type TransitionIndex = usize;
 
@@ -64,19 +63,51 @@ impl BusinessProcessModelAndNotation {
         Ok(self.get_enabled_transitions(state)?.is_empty())
     }
 
-    pub fn is_transition_silent(&self, transition_index: TransitionIndex) -> bool {
-        self.elements
-            .transition_activity(transition_index)
-            .is_none()
+    pub fn is_transition_silent(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> bool {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let x = element.transition_activity(transition_index, sub_marking);
+            if x.is_some() {
+                return false;
+            }
+        }
+        true
     }
 
-    pub fn get_transition_activity(&self, transition_index: TransitionIndex) -> Option<Activity> {
-        self.elements.transition_activity(transition_index)
+    pub fn get_transition_activity(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Activity> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let x = element.transition_activity(transition_index, sub_marking);
+            if x.is_some() {
+                return x;
+            }
+        }
+        None
     }
 
-    pub fn get_enabled_transitions(&self, state: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
-        //recurse to elements
-        let result = self.elements.enabled_transitions(state, None, self)?;
+    pub fn get_enabled_transitions(&self, marking: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
+        let mut result = bitvec![0;0];
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            result.extend(element.enabled_transitions(sub_marking, self, self)?);
+        }
 
         //transform to list of indices
         let mut result2 = Vec::new();
@@ -86,15 +117,24 @@ impl BusinessProcessModelAndNotation {
         Ok(result2)
     }
 
-    pub fn number_of_transitions(&self) -> usize {
-        self.elements.number_of_transitions()
+    pub fn number_of_transitions(&self, marking: &BPMNMarking) -> usize {
+        let mut result = 0;
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            result += element.number_of_transitions(sub_marking);
+        }
+        result
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        BusinessProcessModelAndNotation, semantics::BPMNMarking,
+        BusinessProcessModelAndNotation,
+        semantics::{BPMNMarking, BPMNSubMarking},
         traits::transitionable::Transitionable,
     };
     use std::{
@@ -102,14 +142,13 @@ mod tests {
         fs::{self},
     };
 
-    pub fn debug_transitions(bpmn: &BusinessProcessModelAndNotation) {
+    pub fn debug_transitions(bpmn: &BusinessProcessModelAndNotation, marking: &BPMNMarking) {
         println!("transitions");
-        for transition_index in 0..bpmn.number_of_transitions() {
+        for transition_index in 0..bpmn.number_of_transitions(&marking) {
             println!(
                 "\ttransition {} \t {}",
                 transition_index,
-                bpmn.elements
-                    .transition_debug(transition_index)
+                bpmn.transition_debug(transition_index, marking)
                     .unwrap_or("None".to_string())
             );
         }
@@ -119,45 +158,49 @@ mod tests {
     fn bpmn_semantics() {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
-        assert_eq!(bpmn.number_of_transitions(), 13);
 
         let state = bpmn.get_initial_state().unwrap();
+        assert_eq!(bpmn.number_of_transitions(&state), 13);
 
         assert_eq!(
             state,
             BPMNMarking {
-                sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 message_flow_2_tokens: vec![],
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0],
+                    initial_choice_token: true,
+                    element_index_2_tokens: vec![],
+                    element_index_2_sub_markings: vec![],
+                    root_marking: todo!()
+                }],
                 root_initial_choice_token: true,
-                sub_initial_choice_tokens: HashMap::new(),
-                element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             }
         );
         assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 1);
     }
 
-    //#[test]
-    fn bpmn_lanes_semantics() {
-        let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
-        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
-        assert_eq!(bpmn.number_of_transitions(), 13);
+    // #[test]
+    // fn bpmn_lanes_semantics() {
+    //     let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
+    //     let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    //     assert_eq!(bpmn.number_of_transitions(), 13);
 
-        let state = bpmn.get_initial_state().unwrap();
+    //     let state = bpmn.get_initial_state().unwrap();
 
-        assert_eq!(
-            state,
-            BPMNMarking {
-                sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
-                message_flow_2_tokens: vec![0],
-                root_initial_choice_token: true,
-                sub_initial_choice_tokens: HashMap::new(),
-                element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            }
-        );
+    //     assert_eq!(
+    //         state,
+    //         BPMNMarking {
+    //             sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+    //             message_flow_2_tokens: vec![0],
+    //             root_initial_choice_token: true,
+    //             sub_initial_choice_tokens: HashMap::new(),
+    //             element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    //         }
+    //     );
 
-        debug_transitions(&bpmn);
+    //     debug_transitions(&bpmn);
 
-        println!("{:?}", bpmn.get_enabled_transitions(&state).unwrap());
-        assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 2);
-    }
+    //     println!("{:?}", bpmn.get_enabled_transitions(&state).unwrap());
+    //     assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 2);
+    // }
 }
