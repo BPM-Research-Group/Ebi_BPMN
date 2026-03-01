@@ -3,7 +3,7 @@ use crate::{
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
 };
 use anyhow::{Result, anyhow};
@@ -135,7 +135,8 @@ impl Transitionable for BPMNTask {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
@@ -147,9 +148,9 @@ impl Transitionable for BPMNTask {
             if !source.outgoing_message_flows_always_have_tokens() {
                 //this message must actually be there
 
-                if marking.root_marking.message_flow_2_tokens[message_flow_index] == 0 {
+                if root_marking.message_flow_2_tokens[message_flow_index] == 0 {
                     //message is not present; all transitions are not enabled
-                    return Ok(bitvec![0;self.number_of_transitions(marking)]);
+                    return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
                 }
             } else {
                 //if the message flow has always tokens, we do not need to check the marking
@@ -158,7 +159,7 @@ impl Transitionable for BPMNTask {
             //if there is no incoming message flow, there is no restriction
         }
 
-        Ok(enabledness_xor_join_only!(self, marking))
+        Ok(enabledness_xor_join_only!(self, sub_marking))
     }
 
     fn transition_activity(

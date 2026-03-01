@@ -1,14 +1,16 @@
-use std::rc::Rc;
-
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{
-        objectable::{BPMNObject, EMPTY_FLOWS}, processable::Processable, searchable::Searchable, startable::{InitiationMode, Startable}, transitionable::Transitionable
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
+        searchable::Searchable,
+        startable::{InitiationMode, Startable},
+        transitionable::Transitionable,
     },
     verify_structural_correctness_initiation_mode,
 };
@@ -35,10 +37,9 @@ impl BPMNExpandedSubProcess {
     pub(crate) fn start_process_instance(
         &self,
         bpmn: &BusinessProcessModelAndNotation,
-        root_marking: Rc<BPMNMarking>,
     ) -> Result<BPMNSubMarking> {
         let initiation_mode = self.initiation_mode(bpmn)?;
-        self.to_sub_marking(initiation_mode, root_marking)
+        self.to_sub_marking(&initiation_mode)
     }
 }
 
@@ -156,17 +157,19 @@ impl Transitionable for BPMNExpandedSubProcess {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         //start transitions: like an xor join
-        let mut result = enabledness_xor_join_only!(self, marking);
+        let mut result = enabledness_xor_join_only!(self, sub_marking);
 
         //gather sub-process instantations transitions
-        for sub_marking in &marking.element_index_2_sub_markings[self.local_index] {
+        for sub_marking in &sub_marking.element_index_2_sub_markings[self.local_index] {
             let sub_marking_enabled_transitions =
-                self.elements.enabled_transitions(sub_marking, self, bpmn)?;
+                self.elements
+                    .enabled_transitions(root_marking, sub_marking, self, bpmn)?;
 
             //end transition
             if sub_marking_enabled_transitions.not_any() {
@@ -329,7 +332,7 @@ impl Searchable for BPMNExpandedSubProcess {
 
 #[macro_export]
 macro_rules! to_sub_marking {
-    ($self:ident, $initiation_mode:ident, $root_marking:ident) => {
+    ($self:ident, $initiation_mode:ident) => {
         match $initiation_mode {
             InitiationMode::ChoiceBetweenStartEvents() => {
                 //initiation mode 1: through one or more start events
@@ -341,7 +344,6 @@ macro_rules! to_sub_marking {
                         vec![];
                         $self.elements_non_recursive().len()
                     ],
-                    root_marking: $root_marking,
                 })
             }
             InitiationMode::ParallelElements(elements) => {
@@ -358,7 +360,6 @@ macro_rules! to_sub_marking {
                         vec![];
                         $self.elements_non_recursive().len()
                     ],
-                    root_marking: $root_marking,
                 })
             }
         }
@@ -374,12 +375,8 @@ impl Processable for BPMNExpandedSubProcess {
         &self.sequence_flows
     }
 
-    fn to_sub_marking(
-        &self,
-        initiation_mode: InitiationMode,
-        root_marking: Rc<BPMNMarking>,
-    ) -> Result<BPMNSubMarking> {
-        to_sub_marking!(self, initiation_mode, root_marking)
+    fn to_sub_marking(&self, initiation_mode: &InitiationMode) -> Result<BPMNSubMarking> {
+        to_sub_marking!(self, initiation_mode)
     }
 
     fn is_sub_process(&self) -> bool {

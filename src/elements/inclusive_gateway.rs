@@ -4,7 +4,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow,
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
@@ -116,25 +116,26 @@ impl Transitionable for BPMNInclusiveGateway {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        _root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if self.incoming_sequence_flows.len() == 0 {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
-            if marking.element_index_2_tokens[self.local_index] >= 1 {
+            if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
                 //enabled
-                return Ok(bitvec![1;self.number_of_transitions(marking)]);
+                return Ok(bitvec![1;self.number_of_transitions(sub_marking)]);
             } else {
                 //not enabled
-                return Ok(bitvec![0;self.number_of_transitions(marking)]);
+                return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
             }
         } else {
             //gather a list of incoming sequence flows that do not have a token
             let mut empty_sequence_flows: HashSet<GlobalIndex> = HashSet::new();
             for sequence_flow_local_index in &self.incoming_sequence_flows {
-                if marking.sequence_flow_2_tokens[*sequence_flow_local_index] == 0 {
+                if sub_marking.sequence_flow_2_tokens[*sequence_flow_local_index] == 0 {
                     let sequence_flow =
                         &parent.sequence_flows_non_recursive()[*sequence_flow_local_index];
                     empty_sequence_flows.insert(sequence_flow.global_index);
@@ -143,7 +144,7 @@ impl Transitionable for BPMNInclusiveGateway {
 
             if empty_sequence_flows.len() == self.incoming_sequence_flows.len() {
                 //not enabled as there is no token
-                return Ok(bitvec![0;self.number_of_transitions(marking)]);
+                return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
             }
 
             //perform a backwards search to find tokens that may still come to the gateway
@@ -155,10 +156,11 @@ impl Transitionable for BPMNInclusiveGateway {
                     .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
                     .ok_or_else(|| anyhow!("sequence flow not found"))?;
                 todo!();
+                let other_sub_marking = sub_marking;
                 //this asks the wrong marking
-                if marking.sequence_flow_2_tokens[sequence_flow.flow_index] >= 1 {
+                if other_sub_marking.sequence_flow_2_tokens[sequence_flow.flow_index] >= 1 {
                     //we encountered a token on our search, so the gateway is not enabled
-                    return Ok(bitvec![0;self.number_of_transitions(marking)]);
+                    return Ok(bitvec![0;self.number_of_transitions(other_sub_marking)]);
                 }
 
                 //get the source
@@ -178,7 +180,7 @@ impl Transitionable for BPMNInclusiveGateway {
             }
 
             //enabled
-            return Ok(bitvec![1;self.number_of_transitions(marking)]);
+            return Ok(bitvec![1;self.number_of_transitions(sub_marking)]);
         }
     }
 

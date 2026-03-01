@@ -3,7 +3,7 @@ use crate::{
     element::BPMNElementTrait,
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -135,7 +135,8 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
@@ -146,7 +147,7 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
             if !source.outgoing_message_flows_always_have_tokens() {
                 //this message must actually be there
 
-                if marking.root_marking.message_flow_2_tokens[message_flow_index] == 0 {
+                if root_marking.message_flow_2_tokens[message_flow_index] == 0 {
                     //message is not present; all transitions are not enabled
                     return Ok(bitvec![0; self.incoming_sequence_flows.len()]);
                 }
@@ -158,7 +159,7 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         }
 
         //see which transitions are enabled
-        Ok(enabledness_xor_join_only!(self, marking))
+        Ok(enabledness_xor_join_only!(self, sub_marking))
     }
 
     fn transition_activity(

@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -115,7 +115,8 @@ impl Transitionable for BPMNCollapsedPool {
 
     fn enabled_transitions(
         &self,
-        _marking: &BPMNSubMarking,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {

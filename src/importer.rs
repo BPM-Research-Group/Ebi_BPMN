@@ -101,18 +101,15 @@ mod tests {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-        assert_eq!(bpmn.sequence_flows_non_recursive().len(), 10);
+        assert_eq!(bpmn.sequence_flows_non_recursive().len(), 0);
+        assert_eq!(bpmn.all_elements_ref().len(), 10);
     }
 
     #[test]
     #[should_panic]
-    fn bpmn_pool_import() {
-        let fin = fs::read_to_string("testfiles/model-pool.bpmn").unwrap();
-        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
-
-        assert_eq!(bpmn.elements.len(), 2);
-        assert_eq!(bpmn.sequence_flows_non_recursive().len(), 8);
-        assert_eq!(bpmn.message_flows.len(), 2);
+    fn bpmn_pool_invalid() {
+        let fin = fs::read_to_string("testfiles/invalid-pool.bpmn").unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 
     #[test]

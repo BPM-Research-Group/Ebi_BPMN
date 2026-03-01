@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -114,11 +114,12 @@ impl Transitionable for BPMNExclusiveGateway {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        _root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        let mut result = bitvec![0;self.number_of_transitions(marking)];
+        let mut result = bitvec![0;self.number_of_transitions(sub_marking)];
 
         let outgoing = self.outgoing_sequence_flows.len().max(1);
 
@@ -131,7 +132,7 @@ impl Transitionable for BPMNExclusiveGateway {
                 for (incoming_index, incoming_sequence_flow) in
                     self.incoming_sequence_flows.iter().enumerate()
                 {
-                    if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
                         for i in incoming_index * outgoing..(1 + incoming_index) * outgoing {
                             result.set(i, true);
                         }
@@ -143,20 +144,20 @@ impl Transitionable for BPMNExclusiveGateway {
                 for (incoming_index, incoming_sequence_flow) in
                     self.incoming_sequence_flows.iter().enumerate()
                 {
-                    if marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
                         result.set(incoming_index, true);
                     }
                 }
             }
             (false, true) => {
                 //split only; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.local_index] >= 1 {
+                if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
                     result.fill(true);
                 }
             }
             (false, false) => {
                 //no flows at all; we are in initiation mode 2.
-                if marking.element_index_2_tokens[self.local_index] >= 1 {
+                if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
                     result.set(0, true);
                 }
             }

@@ -4,7 +4,7 @@ use crate::{
     elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
     enabledness_xor_join_only, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -210,11 +210,12 @@ impl Transitionable for BPMNEventBasedGateway {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        _root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        Ok(enabledness_xor_join_only!(self, marking))
+        Ok(enabledness_xor_join_only!(self, sub_marking))
     }
 
     fn transition_activity(

@@ -2,6 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
     traits::{
+        processable::Processable,
         startable::{InitiationMode, Startable},
         transitionable::Transitionable,
     },
@@ -9,9 +10,20 @@ use crate::{
 use anyhow::Result;
 use bitvec::bitvec;
 use ebi_activity_key::Activity;
-use std::rc::Rc;
 
 pub type TransitionIndex = usize;
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct BPMNMarking {
+    pub(crate) element_index_2_sub_markings: Vec<BPMNSubMarking>,
+    pub(crate) root_marking: BPMNRootMarking,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct BPMNRootMarking {
+    pub(crate) root_initial_choice_token: bool,
+    pub(crate) message_flow_2_tokens: Vec<u64>,
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct BPMNSubMarking {
@@ -19,32 +31,48 @@ pub struct BPMNSubMarking {
     pub(crate) initial_choice_token: bool,
     pub(crate) element_index_2_tokens: Vec<u64>,
     pub(crate) element_index_2_sub_markings: Vec<Vec<BPMNSubMarking>>,
-    pub(crate) root_marking: Rc<BPMNMarking>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct BPMNMarking {
-    pub(crate) message_flow_2_tokens: Vec<u64>,
-    pub(crate) element_index_2_sub_markings: Vec<BPMNSubMarking>,
-    pub(crate) root_initial_choice_token: bool,
+impl BPMNSubMarking {
+    pub(crate) fn new_empty() -> Self {
+        Self {
+            sequence_flow_2_tokens: vec![],
+            initial_choice_token: false,
+            element_index_2_tokens: vec![],
+            element_index_2_sub_markings: vec![],
+        }
+    }
 }
 
 impl BusinessProcessModelAndNotation {
     /// BPMN 2.0.2 standard page 238
     pub fn get_initial_state(&self) -> Result<BPMNMarking> {
         //gather the initiation mode
-        let mut mode = InitiationMode::ParallelElements(vec![]);
+        let mut initiation_mode = InitiationMode::ParallelElements(vec![]);
         for element in &self.elements {
             if let BPMNElement::Process(process) = element {
-                mode = mode + process.initiation_mode(self)?;
+                initiation_mode = initiation_mode + process.initiation_mode(self)?;
             }
         }
 
-        if mode.is_choice_between_start_events() {
-            Ok(BPMNMarking {
+        if initiation_mode.is_choice_between_start_events() {
+            let root_marking = BPMNRootMarking {
                 message_flow_2_tokens: vec![0; self.message_flows.len()],
-                element_index_2_sub_markings: vec![],
                 root_initial_choice_token: true,
+            };
+
+            let mut element_index_2_sub_markings = Vec::with_capacity(self.elements.len());
+            for element in self.elements.iter() {
+                if let BPMNElement::Process(process) = element {
+                    element_index_2_sub_markings.push(process.to_sub_marking(&initiation_mode)?);
+                } else {
+                    element_index_2_sub_markings.push(BPMNSubMarking::new_empty());
+                }
+            }
+
+            Ok(BPMNMarking {
+                element_index_2_sub_markings,
+                root_marking,
             })
         } else {
             todo!()
@@ -100,13 +128,23 @@ impl BusinessProcessModelAndNotation {
     }
 
     pub fn get_enabled_transitions(&self, marking: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
+        println!("length elements {}", self.elements.len());
+        println!(
+            "length sub_markings {}",
+            marking.element_index_2_sub_markings.len()
+        );
         let mut result = bitvec![0;0];
         for (element, sub_marking) in self
             .elements
             .iter()
             .zip(marking.element_index_2_sub_markings.iter())
         {
-            result.extend(element.enabled_transitions(sub_marking, self, self)?);
+            result.extend(element.enabled_transitions(
+                &marking.root_marking,
+                sub_marking,
+                self,
+                self,
+            )?);
         }
 
         //transform to list of indices
@@ -134,7 +172,7 @@ impl BusinessProcessModelAndNotation {
 mod tests {
     use crate::{
         BusinessProcessModelAndNotation,
-        semantics::{BPMNMarking, BPMNSubMarking},
+        semantics::{BPMNMarking, BPMNRootMarking, BPMNSubMarking},
         traits::transitionable::Transitionable,
     };
     use std::{
@@ -165,42 +203,53 @@ mod tests {
         assert_eq!(
             state,
             BPMNMarking {
-                message_flow_2_tokens: vec![],
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: true,
+                    message_flow_2_tokens: vec![]
+                },
                 element_index_2_sub_markings: vec![BPMNSubMarking {
-                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0],
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     initial_choice_token: true,
-                    element_index_2_tokens: vec![],
-                    element_index_2_sub_markings: vec![],
-                    root_marking: todo!()
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
                 }],
-                root_initial_choice_token: true,
             }
         );
-        assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 1);
+        let enabled = bpmn.get_enabled_transitions(&state).unwrap();
+        assert_eq!(enabled, [0]);
+
+        debug_transitions(&bpmn, &state);
     }
 
-    // #[test]
-    // fn bpmn_lanes_semantics() {
-    //     let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
-    //     let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
-    //     assert_eq!(bpmn.number_of_transitions(), 13);
+    #[test]
+    fn bpmn_lanes_semantics() {
+        let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-    //     let state = bpmn.get_initial_state().unwrap();
+        let state = bpmn.get_initial_state().unwrap();
 
-    //     assert_eq!(
-    //         state,
-    //         BPMNMarking {
-    //             sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
-    //             message_flow_2_tokens: vec![0],
-    //             root_initial_choice_token: true,
-    //             sub_initial_choice_tokens: HashMap::new(),
-    //             element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    //         }
-    //     );
+        assert_eq!(
+            state,
+            BPMNMarking {
+                element_index_2_sub_markings: vec![
+                    BPMNSubMarking::new_empty(),
+                    BPMNSubMarking {
+                        sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0],
+                        initial_choice_token: true,
+                        element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0],
+                        element_index_2_sub_markings: vec![vec![]; 8],
+                    }
+                ],
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: true,
+                    message_flow_2_tokens: vec![0]
+                }
+            }
+        );
 
-    //     debug_transitions(&bpmn);
+        debug_transitions(&bpmn, &state);
 
-    //     println!("{:?}", bpmn.get_enabled_transitions(&state).unwrap());
-    //     assert_eq!(bpmn.get_enabled_transitions(&state).unwrap().len(), 2);
-    // }
+        let enabled = bpmn.get_enabled_transitions(&state).unwrap();
+        assert_eq!(enabled, [1, 6]);
+    }
 }

@@ -5,7 +5,10 @@ use crate::{
     parser::parser_state::GlobalIndex,
     semantics::BPMNMarking,
     sequence_flow::BPMNSequenceFlow,
-    traits::{objectable::BPMNObject, processable::Processable, searchable::Searchable, transitionable::Transitionable},
+    traits::{
+        objectable::BPMNObject, processable::Processable, searchable::Searchable,
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
@@ -74,7 +77,11 @@ impl BusinessProcessModelAndNotation {
             .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
     }
 
-    pub fn transition_debug(&self, mut transition_index: usize, marking: &BPMNMarking) -> Option<String> {
+    pub fn transition_debug(
+        &self,
+        mut transition_index: usize,
+        marking: &BPMNMarking,
+    ) -> Option<String> {
         for (element, sub_marking) in self
             .elements
             .iter()
@@ -82,7 +89,7 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-
+                return element.transition_debug(transition_index, sub_marking);
             }
             transition_index -= number_of_transitions;
         }
@@ -104,14 +111,14 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
         let mut indices = vec![];
         for element in self.all_elements_ref() {
             if element.is_task() {
-                indices.push(element.local_index());
+                indices.push(element.global_index());
             }
         }
 
         //adjust activities
         for index in indices {
             if let Some(BPMNElement::Task(BPMNTask { activity, .. })) =
-                self.elements.global_index_2_element_mut((index, ()))
+                self.elements.global_index_2_element_mut(index)
             {
                 *activity = translator.translate_activity(&activity);
             } else {

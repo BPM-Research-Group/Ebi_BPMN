@@ -1,9 +1,7 @@
-use std::rc::Rc;
-
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    semantics::{BPMNMarking, BPMNSubMarking},
+    semantics::BPMNSubMarking,
     sequence_flow::BPMNSequenceFlow,
     traits::{objectable::BPMNObject, startable::InitiationMode},
 };
@@ -18,11 +16,7 @@ pub trait Processable: BPMNObject {
     fn sequence_flows_non_recursive(&self) -> &Vec<BPMNSequenceFlow>;
 
     /// return a initial marking
-    fn to_sub_marking(
-        &self,
-        initiation_mode: InitiationMode,
-        root_marking: Rc<BPMNMarking>,
-    ) -> Result<BPMNSubMarking>;
+    fn to_sub_marking(&self, initiation_mode: &InitiationMode) -> Result<BPMNSubMarking>;
 
     /// return whether this is a sub-process, i.e. not a pool or a root of the model
     fn is_sub_process(&self) -> bool;
@@ -39,11 +33,7 @@ impl Processable for BusinessProcessModelAndNotation {
         &EMPTY_FLOWS
     }
 
-    fn to_sub_marking(
-        &self,
-        _initiation_mode: InitiationMode,
-        _root_marking: Rc<BPMNMarking>,
-    ) -> Result<BPMNSubMarking> {
+    fn to_sub_marking(&self, _initiation_mode: &InitiationMode) -> Result<BPMNSubMarking> {
         Err(anyhow!("call the dedicated function"))
     }
 

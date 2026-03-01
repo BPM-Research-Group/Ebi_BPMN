@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::processable::Processable,
 };
 use anyhow::Result;
@@ -17,7 +17,8 @@ pub trait Transitionable {
     /// Returns a BitVec with the transitions that are currently enabled.
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec>;
@@ -44,13 +45,14 @@ impl Transitionable for Vec<BPMNElement> {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         let mut result = bitvec![];
         for element in self {
-            result.extend(element.enabled_transitions(marking, parent, bpmn)?)
+            result.extend(element.enabled_transitions(root_marking, sub_marking, parent, bpmn)?)
         }
         Ok(result)
     }
@@ -95,7 +97,7 @@ macro_rules! number_of_transitions_xor_join_only {
 
 #[macro_export]
 macro_rules! enabledness_xor_join_only {
-    ($s:ident, $marking:ident) => {
+    ($s:ident, $sub_marking:ident) => {
         {
             let mut result = bitvec![0;$s.incoming_sequence_flows.len().max(1)];
             if $s.incoming_sequence_flows.len() >= 1 {
@@ -103,13 +105,13 @@ macro_rules! enabledness_xor_join_only {
                 for (transition_index, incoming_sequence_flow) in
                     $s.incoming_sequence_flows.iter().enumerate()
                 {
-                    if $marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                    if $sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
                         result.set(transition_index, true);
                     }
                 }
             } else {
                 //we are in initiation mode 2
-                if $marking.element_index_2_tokens[$s.local_index] >= 1 {
+                if $sub_marking.element_index_2_tokens[$s.local_index] >= 1 {
                     //enabled
                     result.set(0, true);
                 }

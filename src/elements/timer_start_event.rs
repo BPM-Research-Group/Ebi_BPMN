@@ -3,7 +3,7 @@ use crate::{
     element::BPMNElementTrait,
     enabled_transitions_start_event,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -120,11 +120,17 @@ impl Transitionable for BPMNTimerStartEvent {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        Ok(enabled_transitions_start_event!(self, marking, parent))
+        Ok(enabled_transitions_start_event!(
+            self,
+            root_marking,
+            sub_marking,
+            parent
+        ))
     }
 
     fn transition_activity(

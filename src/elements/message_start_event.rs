@@ -3,7 +3,7 @@ use crate::{
     element::BPMNElementTrait,
     enabled_transitions_start_event,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -137,7 +137,8 @@ impl Transitionable for BPMNMessageStartEvent {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
@@ -147,7 +148,7 @@ impl Transitionable for BPMNMessageStartEvent {
             if source.outgoing_message_flows_always_have_tokens() {
                 //1) the source of the message always has tokens
                 //we are enabled when specifically enabled by the environment
-                if marking.element_index_2_tokens[self.local_index] >= 1 {
+                if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
                     //enabled
                     Ok(bitvec![1;1])
                 } else {
@@ -157,7 +158,7 @@ impl Transitionable for BPMNMessageStartEvent {
             } else {
                 //2) the source of the message is normal -> normal enablement
                 // we are enabled if there is a message on the incoming message flow
-                if marking.root_marking.message_flow_2_tokens[message_flow_index] >= 1 {
+                if root_marking.message_flow_2_tokens[message_flow_index] >= 1 {
                     //enabled
                     Ok(bitvec![1;1])
                 } else {
@@ -167,7 +168,12 @@ impl Transitionable for BPMNMessageStartEvent {
             }
         } else {
             //model does not have an incoming message flow; treat as a regular start event
-            Ok(enabled_transitions_start_event!(self, marking, parent))
+            Ok(enabled_transitions_start_event!(
+                self,
+                root_marking,
+                sub_marking,
+                parent
+            ))
         }
     }
 

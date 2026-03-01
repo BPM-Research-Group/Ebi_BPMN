@@ -16,7 +16,7 @@ use crate::{
         timer_start_event::BPMNTimerStartEvent,
     },
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{
         objectable::BPMNObject, processable::Processable, searchable::Searchable,
@@ -241,11 +241,19 @@ impl Transitionable for BPMNElement {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        enums!(self, enabled_transitions, marking, parent, bpmn)
+        enums!(
+            self,
+            enabled_transitions,
+            root_marking,
+            sub_marking,
+            parent,
+            bpmn
+        )
     }
 
     fn transition_activity(

@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -114,21 +114,22 @@ impl Transitionable for BPMNParallelGateway {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        _root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if self.incoming_sequence_flows.is_empty() {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
-            if marking.element_index_2_tokens[self.local_index] == 0 {
+            if sub_marking.element_index_2_tokens[self.local_index] == 0 {
                 //disabled
                 return Ok(bitvec![0;1]);
             }
         } else {
             //otherwise, every incoming sequence flow must have a token
             for incoming_sequence_flow in &self.incoming_sequence_flows {
-                if marking.sequence_flow_2_tokens[*incoming_sequence_flow] == 0 {
+                if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] == 0 {
                     return Ok(bitvec![0;1]);
                 }
             }

@@ -1,10 +1,8 @@
-use std::rc::Rc;
-
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNMarking, BPMNSubMarking, TransitionIndex},
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     to_sub_marking,
     traits::{
@@ -181,11 +179,13 @@ impl Transitionable for BPMNProcess {
 
     fn enabled_transitions(
         &self,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        self.elements.enabled_transitions(marking, parent, bpmn)
+        self.elements
+            .enabled_transitions(root_marking, sub_marking, parent, bpmn)
     }
 
     fn transition_activity(
@@ -235,12 +235,8 @@ impl Processable for BPMNProcess {
         &self.sequence_flows
     }
 
-    fn to_sub_marking(
-        &self,
-        initiation_mode: InitiationMode,
-        root_marking: Rc<BPMNMarking>,
-    ) -> Result<BPMNSubMarking> {
-        to_sub_marking!(self, initiation_mode, root_marking)
+    fn to_sub_marking(&self, initiation_mode: &InitiationMode) -> Result<BPMNSubMarking> {
+        to_sub_marking!(self, initiation_mode)
     }
 
     fn is_sub_process(&self) -> bool {
