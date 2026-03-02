@@ -1,9 +1,15 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, enabledness_xor_join_only, execute_transition_message_produce, execute_transition_xor_join_consume, number_of_transitions_xor_join_only, parser::parser_state::GlobalIndex, semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex}, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    enabledness_xor_join_only, execute_transition_message_produce,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -139,7 +145,7 @@ impl Transitionable for BPMNMessageEndEvent {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
 
         //produce
         execute_transition_message_produce!(self, root_marking);
@@ -159,6 +165,7 @@ impl Transitionable for BPMNMessageEndEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "message end event `{}`; internal transition {}",

@@ -176,6 +176,7 @@ impl Transitionable for BPMNParallelGateway {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "parallel gateway `{}`; internal transition {}",

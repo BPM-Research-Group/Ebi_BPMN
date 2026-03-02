@@ -162,6 +162,7 @@ impl Transitionable for BPMNTimerStartEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "timer start event `{}`; internal transition {}",

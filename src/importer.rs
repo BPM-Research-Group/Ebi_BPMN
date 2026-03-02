@@ -82,7 +82,9 @@ impl FromStr for BusinessProcessModelAndNotation {
 pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<String> {
     if let Ok(Some(attribute)) = e.try_get_attribute(attribute_name) {
         Some(
-            String::from_utf8_lossy(&attribute.value)
+            attribute
+                .decode_and_unescape_value(e.decoder())
+                .ok()?
                 .as_ref()
                 .to_owned(),
         )

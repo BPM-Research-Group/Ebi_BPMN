@@ -150,6 +150,7 @@ impl Transitionable for BPMNCollapsedPool {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "collapsed pool `{}`; internal transition {}",

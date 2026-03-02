@@ -287,8 +287,9 @@ impl Transitionable for BPMNElement {
         &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
-        enums!(self, transition_debug, transition_index, marking)
+        enums!(self, transition_debug, transition_index, marking, bpmn)
     }
 }
 

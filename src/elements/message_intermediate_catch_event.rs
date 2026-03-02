@@ -172,11 +172,29 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         transition_index: TransitionIndex,
         root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
-        _parent: &dyn Processable,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume token
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+            let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+            let source = &parent.elements_non_recursive()[sequence_flow.source_index];
+            if source.is_event_based_gateway() {
+                //special case: source is an event-based gateway
+
+                //remove all outgoing sequence flows
+                for outgoing_sequence_flow in source.outgoing_message_flows() {
+                    sub_marking.element_index_2_tokens[*outgoing_sequence_flow] -= 1;
+                }
+            } else {
+                //not a special case
+                execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+            }
+        } else {
+            //not a special case
+            execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+        }
+
         //consume message
         if let Some(message_flow_index) = self.incoming_message_flow {
             //there is a connected message flow
@@ -210,6 +228,7 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "message intermediate catch event `{}`; internal transition {}",

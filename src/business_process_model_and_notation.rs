@@ -81,6 +81,7 @@ impl BusinessProcessModelAndNotation {
         &self,
         mut transition_index: usize,
         marking: &BPMNMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         for (element, sub_marking) in self
             .elements
@@ -89,7 +90,7 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_debug(transition_index, sub_marking);
+                return element.transition_debug(transition_index, sub_marking, bpmn);
             }
             transition_index -= number_of_transitions;
         }

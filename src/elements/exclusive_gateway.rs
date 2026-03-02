@@ -187,16 +187,19 @@ impl Transitionable for BPMNExclusiveGateway {
                 //join & split
 
                 //consume
-                sub_marking.sequence_flow_2_tokens[transition_index / outgoing] -= 1;
+                sub_marking.sequence_flow_2_tokens
+                    [self.incoming_sequence_flows[transition_index / outgoing]] -= 1;
 
                 //produce
-                sub_marking.sequence_flow_2_tokens[transition_index % outgoing] += 1;
+                sub_marking.sequence_flow_2_tokens
+                    [self.outgoing_sequence_flows[transition_index % outgoing]] += 1;
             }
             (true, false) => {
                 //join only
 
                 //consume
-                sub_marking.sequence_flow_2_tokens[transition_index] -= 1;
+                sub_marking.sequence_flow_2_tokens
+                    [self.incoming_sequence_flows[transition_index]] -= 1;
             }
             (false, true) => {
                 //split only; we are in initiation mode 2.
@@ -205,7 +208,8 @@ impl Transitionable for BPMNExclusiveGateway {
                 sub_marking.element_index_2_tokens[self.local_index] -= 1;
 
                 //produce
-                sub_marking.sequence_flow_2_tokens[transition_index] += 1;
+                sub_marking.sequence_flow_2_tokens
+                    [self.outgoing_sequence_flows[transition_index]] += 1;
             }
             (false, false) => {
                 //no flows at all; we are in initiation mode 2.
@@ -229,6 +233,7 @@ impl Transitionable for BPMNExclusiveGateway {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "exclusive gateway `{}`; internal transition {}",

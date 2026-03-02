@@ -134,7 +134,7 @@ impl Transitionable for BPMNEndEvent {
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
         Ok(())
     }
 
@@ -150,6 +150,7 @@ impl Transitionable for BPMNEndEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "end event `{}`; internal transition {}",

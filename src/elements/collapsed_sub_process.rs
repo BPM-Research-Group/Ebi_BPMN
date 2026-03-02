@@ -140,7 +140,7 @@ impl Transitionable for BPMNCollapsedSubProcess {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume tokens
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
 
         //do not consume messages
 
@@ -168,6 +168,7 @@ impl Transitionable for BPMNCollapsedSubProcess {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "collapsed sub-process `{}`; internal transition {}",

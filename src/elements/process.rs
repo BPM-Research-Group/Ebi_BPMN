@@ -228,8 +228,10 @@ impl Transitionable for BPMNProcess {
         &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
-        self.elements.transition_debug(transition_index, marking)
+        self.elements
+            .transition_debug(transition_index, marking, bpmn)
     }
 }
 
@@ -264,7 +266,10 @@ impl Processable for BPMNProcess {
     }
 
     fn to_sub_marking(&self, initiation_mode: &InitiationMode) -> Result<BPMNSubMarking> {
-        to_sub_marking!(self, initiation_mode)
+        let result: Result<BPMNSubMarking> = to_sub_marking!(self, initiation_mode);
+        let mut result = result?;
+        result.initial_choice_token = false; //handled by root; should not be accessed; change to false for clarity
+        Ok(result)
     }
 
     fn is_sub_process(&self) -> bool {

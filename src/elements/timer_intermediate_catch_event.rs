@@ -138,11 +138,28 @@ impl Transitionable for BPMNTimerIntermediateCatchEvent {
         transition_index: TransitionIndex,
         _root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
-        _parent: &dyn Processable,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+            let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+            let source = &parent.elements_non_recursive()[sequence_flow.source_index];
+            if source.is_event_based_gateway() {
+                //special case: source is an event-based gateway
+
+                //remove all outgoing sequence flows
+                for outgoing_sequence_flow in source.outgoing_message_flows() {
+                    sub_marking.element_index_2_tokens[*outgoing_sequence_flow] -= 1;
+                }
+            } else {
+                //not a special case
+                execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+            }
+        } else {
+            //not a special case
+            execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+        }
 
         //produce
         execute_transition_parallel_split!(self, sub_marking);
@@ -161,6 +178,7 @@ impl Transitionable for BPMNTimerIntermediateCatchEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "timer intermediate catch event `{}`; internal transition {}",

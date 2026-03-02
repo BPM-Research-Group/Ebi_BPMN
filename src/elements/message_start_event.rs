@@ -231,6 +231,7 @@ impl Transitionable for BPMNMessageStartEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "message start event `{}`; internal transition {}",

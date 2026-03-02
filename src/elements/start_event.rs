@@ -196,6 +196,7 @@ impl Transitionable for BPMNStartEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "start event `{}`; internal transition {}",

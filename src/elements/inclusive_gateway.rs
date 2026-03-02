@@ -188,6 +188,17 @@ impl Transitionable for BPMNInclusiveGateway {
         }
     }
 
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        todo!()
+    }
+
     fn transition_activity(
         &self,
         _transition_index: TransitionIndex,
@@ -200,6 +211,7 @@ impl Transitionable for BPMNInclusiveGateway {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "inclusive gateway `{}`; internal transition {}",

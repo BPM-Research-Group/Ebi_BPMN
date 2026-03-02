@@ -45,6 +45,7 @@ pub trait Transitionable {
         &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String>;
 }
 
@@ -110,11 +111,12 @@ impl Transitionable for Vec<BPMNElement> {
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         for element in self.iter() {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
-                return element.transition_debug(transition_index, marking);
+                return element.transition_debug(transition_index, marking, bpmn);
             }
             transition_index -= number_of_transitions;
         }
@@ -140,13 +142,13 @@ macro_rules! number_of_transitions_xor_join_only {
 
 #[macro_export]
 macro_rules! enabledness_xor_join_only {
-    ($s:ident, $sub_marking:ident) => {
+    ($self:ident, $sub_marking:ident) => {
         {
-            let mut result = bitvec![0;$s.incoming_sequence_flows.len().max(1)];
-            if $s.incoming_sequence_flows.len() >= 1 {
+            let mut result = bitvec![0;$self.incoming_sequence_flows.len().max(1)];
+            if $self.incoming_sequence_flows.len() >= 1 {
                 //we are in initiation mode 1
                 for (transition_index, incoming_sequence_flow) in
-                    $s.incoming_sequence_flows.iter().enumerate()
+                    $self.incoming_sequence_flows.iter().enumerate()
                 {
                     if $sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
                         result.set(transition_index, true);
@@ -154,7 +156,7 @@ macro_rules! enabledness_xor_join_only {
                 }
             } else {
                 //we are in initiation mode 2
-                if $sub_marking.element_index_2_tokens[$s.local_index] >= 1 {
+                if $sub_marking.element_index_2_tokens[$self.local_index] >= 1 {
                     //enabled
                     result.set(0, true);
                 }
@@ -166,8 +168,14 @@ macro_rules! enabledness_xor_join_only {
 
 #[macro_export]
 macro_rules! execute_transition_xor_join_consume {
-    ($sub_marking:ident, $transition_index:expr) => {
-        $sub_marking.sequence_flow_2_tokens[$transition_index] -= 1;
+    ($self: ident, $sub_marking:ident, $transition_index:expr) => {
+        if $self.incoming_sequence_flows.len() >= 1 {
+            //we are in initiation mode 1
+            $sub_marking.sequence_flow_2_tokens[$self.incoming_sequence_flows[$transition_index]] -= 1;
+        } else {
+            //we are in initiation mode 2
+            $sub_marking.element_index_2_tokens[$self.local_index] -= 1;
+        }
     };
 }
 

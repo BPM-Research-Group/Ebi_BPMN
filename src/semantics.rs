@@ -79,7 +79,7 @@ impl BusinessProcessModelAndNotation {
         }
     }
 
-    fn execute_transition(
+    pub fn execute_transition(
         &self,
         state: &mut BPMNMarking,
         mut transition_index: TransitionIndex,
@@ -128,7 +128,7 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                element
+                return element
                     .transition_activity(transition_index, sub_marking)
                     .is_some();
             }
@@ -149,7 +149,7 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                element.transition_activity(transition_index, sub_marking);
+                return element.transition_activity(transition_index, sub_marking);
             }
             transition_index -= number_of_transitions;
         }
@@ -157,11 +157,6 @@ impl BusinessProcessModelAndNotation {
     }
 
     pub fn get_enabled_transitions(&self, marking: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
-        println!("length elements {}", self.elements.len());
-        println!(
-            "length sub_markings {}",
-            marking.element_index_2_sub_markings.len()
-        );
         let mut result = bitvec![0;0];
         for (element, sub_marking) in self
             .elements
@@ -202,12 +197,8 @@ mod tests {
     use crate::{
         BusinessProcessModelAndNotation,
         semantics::{BPMNMarking, BPMNRootMarking, BPMNSubMarking},
-        traits::transitionable::Transitionable,
     };
-    use std::{
-        collections::HashMap,
-        fs::{self},
-    };
+    use std::fs::{self};
 
     pub fn debug_transitions(bpmn: &BusinessProcessModelAndNotation, marking: &BPMNMarking) {
         println!("transitions");
@@ -215,7 +206,7 @@ mod tests {
             println!(
                 "\ttransition {} \t {}",
                 transition_index,
-                bpmn.transition_debug(transition_index, marking)
+                bpmn.transition_debug(transition_index, marking, bpmn)
                     .unwrap_or("None".to_string())
             );
         }
@@ -226,11 +217,12 @@ mod tests {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-        let state = bpmn.get_initial_state().unwrap();
-        assert_eq!(bpmn.number_of_transitions(&state), 13);
+        let mut marking = bpmn.get_initial_state().unwrap();
+        assert_eq!(bpmn.number_of_transitions(&marking), 13);
+        debug_transitions(&bpmn, &marking);
 
         assert_eq!(
-            state,
+            marking,
             BPMNMarking {
                 root_marking: BPMNRootMarking {
                     root_initial_choice_token: true,
@@ -238,16 +230,163 @@ mod tests {
                 },
                 element_index_2_sub_markings: vec![BPMNSubMarking {
                     sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    initial_choice_token: true,
+                    initial_choice_token: false,
                     element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                     element_index_2_sub_markings: vec![vec![]; 9],
                 }],
             }
         );
-        let enabled = bpmn.get_enabled_transitions(&state).unwrap();
+        let enabled = bpmn.get_enabled_transitions(&marking).unwrap();
         assert_eq!(enabled, [0]);
 
-        debug_transitions(&bpmn, &state);
+        //execute start event
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [1]);
+
+        //execute task
+        assert_eq!(
+            bpmn.activity_key
+                .deprocess_activity(&bpmn.get_transition_activity(1, &marking).unwrap()),
+            "Register claim\n(2min)"
+        );
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [2, 3]);
+
+        //execute XOR split
+        bpmn.is_transition_silent(3, &marking);
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [5]);
+
+        //execute task
+        assert_eq!(
+            bpmn.activity_key
+                .deprocess_activity(&bpmn.get_transition_activity(5, &marking).unwrap()),
+            "Check easy claim\n(5 min)"
+        );
+        bpmn.execute_transition(&mut marking, 5).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [9, 10]);
+
+        //execute XOR split
+        bpmn.is_transition_silent(9, &marking);
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [7]);
+
+        //execute XOR join
+        bpmn.is_transition_silent(7, &marking);
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [8]);
+        assert!(!bpmn.is_final_state(&marking).unwrap());
+
+        //execute end event
+        bpmn.is_transition_silent(8, &marking);
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(
+            marking,
+            BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: false,
+                    message_flow_2_tokens: vec![]
+                },
+                element_index_2_sub_markings: vec![BPMNSubMarking {
+                    sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    initial_choice_token: false,
+                    element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    element_index_2_sub_markings: vec![vec![]; 9],
+                }],
+            }
+        );
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), []);
+        assert!(bpmn.is_final_state(&marking).unwrap());
     }
 
     #[test]

@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_xor_join_consume,
+    number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
@@ -14,7 +15,7 @@ use crate::{
     },
     verify_structural_correctness_initiation_mode,
 };
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
 
@@ -189,6 +190,60 @@ impl Transitionable for BPMNExpandedSubProcess {
         Ok(result)
     }
 
+    fn execute_transition(
+        &self,
+        mut transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        if transition_index < number_of_transitions_xor_join_only!(self) {
+            //behaves like an XOR-join to start
+
+            //consume
+            execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+
+            //produce -> start a new sub-process instance
+            sub_marking.element_index_2_sub_markings[self.local_index]
+                .push(self.start_process_instance(bpmn)?);
+            return Ok(());
+        }
+        transition_index -= number_of_transitions_xor_join_only!(self);
+
+        //find the sub-marking that contains the transition index
+        let mut remove_instantiation = None;
+        for (instantiation_index, sub_marking) in sub_marking.element_index_2_sub_markings
+            [self.local_index]
+            .iter_mut()
+            .enumerate()
+        {
+            // one transition to end the instantiation
+            if transition_index == 0 {
+                //end the process instance
+                remove_instantiation = Some(instantiation_index);
+                break;
+            }
+            transition_index -= 1;
+
+            // and the transitions within us
+            let number_of_sub_transitions = self.elements.number_of_transitions(sub_marking);
+            if transition_index < number_of_sub_transitions {
+                self.elements
+                    .execute_transition(transition_index, root_marking, sub_marking, parent, bpmn)
+                    .with_context(|| format!("Execute transition in sub-process `{}`.", self.id))?;
+            }
+            transition_index -= number_of_sub_transitions;
+        }
+
+        if let Some(remove_instantiation_index) = remove_instantiation {
+            sub_marking.element_index_2_sub_markings[self.local_index]
+                .remove(remove_instantiation_index);
+        }
+
+        Ok(())
+    }
+
     fn transition_activity(
         &self,
         mut transition_index: TransitionIndex,
@@ -223,6 +278,7 @@ impl Transitionable for BPMNExpandedSubProcess {
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         //start transition
         if transition_index < self.incoming_sequence_flows.len().max(1) {
@@ -252,7 +308,7 @@ impl Transitionable for BPMNExpandedSubProcess {
             if transition_index < sub_number_of_transitions {
                 return self
                     .elements
-                    .transition_debug(transition_index, &sub_marking);
+                    .transition_debug(transition_index, &sub_marking, bpmn);
             }
             transition_index -= sub_number_of_transitions;
         }

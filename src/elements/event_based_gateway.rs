@@ -2,7 +2,8 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
-    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_parallel_split,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -222,6 +223,23 @@ impl Transitionable for BPMNEventBasedGateway {
         Ok(enabledness_xor_join_only!(self, sub_marking))
     }
 
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //consume
+        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+
+        //produce
+        execute_transition_parallel_split!(self, sub_marking);
+
+        Ok(())
+    }
+
     fn transition_activity(
         &self,
         _transition_index: TransitionIndex,
@@ -234,6 +252,7 @@ impl Transitionable for BPMNEventBasedGateway {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "event-based gateway `{}`; internal transition {}",

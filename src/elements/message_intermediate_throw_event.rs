@@ -144,7 +144,7 @@ impl Transitionable for BPMNMessageIntermediateThrowEvent {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
 
         //produce
         execute_transition_parallel_split!(self, sub_marking);
@@ -164,6 +164,7 @@ impl Transitionable for BPMNMessageIntermediateThrowEvent {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
             "message intermediate throw event `{}`; internal transition {}",
