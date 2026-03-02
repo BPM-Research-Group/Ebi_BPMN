@@ -98,6 +98,10 @@ impl BPMNObject for BPMNExclusiveGateway {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -164,6 +168,53 @@ impl Transitionable for BPMNExclusiveGateway {
         };
 
         Ok(result)
+    }
+
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        let outgoing = self.outgoing_sequence_flows.len().max(1);
+        match (
+            self.incoming_sequence_flows.len() > 0,
+            self.outgoing_sequence_flows.len() > 0,
+        ) {
+            (true, true) => {
+                //join & split
+
+                //consume
+                sub_marking.sequence_flow_2_tokens[transition_index / outgoing] -= 1;
+
+                //produce
+                sub_marking.sequence_flow_2_tokens[transition_index % outgoing] += 1;
+            }
+            (true, false) => {
+                //join only
+
+                //consume
+                sub_marking.sequence_flow_2_tokens[transition_index] -= 1;
+            }
+            (false, true) => {
+                //split only; we are in initiation mode 2.
+
+                //consume
+                sub_marking.element_index_2_tokens[self.local_index] -= 1;
+
+                //produce
+                sub_marking.sequence_flow_2_tokens[transition_index] += 1;
+            }
+            (false, false) => {
+                //no flows at all; we are in initiation mode 2.
+
+                //consume
+                sub_marking.element_index_2_tokens[self.local_index] -= 1;
+            }
+        }
+        Ok(())
     }
 
     fn transition_activity(

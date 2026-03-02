@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_xor_join_consume,
+    number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -97,6 +98,10 @@ impl BPMNObject for BPMNEndEvent {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -119,6 +124,18 @@ impl Transitionable for BPMNEndEvent {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(enabledness_xor_join_only!(self, sub_marking))
+    }
+
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        Ok(())
     }
 
     fn transition_activity(

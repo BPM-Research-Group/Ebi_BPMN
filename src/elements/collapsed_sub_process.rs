@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_parallel_split,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
@@ -100,6 +101,10 @@ impl BPMNObject for BPMNCollapsedSubProcess {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        true
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -124,6 +129,31 @@ impl Transitionable for BPMNCollapsedSubProcess {
         //a collapsed sub-process behaves according to the sequence flows
         //messages do not influence enablement
         Ok(enabledness_xor_join_only!(self, sub_marking))
+    }
+
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //consume tokens
+        execute_transition_xor_join_consume!(sub_marking, transition_index);
+
+        //do not consume messages
+
+        //produce tokens
+        execute_transition_parallel_split!(self, sub_marking);
+
+        //produce messages
+        for outgoing_message_flow in &self.outgoing_message_flows {
+            // A collapsed sub-process can produce arbitrarily many messages; we set one that should never be removed.
+            root_marking.message_flow_2_tokens[*outgoing_message_flow] = 1;
+        }
+
+        Ok(())
     }
 
     fn transition_activity(

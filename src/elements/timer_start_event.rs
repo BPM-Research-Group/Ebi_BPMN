@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabled_transitions_start_event,
+    enabled_transitions_start_event, execute_transition_parallel_split,
+    execute_transition_start_event,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -104,6 +105,10 @@ impl BPMNObject for BPMNTimerStartEvent {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
@@ -131,6 +136,18 @@ impl Transitionable for BPMNTimerStartEvent {
             sub_marking,
             parent
         ))
+    }
+
+    fn execute_transition(
+        &self,
+        _transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        execute_transition_start_event!(self, root_marking, sub_marking, parent);
+        Ok(())
     }
 
     fn transition_activity(

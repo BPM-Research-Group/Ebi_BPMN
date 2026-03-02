@@ -38,6 +38,9 @@ pub trait BPMNObject {
     /// return whether the outgoing message flows of this object are always enabled
     fn outgoing_message_flows_always_have_tokens(&self) -> bool;
 
+    /// return whether any outgoing message flow of this object cannot be removed when it is there
+    fn outgoing_messages_cannot_be_removed(&self) -> bool;
+
     /// return whether this object can have incoming sequence flows
     fn can_have_incoming_sequence_flows(&self) -> bool;
 
@@ -90,6 +93,10 @@ impl BPMNObject for BusinessProcessModelAndNotation {
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
+        false
+    }
+
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
         false
     }
 

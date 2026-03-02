@@ -1,13 +1,9 @@
 use crate::{
-    BusinessProcessModelAndNotation,
-    element::BPMNElementTrait,
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    traits::{
+    BusinessProcessModelAndNotation, element::BPMNElementTrait, execute_transition_parallel_split, parser::parser_state::GlobalIndex, semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex}, traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    },
+    }
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::BitVec};
@@ -98,6 +94,10 @@ impl BPMNObject for BPMNParallelGateway {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -130,11 +130,38 @@ impl Transitionable for BPMNParallelGateway {
             //otherwise, every incoming sequence flow must have a token
             for incoming_sequence_flow in &self.incoming_sequence_flows {
                 if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] == 0 {
+                    //disabled
                     return Ok(bitvec![0;1]);
                 }
             }
         }
         Ok(bitvec![1;1])
+    }
+
+    fn execute_transition(
+        &self,
+        _transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //consume
+        if self.incoming_sequence_flows.is_empty() {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow
+            sub_marking.element_index_2_tokens[self.local_index] -= 1;
+        } else {
+            //otherwise, every incoming sequence flow must have a token
+            for incoming_sequence_flow in &self.incoming_sequence_flows {
+                sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] -= 1;
+            }
+        }
+
+        //produce
+        execute_transition_parallel_split!(self, sub_marking);
+
+        Ok(())
     }
 
     fn transition_activity(

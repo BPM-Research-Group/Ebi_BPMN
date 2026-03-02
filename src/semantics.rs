@@ -7,7 +7,7 @@ use crate::{
         transitionable::Transitionable,
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use bitvec::bitvec;
 use ebi_activity_key::Activity;
 
@@ -82,9 +82,34 @@ impl BusinessProcessModelAndNotation {
     fn execute_transition(
         &self,
         state: &mut BPMNMarking,
-        transition: TransitionIndex,
+        mut transition_index: TransitionIndex,
     ) -> Result<()> {
-        todo!()
+        let transition_index_debug = transition_index;
+        let BPMNMarking {
+            element_index_2_sub_markings,
+            root_marking,
+        } = state;
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(element_index_2_sub_markings.iter_mut())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.execute_transition(
+                    transition_index,
+                    root_marking,
+                    sub_marking,
+                    self,
+                    self,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        Err(anyhow!(
+            "transition {} is not enabled, as it is unknown",
+            transition_index_debug
+        ))
     }
 
     pub fn is_final_state(&self, state: &BPMNMarking) -> Result<bool> {
@@ -93,7 +118,7 @@ impl BusinessProcessModelAndNotation {
 
     pub fn is_transition_silent(
         &self,
-        transition_index: TransitionIndex,
+        mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
     ) -> bool {
         for (element, sub_marking) in self
@@ -101,17 +126,20 @@ impl BusinessProcessModelAndNotation {
             .iter()
             .zip(marking.element_index_2_sub_markings.iter())
         {
-            let x = element.transition_activity(transition_index, sub_marking);
-            if x.is_some() {
-                return false;
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                element
+                    .transition_activity(transition_index, sub_marking)
+                    .is_some();
             }
+            transition_index -= number_of_transitions;
         }
         true
     }
 
     pub fn get_transition_activity(
         &self,
-        transition_index: TransitionIndex,
+        mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
     ) -> Option<Activity> {
         for (element, sub_marking) in self
@@ -119,10 +147,11 @@ impl BusinessProcessModelAndNotation {
             .iter()
             .zip(marking.element_index_2_sub_markings.iter())
         {
-            let x = element.transition_activity(transition_index, sub_marking);
-            if x.is_some() {
-                return x;
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                element.transition_activity(transition_index, sub_marking);
             }
+            transition_index -= number_of_transitions;
         }
         None
     }

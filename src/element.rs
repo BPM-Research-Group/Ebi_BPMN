@@ -256,6 +256,25 @@ impl Transitionable for BPMNElement {
         )
     }
 
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        enums!(
+            self,
+            execute_transition,
+            transition_index,
+            root_marking,
+            sub_marking,
+            parent,
+            bpmn
+        )
+    }
+
     fn transition_activity(
         &self,
         transition_index: TransitionIndex,
@@ -329,6 +348,10 @@ impl BPMNObject for BPMNElement {
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
         enums!(self, outgoing_message_flows_always_have_tokens,)
+    }
+
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        enums!(self, outgoing_messages_cannot_be_removed,)
     }
 
     fn can_have_incoming_sequence_flows(&self) -> bool {

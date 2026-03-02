@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_parallel_split,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -119,6 +120,10 @@ impl BPMNObject for BPMNMessageIntermediateCatchEvent {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -160,6 +165,37 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
 
         //see which transitions are enabled
         Ok(enabledness_xor_join_only!(self, sub_marking))
+    }
+
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //consume token
+        execute_transition_xor_join_consume!(sub_marking, transition_index);
+        //consume message
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //there is a connected message flow
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if !source.outgoing_message_flows_always_have_tokens() {
+                //this message must actually be there
+                if !source.outgoing_messages_cannot_be_removed() {
+                    root_marking.message_flow_2_tokens[message_flow_index] -= 1;
+                }
+            } else {
+                //if the message flow has always tokens, we do not need to check them
+            }
+        } else {
+            //if there is no incoming message flow, we assume there is always a message
+        }
+
+        //produce
+        execute_transition_parallel_split!(self, sub_marking);
+        Ok(())
     }
 
     fn transition_activity(

@@ -4,7 +4,7 @@ use crate::{
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::processable::Processable,
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::Lsb0, vec::BitVec};
 use ebi_activity_key::Activity;
 
@@ -22,6 +22,16 @@ pub trait Transitionable {
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec>;
+
+    /// Execute the transition
+    fn execute_transition(
+        &self,
+        transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()>;
 
     /// If the transition exists and is labelled, returns the label. Otherwise, returns None.
     fn transition_activity(
@@ -57,15 +67,39 @@ impl Transitionable for Vec<BPMNElement> {
         Ok(result)
     }
 
+    fn execute_transition(
+        &self,
+        mut transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        for element in self.iter() {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.execute_transition(
+                    transition_index,
+                    root_marking,
+                    sub_marking,
+                    parent,
+                    bpmn,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        Err(anyhow!("transition not found"))
+    }
+
     fn transition_activity(
         &self,
         mut transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        sub_marking: &BPMNSubMarking,
     ) -> Option<Activity> {
         for element in self.iter() {
-            let number_of_transitions = element.number_of_transitions(marking);
+            let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_activity(transition_index, marking);
+                return element.transition_activity(transition_index, sub_marking);
             }
             transition_index -= number_of_transitions;
         }
@@ -86,6 +120,15 @@ impl Transitionable for Vec<BPMNElement> {
         }
         None
     }
+}
+
+#[macro_export]
+macro_rules! execute_transition_parallel_split {
+    ($self:ident, $sub_marking:ident) => {
+        for outgoing_sequence_flow in &$self.outgoing_sequence_flows {
+            $sub_marking.sequence_flow_2_tokens[*outgoing_sequence_flow] += 1;
+        }
+    };
 }
 
 #[macro_export]
@@ -117,6 +160,22 @@ macro_rules! enabledness_xor_join_only {
                 }
             }
             result
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! execute_transition_xor_join_consume {
+    ($sub_marking:ident, $transition_index:expr) => {
+        $sub_marking.sequence_flow_2_tokens[$transition_index] -= 1;
+    };
+}
+
+#[macro_export]
+macro_rules! execute_transition_message_produce {
+    ($self:ident, $root_marking:ident) => {
+        if let Some(message_flow) = $self.outgoing_message_flow {
+            $root_marking.message_flow_2_tokens[message_flow] += 1;
         }
     };
 }

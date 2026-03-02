@@ -1,6 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
+    execute_transition_parallel_split,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -96,6 +97,10 @@ impl BPMNObject for BPMNStartEvent {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
@@ -124,6 +129,29 @@ macro_rules! enabled_transitions_start_event {
     };
 }
 
+#[macro_export]
+macro_rules! execute_transition_start_event {
+    ($self:ident, $root_marking:ident, $sub_marking:ident, $parent:ident) => {{
+        //consume
+        if !$parent.is_sub_process() && $root_marking.root_initial_choice_token {
+            //enabled by root initial choice token
+            $root_marking.root_initial_choice_token = false;
+        } else if $parent.is_sub_process() && $sub_marking.initial_choice_token {
+            //enabled by sub-process initial choice token
+            $sub_marking.initial_choice_token = false;
+        } else if $sub_marking.element_index_2_tokens[$self.local_index] >= 1 {
+            //enabled by element token
+            $sub_marking.element_index_2_tokens[$self.local_index] -= 1;
+        } else {
+            //not enabled
+            return Err(anyhow!("transition is not enabled"));
+        }
+
+        //produce
+        execute_transition_parallel_split!($self, $sub_marking);
+    }};
+}
+
 impl Transitionable for BPMNStartEvent {
     fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         1
@@ -142,6 +170,18 @@ impl Transitionable for BPMNStartEvent {
             sub_marking,
             parent
         ))
+    }
+
+    fn execute_transition(
+        &self,
+        _transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        execute_transition_start_event!(self, root_marking, sub_marking, parent);
+        Ok(())
     }
 
     fn transition_activity(

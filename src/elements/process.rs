@@ -163,6 +163,10 @@ impl BPMNObject for BPMNProcess {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
@@ -186,6 +190,30 @@ impl Transitionable for BPMNProcess {
     ) -> Result<BitVec> {
         self.elements
             .enabled_transitions(root_marking, sub_marking, parent, bpmn)
+    }
+
+    fn execute_transition(
+        &self,
+        mut transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        for element in &self.elements {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.execute_transition(
+                    transition_index,
+                    root_marking,
+                    sub_marking,
+                    self,
+                    bpmn,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        Ok(())
     }
 
     fn transition_activity(

@@ -194,6 +194,10 @@ impl BPMNObject for BPMNEventBasedGateway {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }

@@ -99,6 +99,10 @@ impl BPMNObject for BPMNCollapsedPool {
         true
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
@@ -121,6 +125,17 @@ impl Transitionable for BPMNCollapsedPool {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         Ok(bitvec![0;0])
+    }
+
+    fn execute_transition(
+        &self,
+        _transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
+        _sub_marking: &mut BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        Ok(())
     }
 
     fn transition_activity(

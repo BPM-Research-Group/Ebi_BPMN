@@ -1,7 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabled_transitions_start_event,
+    enabled_transitions_start_event, execute_transition_parallel_split,
+    execute_transition_start_event,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
@@ -121,6 +122,10 @@ impl BPMNObject for BPMNMessageStartEvent {
         false
     }
 
+    fn outgoing_messages_cannot_be_removed(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
@@ -143,6 +148,8 @@ impl Transitionable for BPMNMessageStartEvent {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if let Some(message_flow_index) = self.incoming_message_flow {
+            //event has a message attached
+
             //Two cases apply:
             let source = bpmn.message_flow_index_2_source(message_flow_index)?;
             if source.outgoing_message_flows_always_have_tokens() {
@@ -175,6 +182,41 @@ impl Transitionable for BPMNMessageStartEvent {
                 parent
             ))
         }
+    }
+
+    fn execute_transition(
+        &self,
+        _transition_index: TransitionIndex,
+        root_marking: &mut BPMNRootMarking,
+        sub_marking: &mut BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //consume
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //event has a message attached
+
+            //Two cases apply:
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.outgoing_message_flows_always_have_tokens() {
+                //1) the source of the message always has tokens
+                //we are enabled when specifically enabled by the environment
+                sub_marking.element_index_2_tokens[self.local_index] -= 1;
+            } else {
+                //2) the source of the message is normal -> normal enablement
+                // we are enabled if there is a message on the incoming message flow
+                if !source.outgoing_messages_cannot_be_removed() {
+                    root_marking.message_flow_2_tokens[message_flow_index] -= 1;
+                }
+            }
+        } else {
+            //model does not have an incoming message flow; treat as a regular start event
+            execute_transition_start_event!(self, root_marking, sub_marking, parent);
+        }
+
+        //produce
+        execute_transition_parallel_split!(self, sub_marking);
+        Ok(())
     }
 
     fn transition_activity(
