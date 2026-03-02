@@ -399,19 +399,19 @@ mod tests {
         assert_eq!(
             state,
             BPMNMarking {
+                root_marking: BPMNRootMarking {
+                    root_initial_choice_token: true,
+                    message_flow_2_tokens: vec![0]
+                },
                 element_index_2_sub_markings: vec![
                     BPMNSubMarking::new_empty(),
                     BPMNSubMarking {
                         sequence_flow_2_tokens: vec![0, 0, 0, 0, 0, 0, 0],
-                        initial_choice_token: true,
+                        initial_choice_token: false,
                         element_index_2_tokens: vec![0, 0, 0, 0, 0, 0, 0, 0],
                         element_index_2_sub_markings: vec![vec![]; 8],
                     }
                 ],
-                root_marking: BPMNRootMarking {
-                    root_initial_choice_token: true,
-                    message_flow_2_tokens: vec![0]
-                }
             }
         );
 
