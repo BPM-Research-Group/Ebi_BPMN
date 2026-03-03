@@ -18,6 +18,11 @@ For now, this crate focuses on the behaviour of BPMN models; not on the data or 
 
 Other elements are gracefully ignored, as long as they do not have in- or outgoing message or sequence flows.
 
+# Operational semantics
+
+The crate provides methods to traverse the state space of a BPMN model.
+An exception is the inclusive (OR) gateway, whose operational semantics currently is work-in-progress.
+
 # Process instance intitation
 
 In accordance with the BPMN standard, a process instance can start as follows:
