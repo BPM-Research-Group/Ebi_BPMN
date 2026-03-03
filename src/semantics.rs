@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
@@ -31,6 +33,12 @@ pub struct BPMNSubMarking {
     pub(crate) initial_choice_token: bool,
     pub(crate) element_index_2_tokens: Vec<u64>,
     pub(crate) element_index_2_sub_markings: Vec<Vec<BPMNSubMarking>>,
+}
+
+impl Display for BPMNMarking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", stringify!(self))
+    }
 }
 
 impl BPMNSubMarking {
