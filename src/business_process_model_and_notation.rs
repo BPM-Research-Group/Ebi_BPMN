@@ -63,7 +63,7 @@ impl BusinessProcessModelAndNotation {
             .message_flows
             .get(message_flow_index)
             .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
-        self.global_index_2_element(message_flow.source_element_index)
+        self.global_index_2_element(message_flow.source_global_index)
             .ok_or_else(|| {
                 anyhow!(
                     "the source of message flow `{}` was not found",
@@ -78,7 +78,7 @@ impl BusinessProcessModelAndNotation {
             .message_flows
             .get(message_flow_index)
             .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
-        self.global_index_2_element(message_flow.target_element_index)
+        self.global_index_2_element(message_flow.target_global_index)
             .ok_or_else(|| {
                 anyhow!(
                     "the target of message flow `{}` was not found",

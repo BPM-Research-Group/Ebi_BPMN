@@ -53,7 +53,7 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                 .sequence_flows_non_recursive()
                 .get(*sequence_flow_index)
             {
-                let target = &parent.elements_non_recursive()[sequence_flow.target_index];
+                let target = &parent.elements_non_recursive()[sequence_flow.target_local_index];
                 //the target must not have any other incominge sequence flows
                 if target.incoming_sequence_flows().len() > 1 {
                     return Err(anyhow!(

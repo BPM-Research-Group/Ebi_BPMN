@@ -140,10 +140,10 @@ impl Closeable for Definitions {
                 message_flows.push(BPMNMessageFlow {
                     global_index,
                     id,
-                    source_element_index,
+                    source_global_index: source_element_index,
                     source_pool_index: source_pool_index
                         .ok_or_else(|| anyhow!("pool not found"))?,
-                    target_element_index,
+                    target_global_index: target_element_index,
                     target_pool_index: target_pool_index
                         .ok_or_else(|| anyhow!("pool not found {}", target_id))?,
                 });

@@ -174,7 +174,7 @@ impl Transitionable for BPMNInclusiveGateway {
                 //get the source
                 let source = process
                     .elements_non_recursive()
-                    .get(sequence_flow.source_index)
+                    .get(sequence_flow.source_local_index)
                     .ok_or_else(|| anyhow!("source not found"))?;
                 for next_sequence_flow_index in source.incoming_sequence_flows() {
                     let next_sequence_flow = process

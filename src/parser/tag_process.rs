@@ -8,7 +8,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
     sequence_flow::BPMNSequenceFlow,
-    traits::searchable::Searchable,
+    traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Context, Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
@@ -61,7 +61,7 @@ macro_rules! process_internal_sequence_flows {
                     target_id,
                 } = draft_sequence_flow;
                 let new_flow_index = sequence_flows.len();
-                let source_index = $sub_elements
+                let source_local_index = $sub_elements
                     .id_2_local_index(&source_id)
                     .ok_or_else(|| {
                         //attempt to give a more helpful error with other found tags
@@ -83,7 +83,7 @@ macro_rules! process_internal_sequence_flows {
                 //register the sequence flow in the source element
                 let source =
                     $sub_elements
-                        .local_index_2_element_mut(source_index)
+                        .local_index_2_element_mut(source_local_index)
                         .ok_or_else(|| {
                             anyhow!(
                                 "Could not find source with id `{}` of sequence flow `{}`.",
@@ -100,8 +100,9 @@ macro_rules! process_internal_sequence_flows {
                             source_id,
                         )
                     })?;
+                let source_global_index = source.global_index();
 
-                let target_index = $sub_elements
+                let target_local_index = $sub_elements
                     .id_2_local_index(&target_id)
                     .ok_or_else(|| {
                         //attempt to give a more helpful error message
@@ -121,15 +122,16 @@ macro_rules! process_internal_sequence_flows {
                     }
                     })?;
                 //register the sequence flow in the target element
-                let target = $sub_elements.local_index_2_element_mut(target_index).ok_or_else(
+                let target = $sub_elements.local_index_2_element_mut(target_local_index).ok_or_else(
                     || {
                         anyhow!(
                             "Could not target `{}` of sequence flow `{}`.",
-                            source_id,
+                            target_id,
                             id
                         )
                     },
                 )?;
+                let target_global_index = target.global_index();
                 target
                     .add_incoming_sequence_flow(new_flow_index)
                     .with_context(|| {
@@ -144,8 +146,10 @@ macro_rules! process_internal_sequence_flows {
                     global_index,
                     id,
                     flow_index: new_flow_index,
-                    source_index,
-                    target_index,
+                    source_global_index,
+                    source_local_index,
+                    target_global_index,
+                    target_local_index,
                 });
             }
             sequence_flows

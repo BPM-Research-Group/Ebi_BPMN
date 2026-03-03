@@ -12,8 +12,8 @@ impl Writable for BPMNSequenceFlow {
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> anyhow::Result<()> {
-        let source_id = parent.elements_non_recursive()[self.source_index].id();
-        let target_id = parent.elements_non_recursive()[self.target_index].id();
+        let source_id = parent.elements_non_recursive()[self.source_local_index].id();
+        let target_id = parent.elements_non_recursive()[self.target_local_index].id();
 
         x.write_event(Event::Empty(
             BytesStart::new("sequenceFlow").with_attributes([

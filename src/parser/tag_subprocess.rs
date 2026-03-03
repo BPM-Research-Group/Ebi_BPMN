@@ -13,7 +13,7 @@ use crate::{
     },
     process_internal_sequence_flows,
     sequence_flow::BPMNSequenceFlow,
-    traits::searchable::Searchable,
+    traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Context, Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};

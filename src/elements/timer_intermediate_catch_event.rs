@@ -148,7 +148,7 @@ impl Transitionable for BPMNTimerIntermediateCatchEvent {
         //consume
         if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
             let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
-            let source = &parent.elements_non_recursive()[sequence_flow.source_index];
+            let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
             if source.is_event_based_gateway() {
                 //special case: source is an event-based gateway
 
