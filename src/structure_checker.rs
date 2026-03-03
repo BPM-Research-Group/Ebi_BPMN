@@ -6,7 +6,7 @@ use anyhow::{Context, Result, anyhow};
 impl BusinessProcessModelAndNotation {
     pub fn is_structurally_correct(&self) -> Result<()> {
         //check elements
-        for element in self.all_elements_ref() {
+        for element in self.elements() {
             element
                 .verify_structural_correctness(self, self)
                 .with_context(|| anyhow!("element `{}`", element.id()))?;

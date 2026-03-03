@@ -68,6 +68,12 @@ impl Searchable for BPMNProcess {
         self.elements.all_elements_ref()
     }
 
+    fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {
+        let mut result: Vec<&BPMNSequenceFlow> = self.sequence_flows.iter().collect();
+        result.extend(self.elements.all_sequence_flows_ref());
+        result
+    }
+
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         self.elements.global_index_2_element(index)
     }

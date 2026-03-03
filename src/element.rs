@@ -199,6 +199,14 @@ impl Searchable for BPMNElement {
         }
     }
 
+    fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {
+        match self {
+            BPMNElement::ExpandedSubProcess(p) => p.all_sequence_flows_ref(),
+            BPMNElement::Process(p) => p.all_sequence_flows_ref(),
+            _ => vec![],
+        }
+    }
+
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         if self.global_index() == index {
             Some(self)

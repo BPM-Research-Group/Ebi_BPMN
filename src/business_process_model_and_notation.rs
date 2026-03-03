@@ -32,15 +32,19 @@ pub struct BusinessProcessModelAndNotation {
 
 impl BusinessProcessModelAndNotation {
     pub fn number_of_elements(&self) -> usize {
-        self.all_elements_ref().len()
+        self.elements().len()
     }
 
     pub fn number_of_message_flows(&self) -> usize {
         self.message_flows.len()
     }
 
-    pub fn all_elements_ref(&self) -> Vec<&BPMNElement> {
+    pub fn elements(&self) -> Vec<&BPMNElement> {
         self.elements.all_elements_ref()
+    }
+
+    pub fn sequence_flows(&self) -> Vec<&BPMNSequenceFlow> {
+        self.elements.all_sequence_flows_ref()
     }
 
     /// find an element with the given index
@@ -125,7 +129,7 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
 
         //gather indices of elements
         let mut indices = vec![];
-        for element in self.all_elements_ref() {
+        for element in self.elements() {
             if element.is_task() {
                 indices.push(element.global_index());
             }
@@ -149,7 +153,7 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
 #[cfg(any(test, feature = "testactivities"))]
 impl TestActivityKey for BusinessProcessModelAndNotation {
     fn test_activity_key(&self) {
-        for element in self.all_elements_ref() {
+        for element in self.elements() {
             if let BPMNElement::Task(BPMNTask { activity, .. }) = element {
                 self.activity_key.assert_activity_is_of_key(activity);
             }

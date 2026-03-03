@@ -104,7 +104,7 @@ mod tests {
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
         assert_eq!(bpmn.sequence_flows_non_recursive().len(), 0);
-        assert_eq!(bpmn.all_elements_ref().len(), 10);
+        assert_eq!(bpmn.elements().len(), 10);
     }
 
     #[test]
