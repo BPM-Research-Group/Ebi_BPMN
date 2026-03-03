@@ -6,9 +6,10 @@ use crate::{
     traits::{objectable::BPMNObject, startable::InitiationMode},
 };
 use anyhow::{Result, anyhow};
+use std::fmt::Debug;
 
 /// a trait with methods for container elements
-pub trait Processable: BPMNObject {
+pub trait Processable: BPMNObject + Debug {
     /// return the elements of this process, but do not recurse
     fn elements_non_recursive(&self) -> &Vec<BPMNElement>;
 

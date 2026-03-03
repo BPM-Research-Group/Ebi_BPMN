@@ -195,7 +195,7 @@ impl Transitionable for BPMNExpandedSubProcess {
         mut transition_index: TransitionIndex,
         root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
-        parent: &dyn Processable,
+        _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         if transition_index < number_of_transitions_xor_join_only!(self) {
@@ -230,8 +230,9 @@ impl Transitionable for BPMNExpandedSubProcess {
             let number_of_sub_transitions = self.elements.number_of_transitions(sub_marking);
             if transition_index < number_of_sub_transitions {
                 self.elements
-                    .execute_transition(transition_index, root_marking, sub_marking, parent, bpmn)
+                    .execute_transition(transition_index, root_marking, sub_marking, self, bpmn)
                     .with_context(|| format!("Execute transition in sub-process `{}`.", self.id))?;
+                return Ok(());
             }
             transition_index -= number_of_sub_transitions;
         }
