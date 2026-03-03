@@ -111,6 +111,10 @@ impl BPMNObject for BPMNMessageIntermediateThrowEvent {
         false
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -141,14 +145,14 @@ impl Transitionable for BPMNMessageIntermediateThrowEvent {
         root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
         _parent: &dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
         execute_transition_xor_join_consume!(self, sub_marking, transition_index);
 
         //produce
         execute_transition_parallel_split!(self, sub_marking);
-        execute_transition_message_produce!(self, root_marking);
+        execute_transition_message_produce!(self, root_marking, bpmn);
         Ok(())
     }
 

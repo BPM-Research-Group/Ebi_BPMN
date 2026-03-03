@@ -125,6 +125,10 @@ impl BPMNObject for BPMNTask {
         false
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -214,9 +218,9 @@ impl Transitionable for BPMNTask {
             }
         }
 
-        //produce tokens
+        //produce
         execute_transition_parallel_split!(self, sub_marking);
-        execute_transition_message_produce!(self, root_marking);
+        execute_transition_message_produce!(self, root_marking, bpmn);
 
         Ok(())
     }

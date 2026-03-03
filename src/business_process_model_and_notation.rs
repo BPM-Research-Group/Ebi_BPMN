@@ -68,6 +68,21 @@ impl BusinessProcessModelAndNotation {
             })
     }
 
+    /// return the element that is the target of the given message flow
+    pub fn message_flow_index_2_target(&self, message_flow_index: usize) -> Result<&BPMNElement> {
+        let message_flow = self
+            .message_flows
+            .get(message_flow_index)
+            .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
+        self.global_index_2_element(message_flow.target_element_index)
+            .ok_or_else(|| {
+                anyhow!(
+                    "the target of message flow `{}` was not found",
+                    message_flow.id
+                )
+            })
+    }
+
     /// return the sequence flow with the given global index
     pub fn global_index_2_sequence_flow_and_parent(
         &self,

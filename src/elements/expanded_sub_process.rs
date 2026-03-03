@@ -1,8 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    enabledness_xor_join_only, execute_transition_xor_join_consume,
-    number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_parallel_split,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
@@ -136,6 +136,10 @@ impl BPMNObject for BPMNExpandedSubProcess {
         false
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -213,7 +217,7 @@ impl Transitionable for BPMNExpandedSubProcess {
 
         //find the sub-marking that contains the transition index
         let mut remove_instantiation = None;
-        for (instantiation_index, sub_marking) in sub_marking.element_index_2_sub_markings
+        for (instantiation_index, sub_sub_marking) in sub_marking.element_index_2_sub_markings
             [self.local_index]
             .iter_mut()
             .enumerate()
@@ -222,15 +226,17 @@ impl Transitionable for BPMNExpandedSubProcess {
             if transition_index == 0 {
                 //end the process instance
                 remove_instantiation = Some(instantiation_index);
+                //produce tokens
+                execute_transition_parallel_split!(self, sub_marking);
                 break;
             }
             transition_index -= 1;
 
             // and the transitions within us
-            let number_of_sub_transitions = self.elements.number_of_transitions(sub_marking);
+            let number_of_sub_transitions = self.elements.number_of_transitions(sub_sub_marking);
             if transition_index < number_of_sub_transitions {
                 self.elements
-                    .execute_transition(transition_index, root_marking, sub_marking, self, bpmn)
+                    .execute_transition(transition_index, root_marking, sub_sub_marking, self, bpmn)
                     .with_context(|| format!("Execute transition in sub-process `{}`.", self.id))?;
                 return Ok(());
             }

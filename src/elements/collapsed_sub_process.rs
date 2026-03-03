@@ -105,6 +105,10 @@ impl BPMNObject for BPMNCollapsedSubProcess {
         true
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        true
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }
@@ -168,11 +172,13 @@ impl Transitionable for BPMNCollapsedSubProcess {
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
-            "collapsed sub-process `{}`; internal transition {}",
-            self.id, transition_index
+            "collapsed sub-process `{}`; internal transition {}; label `{}`",
+            self.id,
+            transition_index,
+            bpmn.activity_key.deprocess_activity(&self.activity)
         ))
     }
 }

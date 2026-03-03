@@ -355,6 +355,10 @@ impl BPMNObject for BPMNElement {
         enums!(self, outgoing_messages_cannot_be_removed,)
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        enums!(self, incoming_messages_are_ignored,)
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         enums!(self, can_have_incoming_sequence_flows,)
     }

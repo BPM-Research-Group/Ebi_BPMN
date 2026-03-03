@@ -171,7 +171,8 @@ macro_rules! execute_transition_xor_join_consume {
     ($self: ident, $sub_marking:ident, $transition_index:expr) => {
         if $self.incoming_sequence_flows.len() >= 1 {
             //we are in initiation mode 1
-            $sub_marking.sequence_flow_2_tokens[$self.incoming_sequence_flows[$transition_index]] -= 1;
+            $sub_marking.sequence_flow_2_tokens
+                [$self.incoming_sequence_flows[$transition_index]] -= 1;
         } else {
             //we are in initiation mode 2
             $sub_marking.element_index_2_tokens[$self.local_index] -= 1;
@@ -181,9 +182,14 @@ macro_rules! execute_transition_xor_join_consume {
 
 #[macro_export]
 macro_rules! execute_transition_message_produce {
-    ($self:ident, $root_marking:ident) => {
-        if let Some(message_flow) = $self.outgoing_message_flow {
-            $root_marking.message_flow_2_tokens[message_flow] += 1;
+    ($self:ident, $root_marking:ident, $bpmn:ident) => {
+        if let Some(message_flow_index) = $self.outgoing_message_flow {
+            {
+                let target = $bpmn.message_flow_index_2_target(message_flow_index)?;
+                if !target.incoming_messages_are_ignored() {
+                    $root_marking.message_flow_2_tokens[message_flow_index] += 1;
+                }
+            }
         }
     };
 }

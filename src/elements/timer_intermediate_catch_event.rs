@@ -109,6 +109,10 @@ impl BPMNObject for BPMNTimerIntermediateCatchEvent {
         false
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        false
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         true
     }

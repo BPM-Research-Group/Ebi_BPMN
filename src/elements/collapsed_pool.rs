@@ -103,6 +103,10 @@ impl BPMNObject for BPMNCollapsedPool {
         false
     }
 
+    fn incoming_messages_are_ignored(&self) -> bool {
+        true
+    }
+
     fn can_have_incoming_sequence_flows(&self) -> bool {
         false
     }
