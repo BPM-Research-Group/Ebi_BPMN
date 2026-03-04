@@ -10,7 +10,7 @@ use crate::{
         message_end_event::BPMNMessageEndEvent,
         message_intermediate_catch_event::BPMNMessageIntermediateCatchEvent,
         message_start_event::BPMNMessageStartEvent, parallel_gateway::BPMNParallelGateway,
-        process::BPMNProcess, start_event::BPMNStartEvent,
+        process::BPMNProcess, start_event::BPMNStartEvent, task::BPMNTask,
         timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent,
     },
@@ -19,7 +19,7 @@ use crate::{
     traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
-use ebi_activity_key::ActivityKey;
+use ebi_activity_key::{Activity, ActivityKey};
 
 pub struct BPMNCreator {
     bpmn: BusinessProcessModelAndNotation,
@@ -40,6 +40,20 @@ impl BPMNCreator {
         Self { bpmn, max_id: 0 }
     }
 
+    pub fn new_with_activity_key(activity_key: ActivityKey) -> Self {
+        let bpmn = BusinessProcessModelAndNotation {
+            activity_key,
+            collaboration_index: None,
+            collaboration_id: None,
+            definitions_index: (0, ()),
+            definitions_id: "definitions".to_string(),
+            elements: vec![],
+            message_flows: vec![],
+        };
+        Self { bpmn, max_id: 0 }
+    }
+
+    /// Checks the model for structural correctness, and returns the model.
     pub fn to_bpmn(self) -> Result<BusinessProcessModelAndNotation> {
         self.bpmn.is_structurally_correct()?;
         Ok(self.bpmn)
@@ -80,6 +94,23 @@ impl BPMNCreator {
         }
     }
 
+    pub fn add_start_event_unchecked(
+        &mut self,
+        parent: Container,
+        start_event_type: StartEventType,
+    ) -> GlobalIndex {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(start_event_type.to_element(global_index, local_index));
+                global_index
+            }
+            _ => panic!("parent not found"),
+        }
+    }
+
     pub fn add_intermediate_event(
         &mut self,
         parent: Container,
@@ -94,6 +125,23 @@ impl BPMNCreator {
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn add_intermediate_event_unchecked(
+        &mut self,
+        parent: Container,
+        intermediate_event_type: IntermediateEventType,
+    ) -> GlobalIndex {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(intermediate_event_type.to_element(global_index, local_index));
+                global_index
+            }
+            _ => panic!("parent not found"),
         }
     }
 
@@ -114,6 +162,67 @@ impl BPMNCreator {
         }
     }
 
+    pub fn add_end_event_unchecked(
+        &mut self,
+        parent: Container,
+        end_event_type: EndEventType,
+    ) -> GlobalIndex {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(end_event_type.to_element(global_index, local_index));
+                global_index
+            }
+            _ => panic!("parent not found"),
+        }
+    }
+
+    pub fn add_task(&mut self, parent: Container, activity: Activity) -> Result<GlobalIndex> {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(BPMNElement::Task(BPMNTask {
+                    global_index,
+                    id: format!("task_{}", global_index.0),
+                    local_index,
+                    activity,
+                    incoming_sequence_flows: vec![],
+                    outgoing_sequence_flows: vec![],
+                    incoming_message_flow: None,
+                    outgoing_message_flow: None,
+                }));
+                Ok(global_index)
+            }
+            _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn add_task_unchecked(&mut self, parent: Container, activity: Activity) -> GlobalIndex {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(BPMNElement::Task(BPMNTask {
+                    global_index,
+                    id: format!("task_{}", global_index.0),
+                    local_index,
+                    activity,
+                    incoming_sequence_flows: vec![],
+                    outgoing_sequence_flows: vec![],
+                    incoming_message_flow: None,
+                    outgoing_message_flow: None,
+                }));
+                global_index
+            }
+            _ => panic!("parent not found"),
+        }
+    }
+
     pub fn add_gateway(
         &mut self,
         parent: Container,
@@ -128,6 +237,23 @@ impl BPMNCreator {
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn add_gateway_unchecked(
+        &mut self,
+        parent: Container,
+        gateway_type: GatewayType,
+    ) -> GlobalIndex {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { elements, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
+                let local_index = elements.len();
+                elements.push(gateway_type.to_element(global_index, local_index));
+                global_index
+            }
+            _ => panic!("parent not found"),
         }
     }
 
@@ -180,8 +306,54 @@ impl BPMNCreator {
             _ => Err(anyhow!("parent not found")),
         }
     }
+
+    pub fn add_sequence_flow_unchecked(
+        &mut self,
+        parent: Container,
+        source: GlobalIndex,
+        target: GlobalIndex,
+    ) {
+        let global_index = self.new_global_index();
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess {
+                elements,
+                sequence_flows,
+                ..
+            }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                elements,
+                sequence_flows,
+                ..
+            })) => {
+                let local_index = sequence_flows.len();
+
+                //find source
+                let source = elements.global_index_2_element_mut(source).unwrap();
+                source.add_outgoing_sequence_flow(local_index).unwrap();
+                let source_global_index = source.global_index();
+                let source_local_index = source.local_index();
+
+                let target = elements.global_index_2_element_mut(target).unwrap();
+                target.add_incoming_sequence_flow(local_index).unwrap();
+                let target_global_index = target.global_index();
+                let target_local_index = target.local_index();
+
+                sequence_flows.push(BPMNSequenceFlow {
+                    global_index,
+                    id: format!("sequenceflow_{}", global_index.0),
+                    local_index,
+                    source_global_index,
+                    source_local_index,
+                    target_global_index,
+                    target_local_index,
+                });
+            }
+            _ => panic!("parent not found"),
+        }
+    }
 }
 
+#[derive(Copy, Clone)]
 pub struct Container {
     global_index: GlobalIndex,
 }
