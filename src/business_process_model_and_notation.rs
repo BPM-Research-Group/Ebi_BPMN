@@ -19,7 +19,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Clone, ActivityKey, Debug)]
 pub struct BusinessProcessModelAndNotation {
-    pub(crate) activity_key: ActivityKey,
+    pub activity_key: ActivityKey,
 
     pub collaboration_index: Option<GlobalIndex>,
     pub collaboration_id: Option<String>,
@@ -51,6 +51,11 @@ impl BusinessProcessModelAndNotation {
     /// find an element with the given index
     pub fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         self.elements.global_index_2_element(index)
+    }
+
+    /// find an element with the given index
+    pub fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
+        self.elements.global_index_2_element_mut(index)
     }
 
     /// find the object of the given index
