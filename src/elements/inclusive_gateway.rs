@@ -1,11 +1,8 @@
-use std::collections::{HashSet, VecDeque};
-
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    sequence_flow,
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
@@ -15,6 +12,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
+use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
 pub struct BPMNInclusiveGateway {
@@ -127,7 +125,7 @@ impl Transitionable for BPMNInclusiveGateway {
         _root_marking: &BPMNRootMarking,
         sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
-        bpmn: &BusinessProcessModelAndNotation,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         if self.incoming_sequence_flows.len() == 0 {
             //if there are no sequence flows, then initiation mode 2 applies.
@@ -141,12 +139,12 @@ impl Transitionable for BPMNInclusiveGateway {
             }
         } else {
             //gather a list of incoming sequence flows that do not have a token
-            let mut empty_sequence_flows: HashSet<GlobalIndex> = HashSet::new();
-            for sequence_flow_local_index in &self.incoming_sequence_flows {
-                if sub_marking.sequence_flow_2_tokens[*sequence_flow_local_index] == 0 {
+            let mut empty_sequence_flows = HashSet::new();
+            for sequence_flow_index in &self.incoming_sequence_flows {
+                if sub_marking.sequence_flow_2_tokens[*sequence_flow_index] == 0 {
                     let sequence_flow =
-                        &parent.sequence_flows_non_recursive()[*sequence_flow_local_index];
-                    empty_sequence_flows.insert(sequence_flow.global_index);
+                        &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+                    empty_sequence_flows.insert(sequence_flow.local_index);
                 }
             }
 
@@ -159,30 +157,47 @@ impl Transitionable for BPMNInclusiveGateway {
             let mut queue = VecDeque::new();
             queue.extend(empty_sequence_flows.clone());
             let mut seen_sequence_flows = empty_sequence_flows;
-            while let Some(sequence_flow_global_index) = queue.pop_front() {
-                let (sequence_flow, process) = bpmn
-                    .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
-                    .ok_or_else(|| anyhow!("sequence flow not found"))?;
-                todo!();
-                let other_sub_marking = sub_marking;
-                //this asks the wrong marking
-                if other_sub_marking.sequence_flow_2_tokens[sequence_flow.flow_index] >= 1 {
-                    //we encountered a token on our search, so the gateway is not enabled
-                    return Ok(bitvec![0;self.number_of_transitions(other_sub_marking)]);
+            while let Some(sequence_flow_index) = queue.pop_front() {
+                let sequence_flow = &parent.sequence_flows_non_recursive()[sequence_flow_index];
+
+                //check whether this sequence flow has a token
+                if *sub_marking
+                    .sequence_flow_2_tokens
+                    .get(sequence_flow.local_index)
+                    .ok_or_else(|| anyhow!("sequence flow not found"))?
+                    >= 1
+                {
+                    // we encountered a token on our search
+                    // not enabled, as that token may end up at the OR join
+                    return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
+                }
+
+                //check whether this sequece flow comes from a sub-process that has instantiations
+                if !sub_marking.element_index_2_sub_markings[sequence_flow.source_local_index]
+                    .is_empty()
+                {
+                    //not enabled: the instantiation may finish and that token may end up at the OR join
+                    return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
+                }
+
+                //check whether the source of this sequence flow is enabled by the initiation mode
+                if sub_marking.element_index_2_tokens[sequence_flow.source_local_index] >= 1 {
+                    //not enabled: this virtual token may end up at the OR join
+                    return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
                 }
 
                 //get the source
-                let source = process
+                let source = parent
                     .elements_non_recursive()
                     .get(sequence_flow.source_local_index)
                     .ok_or_else(|| anyhow!("source not found"))?;
                 for next_sequence_flow_index in source.incoming_sequence_flows() {
-                    let next_sequence_flow = process
+                    let next_sequence_flow = parent
                         .sequence_flows_non_recursive()
                         .get(*next_sequence_flow_index)
                         .ok_or_else(|| anyhow!("next sequence flow not found"))?;
-                    if seen_sequence_flows.insert(next_sequence_flow.global_index) {
-                        queue.push_back(*&next_sequence_flow.global_index);
+                    if seen_sequence_flows.insert(next_sequence_flow.local_index) {
+                        queue.push_back(*&next_sequence_flow.local_index);
                     }
                 }
             }

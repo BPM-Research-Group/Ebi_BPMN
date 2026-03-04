@@ -145,7 +145,7 @@ macro_rules! process_internal_sequence_flows {
                 sequence_flows.push(BPMNSequenceFlow {
                     global_index,
                     id,
-                    flow_index: new_flow_index,
+                    local_index: new_flow_index,
                     source_global_index,
                     source_local_index,
                     target_global_index,

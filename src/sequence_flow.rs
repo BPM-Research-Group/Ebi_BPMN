@@ -4,7 +4,7 @@ use crate::parser::parser_state::GlobalIndex;
 pub struct BPMNSequenceFlow {
     pub global_index: GlobalIndex,
     pub id: String,
-    pub flow_index: usize,
+    pub local_index: usize,
     pub source_global_index: GlobalIndex,
     pub source_local_index: usize,
     pub target_global_index: GlobalIndex,
