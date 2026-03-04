@@ -3,6 +3,9 @@ A BPMN library for Rust
 
 Contains a parser, a data structure and a writer.
 For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
+The crate provides methods to parse BPMN models, methods to write BPMN models, and methods to traverse the state space of a BPMN model.
+
+The crate does not currenly consider or export layouting (bpmndi) information.
 
 # Supported elements
 
@@ -17,11 +20,6 @@ For now, this crate focuses on the behaviour of BPMN models; not on the data or 
 * Expanded and collapsed sub-processes
 
 Other elements are gracefully ignored, as long as they do not have in- or outgoing message or sequence flows.
-
-# Operational semantics
-
-The crate provides methods to traverse the state space of a BPMN model.
-An exception is the inclusive (OR) gateway, whose operational semantics currently is work-in-progress.
 
 # Process instance intitation
 

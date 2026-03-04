@@ -209,13 +209,34 @@ impl Transitionable for BPMNInclusiveGateway {
 
     fn execute_transition(
         &self,
-        transition_index: TransitionIndex,
-        root_marking: &mut BPMNRootMarking,
+        mut transition_index: TransitionIndex,
+        _root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
-        parent: &dyn Processable,
-        bpmn: &BusinessProcessModelAndNotation,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
-        todo!()
+        //consume
+        if self.incoming_sequence_flows.len() == 0 {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow
+            sub_marking.element_index_2_tokens[self.local_index] -= 1;
+        } else {
+            //consume a token from each incoming sequence flow that has one
+            for sequence_flow_index in &self.incoming_sequence_flows {
+                if sub_marking.sequence_flow_2_tokens[*sequence_flow_index] > 0 {
+                    sub_marking.sequence_flow_2_tokens[*sequence_flow_index] -= 1;
+                }
+            }
+        }
+
+        //produce
+        for sequence_flow_index in &self.outgoing_sequence_flows {
+            if transition_index % 2 == 0 {
+                sub_marking.sequence_flow_2_tokens[*sequence_flow_index] += 1;
+                transition_index <<= 1;
+            }
+        }
+        Ok(())
     }
 
     fn transition_activity(
