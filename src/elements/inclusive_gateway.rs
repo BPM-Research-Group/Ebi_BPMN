@@ -29,6 +29,12 @@ impl BPMNElementTrait for BPMNInclusiveGateway {
     }
 
     fn add_outgoing_sequence_flow(&mut self, flow_index: usize) -> Result<()> {
+        if self.outgoing_sequence_flows.len() == usize::BITS.try_into().unwrap() {
+            return Err(anyhow!(
+                "cannot add more than {} outgoing sequence flows to an inclusive gateway",
+                usize::BITS
+            ));
+        }
         self.outgoing_sequence_flows.push(flow_index);
         Ok(())
     }

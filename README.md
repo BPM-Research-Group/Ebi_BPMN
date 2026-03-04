@@ -5,7 +5,7 @@ Contains a parser, a data structure and a writer.
 For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
 The crate provides methods to parse BPMN models, methods to write BPMN models, and methods to traverse the state space of a BPMN model.
 
-The crate does not currenly consider or export layouting (bpmndi) information.
+If you are an end user, consider the Ebi crate & tool, which provides user-accessible algorithms that use BPMN.
 
 # Supported elements
 
@@ -35,3 +35,8 @@ The interpretation of BPMN of this crate differs from the BPMN 2.0.2 standard on
 * The inclusive (OR) gateway uses a slightly different semantics.
 
 For more information on these elements, see [this Youtube playlist](https://youtu.be/k0XAej_0In8?si=37Bd6jOFPwqAURlV).
+
+# Limitations
+
+* The crate does not currenly consider or export layouting (bpmndi) information.
+* There is a maximum number of outgoing sequence flows of an inclusive gateway of 64 (on 64-bits system) or 32 (on 32-bit systems).
