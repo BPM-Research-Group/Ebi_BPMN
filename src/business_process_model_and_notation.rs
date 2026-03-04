@@ -1,6 +1,6 @@
 use crate::{
     element::BPMNElement,
-    elements::task::BPMNTask,
+    elements::{collapsed_sub_process::BPMNCollapsedSubProcess, task::BPMNTask},
     message_flow::BPMNMessageFlow,
     parser::parser_state::GlobalIndex,
     semantics::BPMNMarking,
@@ -39,6 +39,7 @@ impl BusinessProcessModelAndNotation {
         self.message_flows.len()
     }
 
+    /// returns all elements in the model (recursively)
     pub fn elements(&self) -> Vec<&BPMNElement> {
         self.elements.all_elements_ref()
     }
@@ -130,19 +131,22 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
         //gather indices of elements
         let mut indices = vec![];
         for element in self.elements() {
-            if element.is_task() {
+            if element.is_task() || element.is_collapsed_sub_process() {
                 indices.push(element.global_index());
             }
         }
 
         //adjust activities
         for index in indices {
-            if let Some(BPMNElement::Task(BPMNTask { activity, .. })) =
-                self.elements.global_index_2_element_mut(index)
-            {
-                *activity = translator.translate_activity(&activity);
-            } else {
-                unreachable!()
+            match self.elements.global_index_2_element_mut(index) {
+                Some(BPMNElement::Task(BPMNTask { activity, .. }))
+                | Some(BPMNElement::CollapsedSubProcess(BPMNCollapsedSubProcess {
+                    activity,
+                    ..
+                })) => {
+                    *activity = translator.translate_activity(&activity);
+                }
+                _ => unreachable!(),
             }
         }
 
