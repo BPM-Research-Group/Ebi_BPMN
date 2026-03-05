@@ -24,6 +24,9 @@ pub(crate) trait Searchable {
     /// return all elements recursively
     fn all_elements_ref(&self) -> Vec<&BPMNElement>;
 
+    /// return the direct parent that contains the global index
+    fn parent_of(&self, global_index: GlobalIndex) -> (Option<&dyn Processable>, bool);
+
     /// return all sequence flows recursively
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow>;
 
@@ -85,6 +88,16 @@ impl Searchable for Vec<BPMNElement> {
             .map(|element| element.all_elements_ref())
             .flatten()
             .collect()
+    }
+
+    fn parent_of(&self, global_index: GlobalIndex) -> (Option<&dyn Processable>, bool) {
+        for element in self {
+            let x = element.parent_of(global_index);
+            if x.1 {
+                return x;
+            }
+        }
+        (None, false)
     }
 
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {

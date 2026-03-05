@@ -384,6 +384,21 @@ impl Searchable for BPMNExpandedSubProcess {
         self.elements.all_elements_ref()
     }
 
+    fn parent_of(&self, global_index: GlobalIndex) -> (Option<&dyn Processable>, bool) {
+        if self.global_index == global_index {
+            (None, true)
+        } else {
+            let x = self.elements.parent_of(global_index);
+            if x.1 && x.0.is_none() {
+                (Some(self), true)
+            } else if x.1 {
+                x
+            } else {
+                (None, false)
+            }
+        }
+    }
+
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {
         let mut result: Vec<&BPMNSequenceFlow> = self.sequence_flows.iter().collect();
         result.extend(self.elements.all_sequence_flows_ref());

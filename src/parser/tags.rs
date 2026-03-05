@@ -23,10 +23,12 @@ use crate::{
         tag_subprocess::TagSubProcess,
         tag_task::TagTask,
         tag_timer_event_definition::TagTimerEventDefinition,
+        tag_weight::TagWeight,
     },
 };
 use anyhow::Result;
 use ebi_activity_key::Activity;
+use ebi_arithmetic::Fraction;
 use quick_xml::events::{BytesEnd, BytesStart};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIs, EnumIter, EnumString};
@@ -51,6 +53,7 @@ pub(crate) enum Tag {
     StartEvent,
     Task,
     TimerEventDefinition,
+    Weight,
 }
 
 impl Recognisable for Tag {
@@ -84,6 +87,7 @@ impl Recognisable for Tag {
                 Tag::SubProcess => TagSubProcess::recognise_tag(e, state, n),
                 Tag::Participant => TagParticipant::recognise_tag(e, state, n),
                 Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state, n),
+                Tag::Weight => TagWeight::recognise_tag(e, state, n),
             };
             if x.is_some() {
                 return x;
@@ -117,6 +121,7 @@ impl Openable for Tag {
             Tag::SubProcess => TagSubProcess::open_tag(tag, e, state),
             Tag::Participant => TagParticipant::open_tag(tag, e, state),
             Tag::TimerEventDefinition => TagTimerEventDefinition::open_tag(tag, e, state),
+            Tag::Weight => TagWeight::open_tag(tag, e, state),
         }
     }
 }
@@ -196,6 +201,7 @@ pub(crate) enum OpenedTag {
         id: String,
         source_ref: String,
         target_ref: String,
+        weight: Option<Fraction>,
     },
     SubProcess {
         global_index: GlobalIndex,
@@ -217,6 +223,9 @@ pub(crate) enum OpenedTag {
     },
     TimerEventDefinition {
         id: String,
+    },
+    Weight {
+        weight: Fraction,
     },
 }
 
@@ -258,6 +267,7 @@ impl Closeable for OpenedTag {
             OpenedTag::TimerEventDefinition { .. } => {
                 TagTimerEventDefinition::close_tag(opened_tag, e, state)
             }
+            OpenedTag::Weight { .. } => TagWeight::close_tag(opened_tag, e, state),
         }
     }
 }

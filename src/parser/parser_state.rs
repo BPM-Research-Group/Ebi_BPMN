@@ -33,7 +33,10 @@ impl ParserState {
         }
     }
 
-    pub(crate) fn to_model(self) -> Result<BusinessProcessModelAndNotation> {
+    pub(crate) fn to_model(
+        self,
+        disallow_sequence_flow_weights: bool,
+    ) -> Result<BusinessProcessModelAndNotation> {
         let ParserState {
             activity_key,
             mut draft_definitionss,
@@ -59,6 +62,18 @@ impl ParserState {
                 elements,
                 message_flows,
             };
+
+            if disallow_sequence_flow_weights {
+                //verify that the model has no sequence flows with weights
+                for sequence_flow in result.sequence_flows() {
+                    if sequence_flow.weight.is_some() {
+                        return Err(anyhow!(
+                            "Sequence flow `{}` has a weight, which is not allowed in this import mode.",
+                            sequence_flow.id
+                        ));
+                    }
+                }
+            }
 
             //check structural correctness
             result

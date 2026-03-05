@@ -199,6 +199,18 @@ impl Searchable for BPMNElement {
         }
     }
 
+    fn parent_of(&self, global_index: GlobalIndex) -> (Option<&dyn Processable>, bool) {
+        if let BPMNElement::Process(process) = self {
+            process.parent_of(global_index)
+        } else if let BPMNElement::ExpandedSubProcess(process) = self {
+            process.parent_of(global_index)
+        } else if self.global_index() == global_index {
+            (None, true)
+        } else {
+            (None, false)
+        }
+    }
+
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {
         match self {
             BPMNElement::ExpandedSubProcess(p) => p.all_sequence_flows_ref(),

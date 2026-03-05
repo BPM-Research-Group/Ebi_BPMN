@@ -1,3 +1,5 @@
+use ebi_arithmetic::Fraction;
+
 use crate::parser::parser_state::GlobalIndex;
 
 #[derive(Clone, Debug)]
@@ -9,4 +11,5 @@ pub struct BPMNSequenceFlow {
     pub source_local_index: usize,
     pub target_global_index: GlobalIndex,
     pub target_local_index: usize,
+    pub weight: Option<Fraction>,
 }

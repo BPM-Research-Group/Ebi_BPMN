@@ -381,7 +381,7 @@ mod tests {
                 }],
             }
         );
-        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), []);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), Vec::<usize>::new());
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
 

@@ -8,6 +8,7 @@ use crate::{
     },
 };
 use anyhow::{Result, anyhow};
+use ebi_arithmetic::Fraction;
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagSequenceFlow {}
@@ -47,6 +48,7 @@ impl Openable for TagSequenceFlow {
                     id,
                     source_ref,
                     target_ref,
+                    weight: None,
                 })
             } else {
                 Err(anyhow!("sequence flow must have a target"))
@@ -73,6 +75,7 @@ impl Closeable for TagSequenceFlow {
                     id,
                     source_ref,
                     target_ref,
+                    weight,
                 } = opened_tag
                 {
                     draft_sequence_flows.push(DraftSequenceFlow {
@@ -80,6 +83,7 @@ impl Closeable for TagSequenceFlow {
                         id,
                         source_id: source_ref,
                         target_id: target_ref,
+                        weight,
                     });
                     Ok(())
                 } else {
@@ -97,4 +101,5 @@ pub(crate) struct DraftSequenceFlow {
     pub(crate) id: String,
     pub(crate) source_id: String,
     pub(crate) target_id: String,
+    pub(crate) weight: Option<Fraction>,
 }

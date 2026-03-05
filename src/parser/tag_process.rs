@@ -64,6 +64,7 @@ macro_rules! process_internal_sequence_flows {
                     id,
                     source_id,
                     target_id,
+                    weight
                 } = draft_sequence_flow;
                 let new_flow_index = sequence_flows.len();
                 let source_local_index = $sub_elements
@@ -155,6 +156,7 @@ macro_rules! process_internal_sequence_flows {
                     source_local_index,
                     target_global_index,
                     target_local_index,
+                    weight
                 });
             }
             sequence_flows

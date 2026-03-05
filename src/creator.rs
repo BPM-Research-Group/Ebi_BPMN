@@ -300,6 +300,7 @@ impl BPMNCreator {
                     source_local_index,
                     target_global_index,
                     target_local_index,
+                    weight: None,
                 });
                 Ok(())
             }
@@ -346,6 +347,7 @@ impl BPMNCreator {
                     source_local_index,
                     target_global_index,
                     target_local_index,
+                    weight: None,
                 });
             }
             _ => panic!("parent not found"),

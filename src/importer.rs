@@ -13,7 +13,11 @@ use quick_xml::{
 use std::{io::BufRead, str::FromStr};
 
 impl BusinessProcessModelAndNotation {
-    pub fn import_from_reader(reader: &mut dyn BufRead) -> Result<Self>
+    /// Attempts to import a BPMN model. If `disallow_sequence_flow_weights` is set to true, parsing will fail if any sequence flow has a weight.
+    pub fn import_from_reader(
+        reader: &mut dyn BufRead,
+        disallow_sequence_flow_weights: bool,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -61,7 +65,7 @@ impl BusinessProcessModelAndNotation {
                 //end of file: check whether we can finish
                 (_, Event::Eof) => {
                     can_eof(&state).with_context(|| "unexpected end of file")?;
-                    return Ok(state.to_model()?);
+                    return Ok(state.to_model(disallow_sequence_flow_weights)?);
                 }
 
                 _ => (),
@@ -75,7 +79,7 @@ impl FromStr for BusinessProcessModelAndNotation {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let mut reader = std::io::Cursor::new(s);
-        Self::import_from_reader(&mut reader)
+        Self::import_from_reader(&mut reader, false)
     }
 }
 
@@ -95,7 +99,11 @@ pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<St
 
 #[cfg(test)]
 mod tests {
-    use crate::{BusinessProcessModelAndNotation, traits::processable::Processable};
+    use crate::{
+        BusinessProcessModelAndNotation,
+        stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
+        traits::processable::Processable,
+    };
     use std::fs::{self};
 
     #[test]
@@ -105,6 +113,14 @@ mod tests {
 
         assert_eq!(bpmn.sequence_flows_non_recursive().len(), 0);
         assert_eq!(bpmn.elements().len(), 10);
+    }
+
+    #[test]
+    fn sbpmn_import() {
+        let fin = fs::read_to_string("testfiles/model.sbpmn").unwrap();
+        let _bpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
     }
 
     #[test]

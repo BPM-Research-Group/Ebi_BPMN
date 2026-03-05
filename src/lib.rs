@@ -50,8 +50,10 @@ pub mod parser {
     pub mod tag_subprocess;
     pub mod tag_task;
     pub mod tag_timer_event_definition;
+    pub mod tag_weight;
     pub mod tags;
 }
+pub mod stochastic_business_process_model_and_notation;
 pub mod traits {
     pub mod objectable;
     pub mod processable;

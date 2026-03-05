@@ -44,6 +44,17 @@ impl BusinessProcessModelAndNotation {
         self.elements.all_elements_ref()
     }
 
+    pub fn parent_of(&self, global_index: GlobalIndex) -> Option<&dyn Processable> {
+        for element in &self.elements {
+            let x = element.parent_of(global_index);
+            if x.1 {
+                return x.0;
+            }
+        }
+        None
+    }
+
+    /// Returns all sequence flows (recursive)
     pub fn sequence_flows(&self) -> Vec<&BPMNSequenceFlow> {
         self.elements.all_sequence_flows_ref()
     }
