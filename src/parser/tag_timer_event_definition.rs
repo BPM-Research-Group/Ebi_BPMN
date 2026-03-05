@@ -1,4 +1,5 @@
 use crate::parser::{
+    parser::NameSpace,
     parser_state::ParserState,
     parser_traits::{Closeable, Openable, Recognisable},
     tags::{OpenedTag, Tag},
@@ -9,22 +10,24 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub(crate) struct TagTimerEventDefinition {}
 
 impl Recognisable for TagTimerEventDefinition {
-    fn recognise_tag(
-        e: &quick_xml::events::BytesStart,
-        state: &super::parser_state::ParserState,
-    ) -> Option<super::tags::Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        match state.open_tags.iter().last() {
-            Some(OpenedTag::StartEvent { .. }) | Some(OpenedTag::IntermediateCatchEvent { .. }) => {
-                if e.local_name().as_ref() == b"timerEventDefinition" {
-                    return Some(Tag::TimerEventDefinition);
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::StartEvent { .. })
+                | Some(OpenedTag::IntermediateCatchEvent { .. }) => {
+                    if e.local_name().as_ref() == b"timerEventDefinition" {
+                        return Some(Tag::TimerEventDefinition);
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

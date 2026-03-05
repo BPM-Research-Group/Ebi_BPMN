@@ -2,6 +2,7 @@ use crate::{
     element::BPMNElement,
     elements::collapsed_pool::BPMNCollapsedPool,
     parser::{
+        parser::NameSpace,
         parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_collaboration::Collaboration,
@@ -53,30 +54,36 @@ pub(crate) enum Tag {
 }
 
 impl Recognisable for Tag {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Self>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Self>
     where
         Self: Sized,
     {
         for tag in Tag::iter() {
             let x = match tag {
-                Tag::Definitions => Definitions::recognise_tag(e, state),
-                Tag::Process => TagProcess::recognise_tag(e, state),
-                Tag::Collaboration => Collaboration::recognise_tag(e, state),
-                Tag::MessageEventDefinition => TagMessageEventDefinition::recognise_tag(e, state),
-                Tag::MessageFlow => TagMessageFlow::recognise_tag(e, state),
-                Tag::StartEvent => TagStartEvent::recognise_tag(e, state),
-                Tag::Task => TagTask::recognise_tag(e, state),
-                Tag::SequenceFlow => TagSequenceFlow::recognise_tag(e, state),
-                Tag::EndEvent => TagEndEvent::recognise_tag(e, state),
-                Tag::ExclusiveGateway => TagExclusiveGateway::recognise_tag(e, state),
-                Tag::InclusiveGateway => TagInclusiveGateway::recognise_tag(e, state),
-                Tag::IntermediateThrowEvent => TagIntermediateThrowEvent::recognise_tag(e, state),
-                Tag::IntermediateCatchEvent => TagIntermediateCatchEvent::recognise_tag(e, state),
-                Tag::ParallelGateway => TagParallelGateway::recognise_tag(e, state),
-                Tag::EventBasedGateway => TagEventBasedGateway::recognise_tag(e, state),
-                Tag::SubProcess => TagSubProcess::recognise_tag(e, state),
-                Tag::Participant => TagParticipant::recognise_tag(e, state),
-                Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state),
+                Tag::Definitions => Definitions::recognise_tag(e, state, n),
+                Tag::Process => TagProcess::recognise_tag(e, state, n),
+                Tag::Collaboration => Collaboration::recognise_tag(e, state, n),
+                Tag::MessageEventDefinition => {
+                    TagMessageEventDefinition::recognise_tag(e, state, n)
+                }
+                Tag::MessageFlow => TagMessageFlow::recognise_tag(e, state, n),
+                Tag::StartEvent => TagStartEvent::recognise_tag(e, state, n),
+                Tag::Task => TagTask::recognise_tag(e, state, n),
+                Tag::SequenceFlow => TagSequenceFlow::recognise_tag(e, state, n),
+                Tag::EndEvent => TagEndEvent::recognise_tag(e, state, n),
+                Tag::ExclusiveGateway => TagExclusiveGateway::recognise_tag(e, state, n),
+                Tag::InclusiveGateway => TagInclusiveGateway::recognise_tag(e, state, n),
+                Tag::IntermediateThrowEvent => {
+                    TagIntermediateThrowEvent::recognise_tag(e, state, n)
+                }
+                Tag::IntermediateCatchEvent => {
+                    TagIntermediateCatchEvent::recognise_tag(e, state, n)
+                }
+                Tag::ParallelGateway => TagParallelGateway::recognise_tag(e, state, n),
+                Tag::EventBasedGateway => TagEventBasedGateway::recognise_tag(e, state, n),
+                Tag::SubProcess => TagSubProcess::recognise_tag(e, state, n),
+                Tag::Participant => TagParticipant::recognise_tag(e, state, n),
+                Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state, n),
             };
             if x.is_some() {
                 return x;

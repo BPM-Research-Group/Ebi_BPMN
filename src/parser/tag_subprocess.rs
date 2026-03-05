@@ -6,6 +6,7 @@ use crate::{
     },
     importer::parse_attribute,
     parser::{
+        parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_sequence_flow::DraftSequenceFlow,
@@ -21,19 +22,23 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub struct TagSubProcess {}
 
 impl Recognisable for TagSubProcess {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        match state.open_tags.iter().last() {
-            Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
-                if e.local_name().as_ref() == b"subProcess" {
-                    return Some(Tag::SubProcess);
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
+                    if e.local_name().as_ref() == b"subProcess" {
+                        return Some(Tag::SubProcess);
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

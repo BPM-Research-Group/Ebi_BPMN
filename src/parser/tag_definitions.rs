@@ -2,6 +2,7 @@ use crate::{
     element::{BPMNElement, BPMNElementTrait},
     message_flow::BPMNMessageFlow,
     parser::{
+        parser::NameSpace,
         parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_message_flow::DraftMessageFlow,
@@ -15,16 +16,20 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub struct Definitions {}
 
 impl Recognisable for Definitions {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        if state.open_tags.is_empty() {
-            if e.local_name().as_ref() == b"definitions" {
-                return Some(Tag::Definitions);
+        if n.is_bpmn() {
+            if state.open_tags.is_empty() {
+                if e.local_name().as_ref() == b"definitions" {
+                    return Some(Tag::Definitions);
+                }
             }
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

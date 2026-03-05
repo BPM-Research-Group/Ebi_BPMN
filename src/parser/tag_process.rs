@@ -2,6 +2,7 @@ use crate::{
     element::{BPMNElement, BPMNElementTrait},
     elements::process::BPMNProcess,
     parser::{
+        parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_sequence_flow::DraftSequenceFlow,
@@ -16,19 +17,23 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub(crate) struct TagProcess {}
 
 impl Recognisable for TagProcess {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        match state.open_tags.iter().last() {
-            Some(OpenedTag::Definitions { .. }) => {
-                if e.local_name().as_ref() == b"process" {
-                    return Some(Tag::Process);
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::Definitions { .. }) => {
+                    if e.local_name().as_ref() == b"process" {
+                        return Some(Tag::Process);
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

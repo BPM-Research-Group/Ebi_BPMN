@@ -1,6 +1,7 @@
 use crate::{
     importer::parse_attribute,
     parser::{
+        parser::NameSpace,
         parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
@@ -12,20 +13,24 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub(crate) struct TagMessageFlow {}
 
 impl Recognisable for TagMessageFlow {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        match state.open_tags.iter().last() {
-            Some(OpenedTag::Collaboration { .. }) => {
-                if e.local_name().as_ref() == b"messageFlow" {
-                    return Some(Tag::MessageFlow);
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::Collaboration { .. }) => {
+                    if e.local_name().as_ref() == b"messageFlow" {
+                        return Some(Tag::MessageFlow);
+                    }
                 }
-            }
 
-            _ => {}
+                _ => {}
+            }
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

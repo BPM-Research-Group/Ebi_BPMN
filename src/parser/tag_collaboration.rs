@@ -1,6 +1,7 @@
 use crate::{
     element::BPMNElement,
     parser::{
+        parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
@@ -12,22 +13,23 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub(crate) struct Collaboration {}
 
 impl Recognisable for Collaboration {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        if state.open_tags.len() >= 1 {
-            if let Some(OpenedTag::Definitions { .. }) =
-                state.open_tags.get(state.open_tags.len() - 1)
-            {
-                {
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::Definitions { .. }) => {
                     if e.local_name().as_ref() == b"collaboration" {
                         return Some(Tag::Collaboration);
                     }
                 }
+                _ => (),
             }
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

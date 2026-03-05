@@ -30,8 +30,8 @@ impl BusinessProcessModelAndNotation {
             let in_namespace = is_in_namespace(namespace);
             match (in_namespace, xml_event) {
                 //start tag
-                (true, Event::Start(e)) => {
-                    open_tag(&mut state, &e).with_context(|| {
+                (Some(n), Event::Start(e)) => {
+                    open_tag(&mut state, &e, n).with_context(|| {
                         format!(
                             "start tag `{}` at position {}",
                             String::from_utf8_lossy(e.local_name().as_ref()),
@@ -41,7 +41,7 @@ impl BusinessProcessModelAndNotation {
                 }
 
                 //end of tag
-                (true, Event::End(e)) => close_tag(&mut state, &e).with_context(|| {
+                (Some(n), Event::End(e)) => close_tag(&mut state, &e, n).with_context(|| {
                     format!(
                         "close tag `{}` at position {}",
                         String::from_utf8_lossy(e.local_name().as_ref()),
@@ -50,7 +50,7 @@ impl BusinessProcessModelAndNotation {
                 })?,
 
                 //empty tag
-                (true, Event::Empty(e)) => empty_tag(&mut state, &e).with_context(|| {
+                (Some(n), Event::Empty(e)) => empty_tag(&mut state, &e, n).with_context(|| {
                     format!(
                         "empty tag `{}` at position {}",
                         String::from_utf8_lossy(e.local_name().as_ref()),

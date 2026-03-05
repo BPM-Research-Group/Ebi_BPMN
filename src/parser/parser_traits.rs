@@ -1,13 +1,12 @@
 use crate::parser::{
-    parser_state::ParserState,
-    tags::{OpenedTag, Tag},
+    parser::NameSpace, parser_state::ParserState, tags::{OpenedTag, Tag}
 };
 use anyhow::Result;
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) trait Recognisable {
     /// Given a start tag, determine whether it is recognisable
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized;
 }

@@ -2,6 +2,7 @@ use crate::{
     element::BPMNElement,
     elements::exclusive_gateway::BPMNExclusiveGateway,
     parser::{
+        parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
@@ -13,19 +14,23 @@ use quick_xml::events::{BytesEnd, BytesStart};
 pub struct TagExclusiveGateway {}
 
 impl Recognisable for TagExclusiveGateway {
-    fn recognise_tag(e: &BytesStart, state: &ParserState) -> Option<Tag>
+    fn recognise_tag(e: &BytesStart, state: &ParserState, n: NameSpace) -> Option<Tag>
     where
         Self: Sized,
     {
-        match state.open_tags.iter().last() {
-            Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
-                if e.local_name().as_ref() == b"exclusiveGateway" {
-                    return Some(Tag::ExclusiveGateway);
+        if n.is_bpmn() {
+            match state.open_tags.iter().last() {
+                Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
+                    if e.local_name().as_ref() == b"exclusiveGateway" {
+                        return Some(Tag::ExclusiveGateway);
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+            None
+        } else {
+            None
         }
-        None
     }
 }
 

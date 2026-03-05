@@ -11,14 +11,15 @@ use quick_xml::{
     events::{BytesEnd, BytesStart},
     name::{Namespace, ResolveResult},
 };
+use strum_macros::EnumIs;
 
-pub(crate) fn empty_tag(state: &mut ParserState, e: &BytesStart) -> Result<()> {
-    open_tag(state, e)?;
-    close_tag(state, &e.to_end())
+pub(crate) fn empty_tag(state: &mut ParserState, e: &BytesStart, n: NameSpace) -> Result<()> {
+    open_tag(state, e, n)?;
+    close_tag(state, &e.to_end(), n)
 }
 
-pub(crate) fn open_tag(state: &mut ParserState, e: &BytesStart) -> Result<()> {
-    if let Some(tag) = Tag::recognise_tag(e, state) {
+pub(crate) fn open_tag(state: &mut ParserState, e: &BytesStart, n: NameSpace) -> Result<()> {
+    if let Some(tag) = Tag::recognise_tag(e, state, n) {
         let opened_tag =
             Tag::open_tag(tag, e, state).with_context(|| anyhow!("parsing tag `{}`", tag))?;
         state.open_tags.push(opened_tag);
@@ -40,7 +41,7 @@ pub(crate) fn open_tag(state: &mut ParserState, e: &BytesStart) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd) -> Result<()> {
+pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) -> Result<()> {
     if let (Some(most_recent_open_tag_name), Some(most_recent_open_tag)) =
         (state.open_tag_names.pop(), state.open_tags.pop())
     {
@@ -81,10 +82,21 @@ pub(crate) fn can_eof(state: &ParserState) -> Result<()> {
     }
 }
 
-pub(crate) fn is_in_namespace(result: ResolveResult) -> bool {
+#[derive(Clone, Copy, EnumIs)]
+pub enum NameSpace {
+    BPMN,
+    SBPMN,
+}
+
+pub(crate) fn is_in_namespace(result: ResolveResult) -> Option<NameSpace> {
     match result {
-        ResolveResult::Unbound => true,
-        ResolveResult::Bound(Namespace(b"http://www.omg.org/spec/BPMN/20100524/MODEL")) => true,
-        _ => false,
+        ResolveResult::Unbound => Some(NameSpace::BPMN),
+        ResolveResult::Bound(Namespace(b"http://www.omg.org/spec/BPMN/20100524/MODEL")) => {
+            Some(NameSpace::BPMN)
+        }
+        ResolveResult::Bound(Namespace(b"https://www.ebitools.org/sbpmn/20260305")) => {
+            Some(NameSpace::SBPMN)
+        }
+        _ => None,
     }
 }
