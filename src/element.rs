@@ -311,6 +311,15 @@ impl Transitionable for BPMNElement {
     ) -> Option<String> {
         enums!(self, transition_debug, transition_index, marking, bpmn)
     }
+
+    fn transition_weight(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+    ) -> Option<ebi_arithmetic::Fraction> {
+        enums!(self, transition_weight, transition_index, marking, parent)
+    }
 }
 
 impl Writable for BPMNElement {

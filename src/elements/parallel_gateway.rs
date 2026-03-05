@@ -8,6 +8,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
 pub struct BPMNParallelGateway {
@@ -186,5 +187,14 @@ impl Transitionable for BPMNParallelGateway {
             "parallel gateway `{}`; internal transition {}",
             self.id, transition_index
         ))
+    }
+
+    fn transition_weight(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        Some(Fraction::one())
     }
 }

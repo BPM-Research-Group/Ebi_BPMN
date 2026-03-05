@@ -12,6 +12,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::Fraction;
 
 #[derive(Clone, Debug)]
 pub struct BPMNCollapsedPool {
@@ -160,5 +161,14 @@ impl Transitionable for BPMNCollapsedPool {
             "collapsed pool `{}`; internal transition {}",
             self.id, transition_index
         ))
+    }
+
+    fn transition_weight(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        None
     }
 }

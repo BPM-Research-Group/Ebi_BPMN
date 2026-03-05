@@ -6,7 +6,7 @@ use crate::{
         inclusive_gateway::BPMNInclusiveGateway,
     },
     stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
-    traits::objectable::BPMNObject,
+    traits::{objectable::BPMNObject, startable::Startable},
 };
 use anyhow::{Context, Result, anyhow};
 use ebi_arithmetic::Signed;
@@ -37,9 +37,59 @@ impl BusinessProcessModelAndNotation {
 
 impl StochasticBusinessProcessModelAndNotation {
     pub fn is_structurally_correct(&self) -> Result<()> {
+        //check the bpmn itself
         self.bpmn
             .is_structurally_correct()
             .with_context(|| anyhow!("Checking structural correctness of control flow."))?;
+
+        //we cannot handle models with multiple start events
+        {
+            //gather the start elements
+            let mut start_elements = vec![];
+            for element in &self.bpmn.elements {
+                if let BPMNElement::Process(process) = element {
+                    start_elements
+                        .extend(process.unconstrained_start_events_without_recursing(&self.bpmn));
+                }
+            }
+            if start_elements.len() > 1 {
+                return Err(anyhow!("An SBPMN model can have at most one start event."));
+            }
+        }
+
+        //we cannot handle models with steered event-based gateways
+        {
+            for element in self.bpmn.elements() {
+                if element.is_event_based_gateway() {
+                    let parent = self
+                        .bpmn
+                        .parent_of(element.global_index())
+                        .ok_or_else(|| anyhow!("parent not found"))?;
+
+                    for sequence_flow_index in element.outgoing_sequence_flows() {
+                        let target = parent.sequence_flow_index_2_target(*sequence_flow_index)?;
+                        if let Some(message_flow_index) = element.incoming_message_flows().get(0) {
+                            let message_source =
+                                self.bpmn.message_flow_index_2_source(*message_flow_index)?;
+                            if message_source.outgoing_message_flows_always_have_tokens() {
+                                //a message from a collapsed pool is always there
+                                //no problem
+                            } else {
+                                //otherwise, the message must be there
+                                return Err(anyhow!(
+                                    "Event-based gateway `{}` has an outgoing sequence flow to element `{}`, which depends on an uncertain message. This is not supported.",
+                                    element.id(),
+                                    target.id()
+                                ));
+                            }
+                        } else {
+                            //there is no constraining message, so this message start event can start a process instance
+                            //no problem
+                        }
+                    }
+                }
+            }
+        }
 
         //check that outgoing sequence flows have weights
         for element in self.bpmn.elements() {

@@ -14,6 +14,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
 pub struct BPMNMessageIntermediateCatchEvent {
@@ -101,7 +102,10 @@ impl BPMNObject for BPMNMessageIntermediateCatchEvent {
     }
 
     fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        if let Some(message_flow_index) = self.incoming_message_flow {
+        if self.incoming_sequence_flows.len() >= 1 {
+            //if it has an incoming sequence flow, it cannot start a process instance
+            Ok(false)
+        } else if let Some(message_flow_index) = self.incoming_message_flow {
             let source = bpmn.message_flow_index_2_source(message_flow_index)?;
             if source.outgoing_message_flows_always_have_tokens() {
                 //a message from a collapsed pool is always there
@@ -238,5 +242,14 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
             "message intermediate catch event `{}`; internal transition {}",
             self.id, transition_index
         ))
+    }
+
+    fn transition_weight(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        Some(Fraction::one())
     }
 }

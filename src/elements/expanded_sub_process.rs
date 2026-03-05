@@ -18,6 +18,7 @@ use crate::{
 use anyhow::{Context, Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
 pub struct BPMNExpandedSubProcess {
@@ -316,6 +317,38 @@ impl Transitionable for BPMNExpandedSubProcess {
                 return self
                     .elements
                     .transition_debug(transition_index, &sub_marking, bpmn);
+            }
+            transition_index -= sub_number_of_transitions;
+        }
+        None
+    }
+
+    fn transition_weight(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<ebi_arithmetic::Fraction> {
+        //start transition
+        if transition_index < self.incoming_sequence_flows.len().max(1) {
+            return Some(Fraction::one());
+        }
+        transition_index -= self.incoming_sequence_flows.len().max(1);
+
+        //instantiations
+        for sub_marking in marking.element_index_2_sub_markings[self.local_index].iter() {
+            if transition_index == 0 {
+                //end transition
+                return Some(Fraction::one());
+            }
+            transition_index -= 1;
+
+            //own transitions
+            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            if transition_index < sub_number_of_transitions {
+                return self
+                    .elements
+                    .transition_weight(transition_index, &sub_marking, self);
             }
             transition_index -= sub_number_of_transitions;
         }

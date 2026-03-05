@@ -17,6 +17,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
 use ebi_activity_key::Activity;
+use ebi_arithmetic::Fraction;
 
 /// more common name: pool
 #[derive(Clone, Debug)]
@@ -257,6 +258,16 @@ impl Transitionable for BPMNProcess {
     ) -> Option<String> {
         self.elements
             .transition_debug(transition_index, marking, bpmn)
+    }
+
+    fn transition_weight(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        self.elements
+            .transition_weight(transition_index, marking, self)
     }
 }
 

@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
+    stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{
         processable::Processable,
         startable::{InitiationMode, Startable},
@@ -12,6 +13,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::bitvec;
 use ebi_activity_key::Activity;
+use ebi_arithmetic::Fraction;
 
 pub type TransitionIndex = usize;
 
@@ -185,6 +187,69 @@ impl BusinessProcessModelAndNotation {
             result += element.number_of_transitions(sub_marking);
         }
         result
+    }
+}
+
+impl StochasticBusinessProcessModelAndNotation {
+    /// BPMN 2.0.2 standard page 238
+    pub fn get_initial_marking(&self) -> Result<BPMNMarking> {
+        self.bpmn.get_initial_marking()
+    }
+
+    pub fn execute_transition(
+        &self,
+        marking: &mut BPMNMarking,
+        transition_index: TransitionIndex,
+    ) -> Result<()> {
+        self.bpmn.execute_transition(marking, transition_index)
+    }
+
+    pub fn is_final_marking(&self, marking: &BPMNMarking) -> Result<bool> {
+        self.bpmn.is_final_marking(marking)
+    }
+
+    pub fn is_transition_silent(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> bool {
+        self.bpmn.is_transition_silent(transition_index, marking)
+    }
+
+    pub fn get_transition_activity(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Activity> {
+        self.bpmn.get_transition_activity(transition_index, marking)
+    }
+
+    pub fn get_enabled_transitions(&self, marking: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
+        self.bpmn.get_enabled_transitions(marking)
+    }
+
+    pub fn number_of_transitions(&self, marking: &BPMNMarking) -> usize {
+        self.bpmn.number_of_transitions(marking)
+    }
+
+    pub fn transition_weight(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Fraction> {
+        for (element, sub_marking) in self
+            .bpmn
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_weight(transition_index, sub_marking, &self.bpmn);
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
     }
 }
 
@@ -381,7 +446,10 @@ mod tests {
                 }],
             }
         );
-        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), Vec::<usize>::new());
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            Vec::<usize>::new()
+        );
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
 

@@ -7,6 +7,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::Lsb0, vec::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::Fraction;
 
 /// A trait that provides semantics to BPMN elements, by means of transitions.
 /// An element can involve any number of transitions, each of which has a deterministic effect on the marking.
@@ -47,6 +48,13 @@ pub trait Transitionable {
         marking: &BPMNSubMarking,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String>;
+
+    fn transition_weight(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+    ) -> Option<Fraction>;
 }
 
 impl Transitionable for Vec<BPMNElement> {
@@ -117,6 +125,22 @@ impl Transitionable for Vec<BPMNElement> {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
                 return element.transition_debug(transition_index, marking, bpmn);
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
+
+    fn transition_weight(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        for element in self.iter() {
+            let number_of_transitions = element.number_of_transitions(marking);
+            if transition_index < number_of_transitions {
+                return element.transition_weight(transition_index, marking, parent);
             }
             transition_index -= number_of_transitions;
         }

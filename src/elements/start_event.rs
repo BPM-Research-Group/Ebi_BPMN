@@ -13,6 +13,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
 pub struct BPMNStartEvent {
@@ -206,5 +207,14 @@ impl Transitionable for BPMNStartEvent {
             "start event `{}`; internal transition {}",
             self.id, transition_index
         ))
+    }
+
+    fn transition_weight(
+        &self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+    ) -> Option<Fraction> {
+        Some(Fraction::one())
     }
 }
