@@ -13,3 +13,13 @@ pub struct BPMNSequenceFlow {
     pub(crate) target_local_index: usize,
     pub weight: Option<Fraction>,
 }
+
+impl BPMNSequenceFlow {
+    pub fn source_global_index(&self) -> GlobalIndex {
+        self.source_global_index
+    }
+
+    pub fn target_global_index(&self) -> GlobalIndex {
+        self.target_global_index
+    }
+}
