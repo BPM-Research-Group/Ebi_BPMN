@@ -9,13 +9,14 @@ use crate::{
 use anyhow::{Error, Result};
 #[cfg(any(test, feature = "testactivities"))]
 use ebi_activity_key::TestActivityKey;
-use ebi_activity_key::{ActivityKey, TranslateActivityKey};
+use ebi_activity_key::{ActivityKey, HasActivityKey, TranslateActivityKey};
 use std::{
     fmt::{Display, Formatter},
     io::BufRead,
     str::FromStr,
 };
 
+#[derive(Clone, Debug)]
 pub struct StochasticBusinessProcessModelAndNotation {
     pub bpmn: BusinessProcessModelAndNotation,
 }
@@ -94,6 +95,16 @@ impl StochasticBusinessProcessModelAndNotation {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         self.bpmn.transition_debug(transition_index, marking, bpmn)
+    }
+}
+
+impl HasActivityKey for StochasticBusinessProcessModelAndNotation {
+    fn activity_key(&self) -> &ActivityKey {
+        &self.bpmn.activity_key
+    }
+
+    fn activity_key_mut(&mut self) -> &mut ActivityKey {
+        &mut self.bpmn.activity_key
     }
 }
 
