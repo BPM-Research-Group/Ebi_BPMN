@@ -11,6 +11,10 @@ pub struct BPMNMessageFlow {
 }
 
 impl BPMNMessageFlow {
+    pub fn global_index(&self) -> GlobalIndex {
+        self.global_index
+    }
+
     pub fn source_global_index(&self) -> GlobalIndex {
         self.source_global_index
     }
