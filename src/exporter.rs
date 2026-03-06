@@ -2,6 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
     elements::collapsed_pool::BPMNCollapsedPool,
+    stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{objectable::BPMNObject, writable::Writable},
 };
 use anyhow::Result;
@@ -23,6 +24,7 @@ impl BusinessProcessModelAndNotation {
             BytesStart::new("definitions").with_attributes([
                 ("id", self.definitions_id.as_str()),
                 ("xmlns", "http://www.omg.org/spec/BPMN/20100524/MODEL"),
+                ("xmlns:sbpmn", "https://www.ebitools.org/sbpmn/20260305"),
                 ("exporter", "Ebi-bpmn"),
             ]),
         ))?;
@@ -77,9 +79,18 @@ impl BusinessProcessModelAndNotation {
     }
 }
 
+impl StochasticBusinessProcessModelAndNotation {
+    pub fn export_to_writer(&self, f: &mut dyn Write) -> Result<()> {
+        self.bpmn.export_to_writer(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::BusinessProcessModelAndNotation;
+    use crate::{
+        BusinessProcessModelAndNotation,
+        stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
+    };
     use std::fs::{self};
 
     #[test]
@@ -92,6 +103,21 @@ mod tests {
 
         let fout = String::from_utf8_lossy(&f);
         let _bpmn2 = fout.parse::<BusinessProcessModelAndNotation>();
+
+        println!("{}", String::from_utf8_lossy(&f));
+    }
+
+    #[test]
+    fn sbpmn_export_import() {
+        let fin = fs::read_to_string("testfiles/and-a-b-xor-c-or.sbpmn").unwrap();
+        let sbpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let mut f = vec![];
+        sbpmn.export_to_writer(&mut f).unwrap();
+        let fout = String::from_utf8_lossy(&f);
+        let _sbpmn2 = fout.parse::<BusinessProcessModelAndNotation>();
 
         println!("{}", String::from_utf8_lossy(&f));
     }

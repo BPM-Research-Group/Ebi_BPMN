@@ -81,7 +81,7 @@ pub mod writer {
     pub mod process;
     pub mod sequence_flow;
     pub mod start_event;
-    pub mod sub_process;
+    pub mod expanded_sub_process;
     pub mod task;
     pub mod timer_intermediate_catch_event;
     pub mod timer_start_event;

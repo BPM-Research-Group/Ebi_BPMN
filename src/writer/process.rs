@@ -19,6 +19,8 @@ impl Writable for BPMNProcess {
 
         self.elements.write(x, self, bpmn)?;
 
+        self.sequence_flows.write(x, self, bpmn)?;
+
         x.write_event(Event::End(BytesEnd::new("process")))?;
         Ok(())
     }
