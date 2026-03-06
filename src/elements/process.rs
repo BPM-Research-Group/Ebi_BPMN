@@ -90,6 +90,30 @@ impl Searchable for BPMNProcess {
         result
     }
 
+    fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        let x = self
+            .sequence_flows
+            .iter_mut()
+            .filter_map(|sequence_flow| {
+                if sequence_flow.global_index == sequence_flow_global_index {
+                    Some(sequence_flow)
+                } else {
+                    None
+                }
+            })
+            .next();
+        if x.is_some() {
+            return x;
+        }
+
+        //recurse
+        self.elements
+            .global_index_2_sequence_flow_mut(sequence_flow_global_index)
+    }
+
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         self.elements.global_index_2_element(index)
     }
@@ -268,6 +292,16 @@ impl Transitionable for BPMNProcess {
     ) -> Option<Fraction> {
         self.elements
             .transition_weight(transition_index, marking, self)
+    }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        self.elements
+            .transition_2_marked_sequence_flows(transition_index, marking, self)
     }
 }
 

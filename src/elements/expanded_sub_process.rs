@@ -354,6 +354,39 @@ impl Transitionable for BPMNExpandedSubProcess {
         }
         None
     }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        //start transition
+        if transition_index < number_of_transitions_xor_join_only!(self) {
+            return Some(vec![]);
+        }
+        transition_index -= number_of_transitions_xor_join_only!(self);
+
+        for sub_marking in &marking.element_index_2_sub_markings[self.local_index] {
+            if transition_index == 0 {
+                //end transition
+                return Some(vec![]);
+            }
+            transition_index -= 1;
+
+            //own transitions
+            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            if transition_index < sub_number_of_transitions {
+                return self.elements.transition_2_marked_sequence_flows(
+                    transition_index,
+                    &sub_marking,
+                    self,
+                );
+            }
+            transition_index -= sub_number_of_transitions;
+        }
+        None
+    }
 }
 
 impl Startable for BPMNExpandedSubProcess {
@@ -436,6 +469,30 @@ impl Searchable for BPMNExpandedSubProcess {
         let mut result: Vec<&BPMNSequenceFlow> = self.sequence_flows.iter().collect();
         result.extend(self.elements.all_sequence_flows_ref());
         result
+    }
+
+    fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        let x = self
+            .sequence_flows
+            .iter_mut()
+            .filter_map(|sequence_flow| {
+                if sequence_flow.global_index == sequence_flow_global_index {
+                    Some(sequence_flow)
+                } else {
+                    None
+                }
+            })
+            .next();
+        if x.is_some() {
+            return x;
+        }
+
+        //recurse
+        self.elements
+            .global_index_2_sequence_flow_mut(sequence_flow_global_index)
     }
 
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {

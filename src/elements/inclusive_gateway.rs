@@ -240,8 +240,8 @@ impl Transitionable for BPMNInclusiveGateway {
         for sequence_flow_index in &self.outgoing_sequence_flows {
             if transition_index % 2 == 0 {
                 sub_marking.sequence_flow_2_tokens[*sequence_flow_index] += 1;
-                transition_index <<= 1;
             }
+            transition_index <<= 1;
         }
         Ok(())
     }
@@ -311,13 +311,34 @@ impl Transitionable for BPMNInclusiveGateway {
                         .get(*sequence_flow_index)?
                         .weight
                         .as_ref()?;
-                    transition_index <<= 1;
                 }
+                transition_index <<= 1;
             }
             sum_chosen *= transition_index.count_ones();
             let sum_chosen = sum_chosen.recip();
 
             Some((Fraction::from(number_of_outgoing_sequence_flows - 1) + sum_chosen) / s)
         }
+    }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        mut transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        let mut result = vec![];
+        for sequence_flow_index in &self.outgoing_sequence_flows {
+            if transition_index % 2 == 0 {
+                result.push(
+                    parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_index)?
+                        .global_index,
+                )
+            }
+            transition_index <<= 1;
+        }
+        Some(result)
     }
 }

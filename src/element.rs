@@ -219,6 +219,21 @@ impl Searchable for BPMNElement {
         }
     }
 
+    fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        match self {
+            BPMNElement::ExpandedSubProcess(p) => {
+                p.global_index_2_sequence_flow_mut(sequence_flow_global_index)
+            }
+            BPMNElement::Process(p) => {
+                p.global_index_2_sequence_flow_mut(sequence_flow_global_index)
+            }
+            _ => None,
+        }
+    }
+
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         if self.global_index() == index {
             Some(self)
@@ -319,6 +334,21 @@ impl Transitionable for BPMNElement {
         parent: &dyn Processable,
     ) -> Option<ebi_arithmetic::Fraction> {
         enums!(self, transition_weight, transition_index, marking, parent)
+    }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        enums!(
+            self,
+            transition_2_marked_sequence_flows,
+            transition_index,
+            marking,
+            parent
+        )
     }
 }
 

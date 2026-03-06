@@ -306,4 +306,50 @@ impl Transitionable for BPMNExclusiveGateway {
             }
         }
     }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        if self.outgoing_sequence_flows.len() == 0 {
+            Some(vec![])
+        } else {
+            let outgoing = self.outgoing_sequence_flows.len().max(1);
+            match (
+                self.incoming_sequence_flows.len() > 0,
+                self.outgoing_sequence_flows.len() > 0,
+            ) {
+                (true, true) => {
+                    //join & split
+                    let sequence_flow_index =
+                        self.outgoing_sequence_flows[transition_index % outgoing];
+                    Some(vec![
+                        parent
+                            .sequence_flows_non_recursive()
+                            .get(sequence_flow_index)?
+                            .global_index,
+                    ])
+                }
+                (true, false) => {
+                    //join only
+                    Some(vec![])
+                }
+                (false, true) => {
+                    let sequence_flow_index = self.outgoing_sequence_flows[transition_index];
+                    Some(vec![
+                        parent
+                            .sequence_flows_non_recursive()
+                            .get(sequence_flow_index)?
+                            .global_index,
+                    ])
+                }
+                (false, false) => {
+                    //no flows at all; we are in initiation mode 2.
+                    Some(vec![])
+                }
+            }
+        }
+    }
 }

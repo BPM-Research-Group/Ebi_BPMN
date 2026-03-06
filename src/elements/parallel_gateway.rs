@@ -1,9 +1,15 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, execute_transition_parallel_split, parser::parser_state::GlobalIndex, semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex}, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    execute_transition_parallel_split,
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    }
+    },
+    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::BitVec};
@@ -196,5 +202,14 @@ impl Transitionable for BPMNParallelGateway {
         _parent: &dyn Processable,
     ) -> Option<Fraction> {
         Some(Fraction::one())
+    }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
     }
 }

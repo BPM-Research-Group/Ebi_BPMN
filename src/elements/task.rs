@@ -7,6 +7,7 @@ use crate::{
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
+    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -255,5 +256,14 @@ impl Transitionable for BPMNTask {
         _parent: &dyn Processable,
     ) -> Option<Fraction> {
         Some(Fraction::one())
+    }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
     }
 }

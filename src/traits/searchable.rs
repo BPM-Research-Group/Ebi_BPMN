@@ -30,6 +30,12 @@ pub(crate) trait Searchable {
     /// return all sequence flows recursively
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow>;
 
+    /// return the sequence flow with this index, if it exists (recurses)
+    fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow>;
+
     /// find an element with the given index
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement>;
 
@@ -105,6 +111,17 @@ impl Searchable for Vec<BPMNElement> {
             .map(|element| element.all_sequence_flows_ref())
             .flatten()
             .collect()
+    }
+
+    fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        self.iter_mut()
+            .filter_map(|element| {
+                element.global_index_2_sequence_flow_mut(sequence_flow_global_index)
+            })
+            .next()
     }
 
     fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {

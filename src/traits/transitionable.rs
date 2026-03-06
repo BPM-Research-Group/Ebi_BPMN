@@ -1,6 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
+    parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::processable::Processable,
 };
@@ -55,6 +56,14 @@ pub trait Transitionable {
         marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<Fraction>;
+
+    /// Returns the sequence flows that get a token by executing this transition.
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>>;
 }
 
 impl Transitionable for Vec<BPMNElement> {
@@ -146,6 +155,26 @@ impl Transitionable for Vec<BPMNElement> {
         }
         None
     }
+
+    fn transition_2_marked_sequence_flows<'a>(
+        &'a self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>> {
+        for element in self.iter() {
+            let number_of_transitions = element.number_of_transitions(marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_marked_sequence_flows(
+                    transition_index,
+                    marking,
+                    parent,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
 }
 
 #[macro_export]
@@ -215,5 +244,25 @@ macro_rules! execute_transition_message_produce {
                 }
             }
         }
+    };
+}
+
+#[macro_export]
+macro_rules! transition_2_marked_sequence_flows_concurrent_split {
+    ($self:ident, $parent:ident) => {
+        Some(
+            $self
+                .outgoing_sequence_flows()
+                .iter()
+                .filter_map(|sequence_flow_id| {
+                    Some(
+                        $parent
+                            .sequence_flows_non_recursive()
+                            .get(*sequence_flow_id)?
+                            .global_index,
+                    )
+                })
+                .collect(),
+        )
     };
 }

@@ -270,7 +270,7 @@ mod tests {
             println!(
                 "\ttransition {} \t {}",
                 transition_index,
-                bpmn.transition_debug(transition_index, marking, bpmn)
+                bpmn.transition_debug(transition_index, marking)
                     .unwrap_or("None".to_string())
             );
         }

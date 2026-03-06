@@ -3,7 +3,7 @@ use crate::{
     elements::{collapsed_sub_process::BPMNCollapsedSubProcess, task::BPMNTask},
     message_flow::BPMNMessageFlow,
     parser::parser_state::GlobalIndex,
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{
         objectable::BPMNObject, processable::Processable, searchable::Searchable,
@@ -118,7 +118,6 @@ impl BusinessProcessModelAndNotation {
         &self,
         mut transition_index: usize,
         marking: &BPMNMarking,
-        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         for (element, sub_marking) in self
             .elements
@@ -127,11 +126,43 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_debug(transition_index, sub_marking, bpmn);
+                return element.transition_debug(transition_index, sub_marking, self);
             }
             transition_index -= number_of_transitions;
         }
         None
+    }
+
+    /// Returns the global indices of sequence flows that get a token by executing this transition.
+    pub fn transition_2_marked_sequence_flows(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Vec<GlobalIndex>> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_marked_sequence_flows(
+                    transition_index,
+                    sub_marking,
+                    self,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
+
+    /// return the sequence flow with this index, if it exists (recurses)
+    pub fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        self.elements.global_index_2_sequence_flow_mut(sequence_flow_global_index)
     }
 }
 

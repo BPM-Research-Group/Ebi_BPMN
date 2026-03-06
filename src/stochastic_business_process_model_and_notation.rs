@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
     parser::{parser::NAMESPACE_SBPMN, parser_state::GlobalIndex},
-    semantics::BPMNMarking,
+    semantics::{BPMNMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{objectable::BPMNObject, processable::Processable},
 };
@@ -96,11 +96,29 @@ impl StochasticBusinessProcessModelAndNotation {
 
     pub fn transition_debug(
         &self,
-        transition_index: usize,
+        transition_index: TransitionIndex,
         marking: &BPMNMarking,
-        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
-        self.bpmn.transition_debug(transition_index, marking, bpmn)
+        self.bpmn.transition_debug(transition_index, marking)
+    }
+
+    /// Returns the global indices of sequence flows that get a token by executing this transition.
+    pub fn transition_2_marked_sequence_flows<'a>(
+        &'a mut self,
+        marking: &BPMNMarking,
+        transition_index: TransitionIndex,
+    ) -> Option<Vec<GlobalIndex>> {
+        self.bpmn
+            .transition_2_marked_sequence_flows(transition_index, marking)
+    }
+
+    /// return the sequence flow with this index, if it exists (recurses)
+    pub fn global_index_2_sequence_flow_mut(
+        &mut self,
+        sequence_flow_global_index: GlobalIndex,
+    ) -> Option<&mut BPMNSequenceFlow> {
+        self.bpmn
+            .global_index_2_sequence_flow_mut(sequence_flow_global_index)
     }
 }
 
