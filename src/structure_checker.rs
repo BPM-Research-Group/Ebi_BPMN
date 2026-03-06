@@ -166,9 +166,9 @@ impl StochasticBusinessProcessModelAndNotation {
                                 .ok_or_else(|| anyhow!("sequence flow not found"))?;
 
                             if let Some(weight) = &sequence_flow.weight {
-                                if !weight.is_positive() {
+                                if weight.is_negative() {
                                     return Err(anyhow!(
-                                        "Sequence flow `{}` has a non-positive weight.",
+                                        "Sequence flow `{}` has a negative weight.",
                                         sequence_flow.id
                                     ));
                                 }

@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{Context, Error, anyhow};
 
 use crate::{
     BusinessProcessModelAndNotation,
@@ -18,7 +18,7 @@ impl TryFrom<BusinessProcessModelAndNotation> for StochasticBusinessProcessModel
     /// This is possible if the appropriate sequence flows are annotated with weights.
     fn try_from(value: BusinessProcessModelAndNotation) -> Result<Self, Self::Error> {
         let result = Self { bpmn: value };
-        result.is_structurally_correct()?;
+        result.is_structurally_correct().with_context(|| anyhow!("Verifying structural correctness."))?;
         Ok(result)
     }
 }
