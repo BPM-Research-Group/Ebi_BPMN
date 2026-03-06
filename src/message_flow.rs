@@ -2,10 +2,20 @@ use crate::parser::parser_state::GlobalIndex;
 
 #[derive(Clone, Debug)]
 pub struct BPMNMessageFlow {
-    pub global_index: GlobalIndex,
-    pub id: String,
-    pub source_pool_index: usize,
-    pub source_global_index: GlobalIndex,
-    pub target_pool_index: usize,
-    pub target_global_index: GlobalIndex,
+    pub(crate) global_index: GlobalIndex,
+    pub(crate) id: String,
+    pub(crate) source_pool_index: usize,
+    pub(crate) source_global_index: GlobalIndex,
+    pub(crate) target_pool_index: usize,
+    pub(crate) target_global_index: GlobalIndex,
+}
+
+impl BPMNMessageFlow {
+    pub fn source_global_index(&self) -> GlobalIndex {
+        self.source_global_index
+    }
+
+    pub fn target_global_index(&self) -> GlobalIndex {
+        self.target_global_index
+    }
 }
