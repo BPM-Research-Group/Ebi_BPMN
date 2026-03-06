@@ -232,7 +232,7 @@ impl StochasticBusinessProcessModelAndNotation {
         self.bpmn.number_of_transitions(marking)
     }
 
-    pub fn transition_weight(
+    pub fn get_transition_weight(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
@@ -255,9 +255,12 @@ impl StochasticBusinessProcessModelAndNotation {
 
 #[cfg(test)]
 mod tests {
+    use ebi_arithmetic::{Fraction, One, f};
+
     use crate::{
         BusinessProcessModelAndNotation,
         semantics::{BPMNMarking, BPMNRootMarking, BPMNSubMarking},
+        stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     };
     use std::fs::{self};
 
@@ -826,6 +829,96 @@ mod tests {
             }
         );
 
+        assert!(bpmn.is_final_marking(&marking).unwrap());
+    }
+
+    #[test]
+    fn bpmn_or_import() {
+        let fin = fs::read_to_string("testfiles/and-a-b-xor-c-or.sbpmn").unwrap();
+        let bpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap();
+        debug_transitions(&bpmn.bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0]);
+        assert_eq!(
+            bpmn.get_transition_weight(0, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [1]);
+        assert_eq!(
+            bpmn.get_transition_weight(1, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [2, 3]);
+        assert_eq!(
+            bpmn.get_transition_weight(3, &marking).unwrap(),
+            Fraction::one()
+        );
+        assert_eq!(
+            bpmn.get_transition_weight(2, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 2).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [3]);
+        assert_eq!(
+            bpmn.get_transition_weight(3, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [4, 5]);
+        assert_eq!(bpmn.get_transition_weight(4, &marking).unwrap(), f!(1, 3));
+        assert_eq!(bpmn.get_transition_weight(5, &marking).unwrap(), f!(2, 3));
+
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [6, 7]);
+        assert_eq!(
+            bpmn.get_transition_weight(6, &marking).unwrap(),
+            Fraction::one()
+        );
+        assert_eq!(
+            bpmn.get_transition_weight(7, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [7, 9]);
+        assert_eq!(
+            bpmn.get_transition_weight(7, &marking).unwrap(),
+            Fraction::one()
+        );
+        assert_eq!(
+            bpmn.get_transition_weight(9, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [8, 9]);
+        assert_eq!(
+            bpmn.get_transition_weight(8, &marking).unwrap(),
+            Fraction::one()
+        );
+        assert_eq!(
+            bpmn.get_transition_weight(9, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [9]);
+        assert_eq!(
+            bpmn.get_transition_weight(9, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0; 0]);
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
 }

@@ -272,6 +272,10 @@ impl Transitionable for BPMNInclusiveGateway {
         _marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<Fraction> {
+        if self.outgoing_sequence_flows.len() <= 1 {
+            return Some(Fraction::one());
+        }
+
         let sum_weights = self
             .outgoing_sequence_flows
             .iter()
@@ -305,7 +309,8 @@ impl Transitionable for BPMNInclusiveGateway {
                     sum_chosen += parent
                         .sequence_flows_non_recursive()
                         .get(*sequence_flow_index)?
-                        .weight.as_ref()?;
+                        .weight
+                        .as_ref()?;
                     transition_index <<= 1;
                 }
             }

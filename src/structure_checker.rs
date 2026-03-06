@@ -122,28 +122,31 @@ impl StochasticBusinessProcessModelAndNotation {
                     outgoing_sequence_flows,
                     ..
                 }) => {
-                    let parent = self
-                        .bpmn
-                        .parent_of(element.global_index())
-                        .ok_or_else(|| anyhow!("parent not found"))?;
-                    for sequence_flow_local_index in outgoing_sequence_flows {
-                        let sequence_flow = parent
-                            .sequence_flows_non_recursive()
-                            .get(*sequence_flow_local_index)
-                            .ok_or_else(|| anyhow!("sequence flow not found"))?;
+                    if outgoing_sequence_flows.len() > 1 {
+                        //only splits matter
+                        let parent = self
+                            .bpmn
+                            .parent_of(element.global_index())
+                            .ok_or_else(|| anyhow!("parent not found"))?;
+                        for sequence_flow_local_index in outgoing_sequence_flows {
+                            let sequence_flow = parent
+                                .sequence_flows_non_recursive()
+                                .get(*sequence_flow_local_index)
+                                .ok_or_else(|| anyhow!("sequence flow not found"))?;
 
-                        if let Some(weight) = &sequence_flow.weight {
-                            if !weight.is_positive() {
+                            if let Some(weight) = &sequence_flow.weight {
+                                if !weight.is_positive() {
+                                    return Err(anyhow!(
+                                        "Sequence flow `{}` has a non-positive weight.",
+                                        sequence_flow.id
+                                    ));
+                                }
+                            } else {
                                 return Err(anyhow!(
-                                    "Sequence flow `{}` has a non-positive weight.",
+                                    "Sequence flow `{}` does not have a weight. It should have a weight as it is an outgoing sequence flow of a gateway that makes a choice.",
                                     sequence_flow.id
                                 ));
                             }
-                        } else {
-                            return Err(anyhow!(
-                                "Sequence flow `{}` does not have a weight. It should have a weight as it is an outgoing sequence flow of a gateway that makes a choice.",
-                                sequence_flow.id
-                            ));
                         }
                     }
                 }

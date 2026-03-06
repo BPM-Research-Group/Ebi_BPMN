@@ -211,11 +211,11 @@ impl Transitionable for BPMNProcess {
         &self,
         root_marking: &BPMNRootMarking,
         sub_marking: &BPMNSubMarking,
-        parent: &dyn Processable,
+        _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         self.elements
-            .enabled_transitions(root_marking, sub_marking, parent, bpmn)
+            .enabled_transitions(root_marking, sub_marking, self, bpmn)
     }
 
     fn execute_transition(
