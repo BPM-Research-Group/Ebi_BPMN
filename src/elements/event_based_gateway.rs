@@ -267,62 +267,10 @@ impl Transitionable for BPMNEventBasedGateway {
 
     fn transition_weight(
         &self,
-        transition_index: TransitionIndex,
+        _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        parent: &dyn Processable,
+        _parent: &dyn Processable,
     ) -> Option<Fraction> {
-        if self.outgoing_sequence_flows.len() == 0 {
-            Some(Fraction::one())
-        } else {
-            let sum_weight = self
-                .outgoing_sequence_flows
-                .iter()
-                .filter_map(|sequence_flow_index| {
-                    parent
-                        .sequence_flows_non_recursive()
-                        .get(*sequence_flow_index)?
-                        .weight
-                        .as_ref()
-                })
-                .sum();
-            let outgoing = self.outgoing_sequence_flows.len().max(1);
-            match (
-                self.incoming_sequence_flows.len() > 0,
-                self.outgoing_sequence_flows.len() > 0,
-            ) {
-                (true, true) => {
-                    //join & split
-                    let sequence_flow_index =
-                        self.outgoing_sequence_flows[transition_index % outgoing];
-                    Some(
-                        parent
-                            .sequence_flows_non_recursive()
-                            .get(sequence_flow_index)?
-                            .weight
-                            .as_ref()?
-                            / &sum_weight,
-                    )
-                }
-                (true, false) => {
-                    //join only
-                    Some(Fraction::one())
-                }
-                (false, true) => {
-                    let sequence_flow_index = self.outgoing_sequence_flows[transition_index];
-                    Some(
-                        parent
-                            .sequence_flows_non_recursive()
-                            .get(sequence_flow_index)?
-                            .weight
-                            .as_ref()?
-                            / &sum_weight,
-                    )
-                }
-                (false, false) => {
-                    //no flows at all; we are in initiation mode 2.
-                    Some(Fraction::one())
-                }
-            }
-        }
+        Some(Fraction::one())
     }
 }

@@ -12,7 +12,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
-use ebi_arithmetic::Fraction;
+use ebi_arithmetic::{Fraction, One, Recip, Zero};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
@@ -268,10 +268,51 @@ impl Transitionable for BPMNInclusiveGateway {
 
     fn transition_weight(
         &self,
-        _transition_index: TransitionIndex,
+        mut transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        _parent: &dyn Processable,
+        parent: &dyn Processable,
     ) -> Option<Fraction> {
-        todo!()
+        let sum_weights = self
+            .outgoing_sequence_flows
+            .iter()
+            .filter_map(|sequence_flow_index| {
+                parent.sequence_flows_non_recursive()[*sequence_flow_index]
+                    .weight
+                    .as_ref()
+            })
+            .sum::<Fraction>();
+        let number_of_outgoing_sequence_flows = self.outgoing_sequence_flows.len();
+
+        let s_1 = (2_usize.pow(number_of_outgoing_sequence_flows.try_into().unwrap()) - 2)
+            * (number_of_outgoing_sequence_flows - 1);
+        let s_2 = Fraction::one()
+            + (1..number_of_outgoing_sequence_flows)
+                .map(|z| {
+                    Fraction::binomial_coefficient(number_of_outgoing_sequence_flows - 1, z - 1)
+                        * Fraction::from(z).recip()
+                })
+                .sum::<Fraction>();
+        let s = Fraction::from(s_1) + s_2 * Fraction::from(sum_weights.clone());
+
+        if transition_index.count_ones() == self.outgoing_sequence_flows.len() as u32 {
+            //full set chosen
+            Some(sum_weights / s)
+        } else {
+            //sub-set chosen
+            let mut sum_chosen = Fraction::zero();
+            for sequence_flow_index in &self.outgoing_sequence_flows {
+                if transition_index % 2 == 0 {
+                    sum_chosen += parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_index)?
+                        .weight.as_ref()?;
+                    transition_index <<= 1;
+                }
+            }
+            sum_chosen *= transition_index.count_ones();
+            let sum_chosen = sum_chosen.recip();
+
+            Some((Fraction::from(number_of_outgoing_sequence_flows - 1) + sum_chosen) / s)
+        }
     }
 }
