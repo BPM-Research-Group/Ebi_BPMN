@@ -125,6 +125,17 @@ mod tests {
 
     #[test]
     #[should_panic]
+    fn sbpmn_import_fail() {
+        let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
+        let bpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        dbg!(bpmn);
+    }
+
+    #[test]
+    #[should_panic]
     fn bpmn_pool_invalid() {
         let fin = fs::read_to_string("testfiles/invalid-pool.bpmn").unwrap();
         let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();

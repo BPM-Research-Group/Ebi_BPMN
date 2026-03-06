@@ -88,3 +88,4 @@ pub mod writer {
 }
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;
+pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;

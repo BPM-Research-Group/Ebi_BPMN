@@ -2,7 +2,7 @@ use crate::{
     element::{BPMNElement, BPMNElementTrait},
     message_flow::BPMNMessageFlow,
     parser::{
-        parser::NameSpace,
+        parser::{NAMESPACE_SBPMN, NameSpace},
         parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_message_flow::DraftMessageFlow,
@@ -33,6 +33,19 @@ impl Recognisable for Definitions {
     }
 }
 
+fn find_stochastic_namespace_declaration(e: &BytesStart) -> bool {
+    for attribute in e.attributes() {
+        if let Ok(attribute) = attribute {
+            if let Some(_) = attribute.key.as_namespace_binding() {
+                if *attribute.value == *NAMESPACE_SBPMN {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 impl Openable for Definitions {
     fn open_tag(_tag: Tag, e: &BytesStart, state: &mut ParserState) -> Result<OpenedTag>
     where
@@ -40,11 +53,14 @@ impl Openable for Definitions {
     {
         let (index, id) = state.read_and_add_id(e)?;
 
+        //find the stochastic declaration
+
         Ok(OpenedTag::Definitions {
             global_index: index,
             id,
             collaboration_index: None,
             collaboration_id: None,
+            stochastic_namespace: find_stochastic_namespace_declaration(e),
             draft_message_flows: vec![],
             elements: vec![],
         })
@@ -60,6 +76,7 @@ impl Closeable for Definitions {
             id,
             collaboration_index,
             collaboration_id,
+            stochastic_namespace,
             draft_message_flows,
             mut elements,
         } = opened_tag
@@ -159,6 +176,7 @@ impl Closeable for Definitions {
                 id,
                 collaboration_index,
                 collaboration_id,
+                stochastic_namespace,
                 elements,
                 message_flows,
             });
@@ -175,6 +193,7 @@ pub(crate) struct DraftDefinitions {
     pub(crate) id: String,
     pub(crate) collaboration_index: Option<GlobalIndex>,
     pub(crate) collaboration_id: Option<String>,
+    pub(crate) stochastic_namespace: bool,
     pub(crate) elements: Vec<BPMNElement>,
     pub(crate) message_flows: Vec<BPMNMessageFlow>,
 }

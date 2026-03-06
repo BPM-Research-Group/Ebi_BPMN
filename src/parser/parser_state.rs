@@ -49,11 +49,13 @@ impl ParserState {
                 id: definitions_id,
                 collaboration_index,
                 collaboration_id,
+                stochastic_namespace,
                 elements,
                 message_flows,
             } = draft_definition;
             //construct result
             let result = BusinessProcessModelAndNotation {
+                stochastic_namespace,
                 activity_key,
                 collaboration_index,
                 collaboration_id,

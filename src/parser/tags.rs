@@ -140,6 +140,7 @@ pub(crate) enum OpenedTag {
         id: String,
         collaboration_index: Option<GlobalIndex>,
         collaboration_id: Option<String>,
+        stochastic_namespace: bool,
         draft_message_flows: Vec<DraftMessageFlow>,
         elements: Vec<BPMNElement>,
     },

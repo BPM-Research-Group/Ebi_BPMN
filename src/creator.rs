@@ -29,6 +29,7 @@ pub struct BPMNCreator {
 impl BPMNCreator {
     pub fn new() -> Self {
         let bpmn = BusinessProcessModelAndNotation {
+            stochastic_namespace: false,
             activity_key: ActivityKey::new(),
             collaboration_index: None,
             collaboration_id: None,
@@ -42,6 +43,7 @@ impl BPMNCreator {
 
     pub fn new_with_activity_key(activity_key: ActivityKey) -> Self {
         let bpmn = BusinessProcessModelAndNotation {
+            stochastic_namespace: false,
             activity_key,
             collaboration_index: None,
             collaboration_id: None,

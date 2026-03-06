@@ -19,6 +19,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Clone, ActivityKey, Debug)]
 pub struct BusinessProcessModelAndNotation {
+    pub(crate) stochastic_namespace: bool,
     pub activity_key: ActivityKey,
 
     pub collaboration_index: Option<GlobalIndex>,

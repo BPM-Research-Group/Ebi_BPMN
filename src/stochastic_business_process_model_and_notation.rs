@@ -1,12 +1,12 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    parser::parser_state::GlobalIndex,
+    parser::{parser::NAMESPACE_SBPMN, parser_state::GlobalIndex},
     semantics::BPMNMarking,
     sequence_flow::BPMNSequenceFlow,
     traits::{objectable::BPMNObject, processable::Processable},
 };
-use anyhow::{Error, Result};
+use anyhow::{Error, Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
 use ebi_activity_key::TestActivityKey;
 use ebi_activity_key::{ActivityKey, HasActivityKey, TranslateActivityKey};
@@ -27,6 +27,12 @@ impl StochasticBusinessProcessModelAndNotation {
         Self: Sized,
     {
         let bpmn = BusinessProcessModelAndNotation::import_from_reader(reader, false)?;
+        if !bpmn.stochastic_namespace {
+            return Err(anyhow!(
+                "The SBPMN namespace of `{}` must be declared on the definitions tag.",
+                String::from_utf8_lossy(NAMESPACE_SBPMN)
+            ));
+        }
         let sbpmn = Self { bpmn };
         sbpmn.is_structurally_correct()?;
         Ok(sbpmn)

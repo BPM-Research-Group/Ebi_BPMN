@@ -88,15 +88,14 @@ pub enum NameSpace {
     SBPMN,
 }
 
+pub const NAMESPACE_SBPMN: &[u8; 39] = b"https://www.ebitools.org/sbpmn/20260305";
+pub const NAMESPACE_BPMN: &[u8; 43] = b"http://www.omg.org/spec/BPMN/20100524/MODEL";
+
 pub(crate) fn is_in_namespace(result: ResolveResult) -> Option<NameSpace> {
     match result {
         ResolveResult::Unbound => Some(NameSpace::BPMN),
-        ResolveResult::Bound(Namespace(b"http://www.omg.org/spec/BPMN/20100524/MODEL")) => {
-            Some(NameSpace::BPMN)
-        }
-        ResolveResult::Bound(Namespace(b"https://www.ebitools.org/sbpmn/20260305")) => {
-            Some(NameSpace::SBPMN)
-        }
+        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_BPMN => Some(NameSpace::BPMN),
+        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_SBPMN => Some(NameSpace::SBPMN),
         _ => None,
     }
 }

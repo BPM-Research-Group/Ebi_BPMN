@@ -20,14 +20,16 @@ impl BusinessProcessModelAndNotation {
         x.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
 
         //definitions
-        x.write_event(Event::Start(
-            BytesStart::new("definitions").with_attributes([
-                ("id", self.definitions_id.as_str()),
-                ("xmlns", "http://www.omg.org/spec/BPMN/20100524/MODEL"),
-                ("xmlns:sbpmn", "https://www.ebitools.org/sbpmn/20260305"),
-                ("exporter", "Ebi-bpmn"),
-            ]),
-        ))?;
+        let mut bytes_start = BytesStart::new("definitions").with_attributes([
+            ("id", self.definitions_id.as_str()),
+            ("xmlns", "http://www.omg.org/spec/BPMN/20100524/MODEL"),
+            ("exporter", "Ebi-bpmn"),
+        ]);
+        if self.stochastic_namespace {
+            bytes_start = bytes_start
+                .with_attributes([(("xmlns:sbpmn", "https://www.ebitools.org/sbpmn/20260305"))]);
+        }
+        x.write_event(Event::Start(bytes_start))?;
 
         //collaboration
         if let Some(collaboration_id) = &self.collaboration_id {
@@ -109,6 +111,21 @@ mod tests {
 
     #[test]
     fn sbpmn_export_import() {
+        let fin = fs::read_to_string("testfiles/model.sbpmn").unwrap();
+        let sbpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let mut f = vec![];
+        sbpmn.export_to_writer(&mut f).unwrap();
+        let fout = String::from_utf8_lossy(&f);
+        let _sbpmn2 = fout.parse::<StochasticBusinessProcessModelAndNotation>().unwrap();
+
+        println!("{}", String::from_utf8_lossy(&f));
+    }
+
+    #[test]
+    fn sbpmn_export_import_or() {
         let fin = fs::read_to_string("testfiles/and-a-b-xor-c-or.sbpmn").unwrap();
         let sbpmn = fin
             .parse::<StochasticBusinessProcessModelAndNotation>()
@@ -117,7 +134,7 @@ mod tests {
         let mut f = vec![];
         sbpmn.export_to_writer(&mut f).unwrap();
         let fout = String::from_utf8_lossy(&f);
-        let _sbpmn2 = fout.parse::<BusinessProcessModelAndNotation>();
+        let _sbpmn2 = fout.parse::<StochasticBusinessProcessModelAndNotation>().unwrap();
 
         println!("{}", String::from_utf8_lossy(&f));
     }

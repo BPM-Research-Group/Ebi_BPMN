@@ -57,6 +57,37 @@ impl StochasticBusinessProcessModelAndNotation {
             }
         }
 
+        //choice-based sequence flows must have weights
+        {
+            for element in self.bpmn.elements() {
+                if element.is_event_based_gateway()
+                    || element.is_exclusive_gateway()
+                    || element.is_inclusive_gateway()
+                {
+                    if element.outgoing_sequence_flows().len() > 1 {
+                        for sequence_flow_index in element.outgoing_sequence_flows() {
+                            let parent = self
+                                .bpmn
+                                .parent_of(element.global_index())
+                                .ok_or_else(|| anyhow!("parent not found"))?;
+
+                            let sequence_flow = parent
+                                .sequence_flows_non_recursive()
+                                .get(*sequence_flow_index)
+                                .ok_or_else(|| anyhow!("sequence flow not found"))?;
+
+                            if sequence_flow.weight.is_none() {
+                                return Err(anyhow!(
+                                    "Sequence flow `{}` originates from a choice-making gateway and therefore must have a weight.",
+                                    sequence_flow.id
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         //we cannot handle models with steered event-based gateways
         {
             for element in self.bpmn.elements() {
