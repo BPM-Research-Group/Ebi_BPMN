@@ -1,4 +1,4 @@
-use ebi_arithmetic::Fraction;
+use ebi_arithmetic::{Fraction, Signed};
 
 use crate::parser::parser_state::GlobalIndex;
 
@@ -18,12 +18,20 @@ impl BPMNSequenceFlow {
     pub fn global_index(&self) -> GlobalIndex {
         self.global_index
     }
-    
+
     pub fn source_global_index(&self) -> GlobalIndex {
         self.source_global_index
     }
 
     pub fn target_global_index(&self) -> GlobalIndex {
         self.target_global_index
+    }
+
+    pub fn has_fireable_weight(&self) -> bool {
+        if let Some(weight) = &self.weight {
+            weight.is_positive()
+        } else {
+            true
+        }
     }
 }

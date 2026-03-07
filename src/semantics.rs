@@ -56,7 +56,13 @@ impl BPMNSubMarking {
 
 impl BusinessProcessModelAndNotation {
     /// BPMN 2.0.2 standard page 238
-    pub fn get_initial_marking(&self) -> Result<BPMNMarking> {
+    /// By convention, if the model is empty, it does not support any trace, and this function returns Ok(None).
+    /// If the model is structurally correct, this method will return Ok(..).
+    pub fn get_initial_marking(&self) -> Result<Option<BPMNMarking>> {
+        if self.elements.is_empty() {
+            return Ok(None);
+        }
+
         //gather the initiation mode
         let mut initiation_mode = InitiationMode::ParallelElements(vec![]);
         for element in &self.elements {
@@ -80,10 +86,10 @@ impl BusinessProcessModelAndNotation {
                 }
             }
 
-            Ok(BPMNMarking {
+            Ok(Some(BPMNMarking {
                 element_index_2_sub_markings,
                 root_marking,
-            })
+            }))
         } else {
             todo!()
         }
@@ -192,7 +198,9 @@ impl BusinessProcessModelAndNotation {
 
 impl StochasticBusinessProcessModelAndNotation {
     /// BPMN 2.0.2 standard page 238
-    pub fn get_initial_marking(&self) -> Result<BPMNMarking> {
+    /// By convention, if the model is empty, it does not support any trace, and this function returns Ok(None).
+    /// If the model is structurally correct, this method will return Ok(..).
+    pub fn get_initial_marking(&self) -> Result<Option<BPMNMarking>> {
         self.bpmn.get_initial_marking()
     }
 
@@ -254,7 +262,7 @@ impl StochasticBusinessProcessModelAndNotation {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use ebi_arithmetic::{Fraction, One, f};
 
     use crate::{
@@ -281,7 +289,7 @@ mod tests {
         let fin = fs::read_to_string("testfiles/model.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-        let mut marking = bpmn.get_initial_marking().unwrap();
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
         assert_eq!(bpmn.number_of_transitions(&marking), 13);
         debug_transitions(&bpmn, &marking);
 
@@ -461,7 +469,7 @@ mod tests {
         let fin = fs::read_to_string("testfiles/model-lanes.bpmn").unwrap();
         let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
 
-        let mut marking = bpmn.get_initial_marking().unwrap();
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
         debug_transitions(&bpmn, &marking);
 
         assert_eq!(
@@ -839,7 +847,7 @@ mod tests {
             .parse::<StochasticBusinessProcessModelAndNotation>()
             .unwrap();
 
-        let mut marking = bpmn.get_initial_marking().unwrap();
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
         debug_transitions(&bpmn.bpmn, &marking);
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0]);
         assert_eq!(

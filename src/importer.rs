@@ -100,7 +100,7 @@ pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<St
 #[cfg(test)]
 mod tests {
     use crate::{
-        BusinessProcessModelAndNotation,
+        BusinessProcessModelAndNotation, semantics::tests::debug_transitions,
         stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
         traits::processable::Processable,
     };
@@ -155,5 +155,42 @@ mod tests {
 
         assert_eq!(bpmn.elements.len(), 2);
         assert_eq!(bpmn.message_flows.len(), 1);
+    }
+
+    #[test]
+    fn sbpmn_import_zero_weight() {
+        let fin = fs::read_to_string("testfiles/model-zeroweight.sbpmn").unwrap();
+        let sbpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        dbg!(&sbpmn);
+
+        let mut marking = sbpmn.get_initial_marking().unwrap().unwrap();
+        assert_eq!(sbpmn.number_of_transitions(&marking), 13);
+        debug_transitions(&sbpmn.bpmn, &marking);
+
+        let enabled = sbpmn.get_enabled_transitions(&marking).unwrap();
+        assert_eq!(enabled, [0]);
+
+        //execute start event
+        sbpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(sbpmn.get_enabled_transitions(&marking).unwrap(), [1]);
+
+        //execute task
+        assert_eq!(
+            sbpmn
+                .bpmn
+                .activity_key
+                .deprocess_activity(&sbpmn.get_transition_activity(1, &marking).unwrap()),
+            "Register claim\n(2min)"
+        );
+        sbpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(sbpmn.get_enabled_transitions(&marking).unwrap(), [3]);
+
+        //execute XOR split
+        sbpmn.is_transition_silent(3, &marking);
+        sbpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(sbpmn.get_enabled_transitions(&marking).unwrap(), [5]);
     }
 }

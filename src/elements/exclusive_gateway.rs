@@ -125,7 +125,7 @@ impl Transitionable for BPMNExclusiveGateway {
         &self,
         _root_marking: &BPMNRootMarking,
         sub_marking: &BPMNSubMarking,
-        _parent: &dyn Processable,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         let mut result = bitvec![0;self.number_of_transitions(sub_marking)];
@@ -138,22 +138,31 @@ impl Transitionable for BPMNExclusiveGateway {
         ) {
             (true, true) => {
                 //join & split
-                for (incoming_index, incoming_sequence_flow) in
+                for (incoming_index, incoming_sequence_flow_index) in
                     self.incoming_sequence_flows.iter().enumerate()
                 {
-                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
-                        for i in incoming_index * outgoing..(1 + incoming_index) * outgoing {
-                            result.set(i, true);
+                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow_index] >= 1 {
+                        for (outgoing_index, outgoing_sequence_flow_local_index) in
+                            self.outgoing_sequence_flows.iter().enumerate()
+                        {
+                            let outgoing_sequence_flow = parent
+                                .sequence_flows_non_recursive()
+                                .get(*outgoing_sequence_flow_local_index)
+                                .ok_or_else(|| anyhow!("sequence flow not found"))?;
+                            if outgoing_sequence_flow.has_fireable_weight() {
+                                let transition = incoming_index * outgoing + outgoing_index;
+                                result.set(transition, true);
+                            }
                         }
                     }
                 }
             }
             (true, false) => {
                 //join only
-                for (incoming_index, incoming_sequence_flow) in
+                for (incoming_index, incoming_sequence_flow_index) in
                     self.incoming_sequence_flows.iter().enumerate()
                 {
-                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow] >= 1 {
+                    if sub_marking.sequence_flow_2_tokens[*incoming_sequence_flow_index] >= 1 {
                         result.set(incoming_index, true);
                     }
                 }
@@ -161,7 +170,17 @@ impl Transitionable for BPMNExclusiveGateway {
             (false, true) => {
                 //split only; we are in initiation mode 2.
                 if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
-                    result.fill(true);
+                    for (outgoing_index, outgoing_sequence_flow_local_index) in
+                        self.outgoing_sequence_flows.iter().enumerate()
+                    {
+                        let outgoing_sequence_flow = parent
+                            .sequence_flows_non_recursive()
+                            .get(*outgoing_sequence_flow_local_index)
+                            .ok_or_else(|| anyhow!("sequence flow not found"))?;
+                        if outgoing_sequence_flow.has_fireable_weight() {
+                            result.set(outgoing_index, true);
+                        }
+                    }
                 }
             }
             (false, false) => {
