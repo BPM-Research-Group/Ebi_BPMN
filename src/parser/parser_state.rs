@@ -19,7 +19,7 @@ pub(crate) struct ParserState {
     pub(crate) not_recognised_id_2_tag: HashMap<String, String>,
 }
 
-pub(crate) type GlobalIndex = (usize, ());
+pub type GlobalIndex = (usize, ());
 
 impl ParserState {
     pub(crate) fn new() -> Self {
