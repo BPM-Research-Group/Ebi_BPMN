@@ -37,7 +37,7 @@ In accordance with the BPMN standard, a process instance can start as follows:
   
    let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
   
-   let mut marking = bpmn.get_initial_marking()?;
+   let mut marking = bpmn.get_initial_marking()?.unwrap();
    assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
    bpmn.execute_transition(&mut marking, 0)?;
   
@@ -51,6 +51,7 @@ In accordance with the BPMN standard, a process instance can start as follows:
 The interpretation of BPMN of this crate differs from the BPMN 2.0.2 standard on the following aspects:
 * There is no difference made between a deadlock and proper termination. That is, a trace is considered finished if and as soon as it reaches a deadlock.
 * The inclusive (OR) gateway uses a slightly different semantics.
+* A completely empty model is assumed to have no traces (not the language with the empty trace).
 
 For more information on these elements, see [this Youtube playlist](https://youtu.be/k0XAej_0In8?si=37Bd6jOFPwqAURlV).
 

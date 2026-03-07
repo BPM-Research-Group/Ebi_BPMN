@@ -30,7 +30,7 @@ use std::fmt::{Display, Formatter};
   
    let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
   
-   let mut marking = bpmn.get_initial_marking()?;
+   let mut marking = bpmn.get_initial_marking()?.unwrap();
    assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
    bpmn.execute_transition(&mut marking, 0)?;
   
