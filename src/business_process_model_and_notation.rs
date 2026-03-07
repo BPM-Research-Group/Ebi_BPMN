@@ -32,6 +32,7 @@ use std::fmt::{Display, Formatter};
   
    let mut marking = bpmn.get_initial_marking()?;
    assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+   bpmn.execute_transition(&mut marking, 0)?;
   
    Ok(())
   }

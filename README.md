@@ -39,6 +39,7 @@ In accordance with the BPMN standard, a process instance can start as follows:
   
    let mut marking = bpmn.get_initial_marking()?;
    assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+   bpmn.execute_transition(&mut marking, 0)?;
   
    Ok(())
   }
