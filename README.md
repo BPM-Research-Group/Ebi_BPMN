@@ -5,7 +5,7 @@ Contains a parser, a data structure and a writer.
 For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
 The crate provides methods to parse BPMN models, methods to write BPMN models, and methods to traverse the state space of a BPMN model.
 
-If you are an end user, consider the Ebi crate & tool, which provides user-accessible algorithms that use BPMN.
+If you are an end user, please consider using the Ebi crate & tool, which provides user-accessible algorithms that use BPMN.
 
 # Supported elements
 
@@ -27,6 +27,23 @@ In accordance with the BPMN standard, a process instance can start as follows:
 * If the model contains a single start event, then that event is fired to start a process instance.
 * If the model contains multiple start events, one of them can be chosen to start a process instance.
 * If the model contains no start events, every eligible element receives a token, and they thus start in parallel.
+
+# Example
+
+```rust
+  fn main() -> anyhow::Result<()> {
+   let f = File::open("testfiles/model.bpmn")?;
+   let mut reader = BufReader::new(f);
+  
+   let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
+  
+   let mut marking = bpmn.get_initial_marking()?;
+   assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+  
+   Ok(())
+  }
+
+```
 
 # Deviations from the BPMN 2.0.2 standard
 

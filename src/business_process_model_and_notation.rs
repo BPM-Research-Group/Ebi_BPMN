@@ -17,6 +17,27 @@ use ebi_activity_key::{ActivityKey, ActivityKeyTranslator, TranslateActivityKey}
 use ebi_derive::ActivityKey;
 use std::fmt::{Display, Formatter};
 
+/** A struct with a Business Process Model and Notation (BPMN) model.
+  ```
+  use std::io::prelude::*;
+  use std::io::BufReader;
+  use std::fs::File;
+  use ebi_bpmn::BusinessProcessModelAndNotation;
+  
+  fn main() -> anyhow::Result<()> {
+   let f = File::open("testfiles/model.bpmn")?;
+   let mut reader = BufReader::new(f);
+  
+   let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
+  
+   let mut marking = bpmn.get_initial_marking()?;
+   assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+  
+   Ok(())
+  }
+  ```
+*/
+
 #[derive(Clone, ActivityKey, Debug)]
 pub struct BusinessProcessModelAndNotation {
     pub(crate) stochastic_namespace: bool,
