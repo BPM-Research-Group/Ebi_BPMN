@@ -1,12 +1,15 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, execute_transition_message_produce,
-    execute_transition_parallel_split, execute_transition_xor_join_consume,
-    number_of_transitions_xor_join_only,
+    enabledness_xor_join_only, execute_transition_parallel_split,
+    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    traits::{objectable::BPMNObject, processable::Processable, transitionable::Transitionable},
+    traits::{
+        objectable::{BPMNObject, EMPTY_FLOWS},
+        processable::Processable,
+        transitionable::Transitionable,
+    },
     transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
@@ -15,7 +18,7 @@ use ebi_activity_key::Activity;
 use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
-pub struct BPMNTask {
+pub struct BPMNReceiveTask {
     pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) local_index: usize,
@@ -23,10 +26,9 @@ pub struct BPMNTask {
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
     pub(crate) incoming_message_flow: Option<usize>,
-    pub(crate) outgoing_message_flow: Option<usize>,
 }
 
-impl BPMNElementTrait for BPMNTask {
+impl BPMNElementTrait for BPMNReceiveTask {
     fn add_incoming_sequence_flow(&mut self, flow_index: usize) -> Result<()> {
         self.incoming_sequence_flows.push(flow_index);
         Ok(())
@@ -45,12 +47,10 @@ impl BPMNElementTrait for BPMNTask {
         Ok(())
     }
 
-    fn add_outgoing_message_flow(&mut self, flow_index: usize) -> Result<()> {
-        if self.outgoing_message_flow.is_some() {
-            return Err(anyhow!("cannot add a second outgoing message flow"));
-        }
-        self.outgoing_message_flow = Some(flow_index);
-        Ok(())
+    fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> Result<()> {
+        Err(anyhow!(
+            "cannot add an outgoing message flow to a receive task"
+        ))
     }
 
     fn verify_structural_correctness(
@@ -62,7 +62,7 @@ impl BPMNElementTrait for BPMNTask {
     }
 }
 
-impl BPMNObject for BPMNTask {
+impl BPMNObject for BPMNReceiveTask {
     fn local_index(&self) -> usize {
         self.local_index
     }
@@ -98,7 +98,7 @@ impl BPMNObject for BPMNTask {
     }
 
     fn outgoing_message_flows(&self) -> &[usize] {
-        &self.outgoing_message_flow.as_slice()
+        &EMPTY_FLOWS
     }
 
     fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
@@ -112,7 +112,7 @@ impl BPMNObject for BPMNTask {
                 Ok(false)
             }
         } else {
-            //there is no constraining message, so this message start event can start a process instance
+            //there is no constraining message, so this receive task can start a process instance
             Ok(true)
         }
     }
@@ -134,11 +134,11 @@ impl BPMNObject for BPMNTask {
     }
 
     fn can_have_outgoing_sequence_flows(&self) -> bool {
-        true
+        false
     }
 }
 
-impl Transitionable for BPMNTask {
+impl Transitionable for BPMNReceiveTask {
     fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
@@ -220,7 +220,6 @@ impl Transitionable for BPMNTask {
 
         //produce
         execute_transition_parallel_split!(self, sub_marking);
-        execute_transition_message_produce!(self, root_marking, bpmn);
 
         Ok(())
     }

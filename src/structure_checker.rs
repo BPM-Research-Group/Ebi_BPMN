@@ -14,10 +14,10 @@ use ebi_arithmetic::Signed;
 impl BusinessProcessModelAndNotation {
     pub fn is_structurally_correct(&self) -> Result<()> {
         //check elements
-        for element in self.elements() {
+        for element in &self.elements {
             element
                 .verify_structural_correctness(self, self)
-                .with_context(|| anyhow!("element `{}`", element.id()))?;
+                .with_context(|| anyhow!("Found a structural correctness issue with element `{}`.", element.id()))?;
         }
 
         //check messages
@@ -137,6 +137,7 @@ impl StochasticBusinessProcessModelAndNotation {
                 | BPMNElement::MessageStartEvent(_)
                 | BPMNElement::ParallelGateway(_)
                 | BPMNElement::Process(_)
+                | BPMNElement::ReceiveTask(_)
                 | BPMNElement::StartEvent(_)
                 | BPMNElement::Task(_)
                 | BPMNElement::TimerIntermediateCatchEvent(_)

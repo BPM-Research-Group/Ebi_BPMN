@@ -80,7 +80,7 @@ impl ParserState {
             //check structural correctness
             result
                 .is_structurally_correct()
-                .with_context(|| "model is not structurally correct")?;
+                .with_context(|| "The model is not structurally correct.")?;
             Ok(result)
         } else {
             if draft_definitionss.len() == 0 {

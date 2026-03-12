@@ -18,6 +18,7 @@ pub mod elements {
     pub mod message_start_event;
     pub mod parallel_gateway;
     pub mod process;
+    pub mod receive_task;
     pub mod start_event;
     pub mod task;
     pub mod timer_intermediate_catch_event;
@@ -46,6 +47,7 @@ pub mod parser {
     pub mod tag_parallel_gateway;
     pub mod tag_participant;
     pub mod tag_process;
+    pub mod tag_receive_task;
     pub mod tag_sequence_flow;
     pub mod tag_start_event;
     pub mod tag_subprocess;
@@ -69,6 +71,7 @@ pub mod writer {
     pub mod end_event;
     pub mod event_based_gateway;
     pub mod exclusive_gateway;
+    pub mod expanded_sub_process;
     pub mod inclusive_gateway;
     pub mod intermediate_catch_event;
     pub mod intermediate_throw_event;
@@ -79,9 +82,9 @@ pub mod writer {
     pub mod message_start_event;
     pub mod parallel_gateway;
     pub mod process;
+    pub mod receive_task;
     pub mod sequence_flow;
     pub mod start_event;
-    pub mod expanded_sub_process;
     pub mod task;
     pub mod timer_intermediate_catch_event;
     pub mod timer_start_event;

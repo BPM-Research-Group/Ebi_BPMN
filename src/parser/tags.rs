@@ -18,6 +18,7 @@ use crate::{
         tag_parallel_gateway::TagParallelGateway,
         tag_participant::TagParticipant,
         tag_process::TagProcess,
+        tag_receive_task::TagReceiveTask,
         tag_sequence_flow::{DraftSequenceFlow, TagSequenceFlow},
         tag_start_event::TagStartEvent,
         tag_subprocess::TagSubProcess,
@@ -48,6 +49,7 @@ pub(crate) enum Tag {
     ParallelGateway,
     Participant,
     Process,
+    ReceiveTask,
     SequenceFlow,
     SubProcess,
     StartEvent,
@@ -88,6 +90,7 @@ impl Recognisable for Tag {
                 Tag::Participant => TagParticipant::recognise_tag(e, state, n),
                 Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state, n),
                 Tag::Weight => TagWeight::recognise_tag(e, state, n),
+                Tag::ReceiveTask => TagReceiveTask::recognise_tag(e, state, n),
             };
             if x.is_some() {
                 return x;
@@ -122,6 +125,7 @@ impl Openable for Tag {
             Tag::Participant => TagParticipant::open_tag(tag, e, state),
             Tag::TimerEventDefinition => TagTimerEventDefinition::open_tag(tag, e, state),
             Tag::Weight => TagWeight::open_tag(tag, e, state),
+            Tag::ReceiveTask => TagReceiveTask::open_tag(tag, e, state),
         }
     }
 }
@@ -197,6 +201,11 @@ pub(crate) enum OpenedTag {
         elements: Vec<BPMNElement>,
         draft_sequence_flows: Vec<DraftSequenceFlow>,
     },
+    ReceiveTask {
+        global_index: GlobalIndex,
+        id: String,
+        activity: Activity,
+    },
     SequenceFlow {
         global_index: GlobalIndex,
         id: String,
@@ -269,6 +278,7 @@ impl Closeable for OpenedTag {
                 TagTimerEventDefinition::close_tag(opened_tag, e, state)
             }
             OpenedTag::Weight { .. } => TagWeight::close_tag(opened_tag, e, state),
+            OpenedTag::ReceiveTask { .. } => TagReceiveTask::close_tag(opened_tag, e, state),
         }
     }
 }

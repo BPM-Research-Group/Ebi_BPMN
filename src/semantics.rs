@@ -929,4 +929,14 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0; 0]);
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
+
+    #[test]
+    fn bpmn_eventbasedgateway() {
+        let fin = fs::read_to_string("testfiles/eventbasedgateway.bpmn").unwrap();
+        let bpmn = fin
+            .parse::<BusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+    }
 }
