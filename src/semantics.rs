@@ -968,4 +968,73 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0; 0]);
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
+
+    #[test]
+    fn admission() {
+        let fin = fs::read_to_string("testfiles/admission.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+        debug_transitions(&bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![1]);
+
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3, 4]);
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![5]);
+
+        bpmn.execute_transition(&mut marking, 5).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![7]);
+
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![2]);
+
+        bpmn.execute_transition(&mut marking, 2).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3, 4]);
+
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![8]);
+
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6, 9]);
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![9, 11]);
+
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![10, 11]
+        );
+
+        bpmn.execute_transition(&mut marking, 10).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![11, 12]
+        );
+
+        bpmn.execute_transition(&mut marking, 11).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![12]);
+
+        bpmn.execute_transition(&mut marking, 12).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![12, 13]
+        );
+
+        bpmn.execute_transition(&mut marking, 12).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![13]);
+
+        bpmn.execute_transition(&mut marking, 13).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![13]);
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
+
+        bpmn.execute_transition(&mut marking, 13).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0; 0]);
+        assert!(bpmn.is_final_marking(&marking).unwrap());
+    }
 }
