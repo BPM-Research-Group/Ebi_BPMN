@@ -132,6 +132,9 @@ impl BusinessProcessModelAndNotation {
         ))
     }
 
+    /// Returns whether the marking is a final marking. That is, whether no transitions are enabled in it.
+    /// If the model is structurally correct, this function will always return Ok().
+    /// If the model is not structurally correct, this function may return Err() but will not panic.
     pub fn is_final_marking(&self, marking: &BPMNMarking) -> Result<bool> {
         Ok(self.get_enabled_transitions(marking)?.is_empty())
     }

@@ -18,6 +18,8 @@ use ebi_derive::ActivityKey;
 use std::fmt::{Display, Formatter};
 
 /** A struct with a Business Process Model and Notation (BPMN) model.
+ 
+Example:
   ```
   use std::io::prelude::*;
   use std::io::BufReader;
@@ -37,6 +39,8 @@ use std::fmt::{Display, Formatter};
    Ok(())
   }
   ```
+
+  To create a BPMN model programmatically, please consider using a [BPMNCreator].
 */
 
 #[derive(Clone, ActivityKey, Debug)]
