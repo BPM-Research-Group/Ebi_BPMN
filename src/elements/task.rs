@@ -186,9 +186,9 @@ impl Transitionable for BPMNTask {
             if source.is_event_based_gateway() {
                 //special case: source is an event-based gateway
 
-                //remove all outgoing sequence flows
-                for outgoing_sequence_flow in source.outgoing_message_flows() {
-                    sub_marking.element_index_2_tokens[*outgoing_sequence_flow] -= 1;
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                for outgoing_sequence_flow in source.outgoing_sequence_flows() {
+                    sub_marking.sequence_flow_2_tokens[*outgoing_sequence_flow] -= 1;
                 }
             } else {
                 //not a special case

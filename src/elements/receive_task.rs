@@ -41,7 +41,7 @@ impl BPMNElementTrait for BPMNReceiveTask {
 
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {
         if self.incoming_message_flow.is_some() {
-            return Err(anyhow!("cannot add a second incoming message flow"));
+            return Err(anyhow!("Cannot add a second incoming message flow to a receive task."));
         }
         self.incoming_message_flow = Some(flow_index);
         Ok(())
@@ -49,7 +49,7 @@ impl BPMNElementTrait for BPMNReceiveTask {
 
     fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
-            "cannot add an outgoing message flow to a receive task"
+            "Cannot add an outgoing message flow to a receive task."
         ))
     }
 
@@ -186,9 +186,9 @@ impl Transitionable for BPMNReceiveTask {
             if source.is_event_based_gateway() {
                 //special case: source is an event-based gateway
 
-                //remove all outgoing sequence flows
-                for outgoing_sequence_flow in source.outgoing_message_flows() {
-                    sub_marking.element_index_2_tokens[*outgoing_sequence_flow] -= 1;
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                for outgoing_sequence_flow in source.outgoing_sequence_flows() {
+                    sub_marking.sequence_flow_2_tokens[*outgoing_sequence_flow] -= 1;
                 }
             } else {
                 //not a special case
