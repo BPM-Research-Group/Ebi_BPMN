@@ -131,6 +131,7 @@ pub(crate) mod writer {
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;
 pub use creator::BPMNCreator;
+pub use creator::Container;
 pub use creator::EndEventType;
 pub use creator::GatewayType;
 pub use creator::IntermediateEventType;
