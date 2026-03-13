@@ -3,16 +3,16 @@
 //! Contains a parser, a data structure and a writer.
 //! For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
 //! The crate provides methods to parse BPMN models, methods to write BPMN models, and methods to traverse the state space of a BPMN model.
-//! 
+//!
 //! A web-based tool to create BPMN models is [bpmn.io].
-//! 
+//!
 //! This create is intended as a crate to be used in other software. If you are an end user, please consider using the [Ebi] crate & tool, which provides user-accessible algorithms that use BPMN.
-//! 
+//!
 //! # Usage
-//! 
+//!
 //! The main struct is [BusinessProcessModelAndNotation], which contains methods for parsing, writing and state-space traversal.
 //! To create a BPMN model programmatically, consider the [BPMNCreator] struct.
-//! 
+//!
 //! To parse a BPMN model:
 //!  ```
 //!  use std::io::prelude::*;
@@ -33,7 +33,7 @@
 //!   Ok(())
 //!  }
 //!  ```
-//! 
+//!
 //! [Ebi]: https://crates.io/crates/ebi
 //! [bpmn.io]: https://bpmn.io
 
@@ -130,7 +130,11 @@ pub(crate) mod writer {
 }
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;
-pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
 pub use creator::BPMNCreator;
+pub use creator::EndEventType;
+pub use creator::GatewayType;
+pub use creator::IntermediateEventType;
+pub use creator::StartEventType;
 pub use message_flow::BPMNMessageFlow;
 pub use sequence_flow::BPMNSequenceFlow;
+pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
