@@ -136,5 +136,6 @@ pub use creator::GatewayType;
 pub use creator::IntermediateEventType;
 pub use creator::StartEventType;
 pub use message_flow::BPMNMessageFlow;
+pub use parser::parser_state::GlobalIndex;
 pub use sequence_flow::BPMNSequenceFlow;
 pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
