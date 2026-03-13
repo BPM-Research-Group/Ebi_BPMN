@@ -6,8 +6,6 @@ use crate::{
 };
 
 pub(crate) trait Searchable {
-    /// find an object with the given index
-    fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject>;
 
     /// find an object with the given id, returns (pool index, element index)
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)>;
@@ -47,15 +45,6 @@ pub(crate) trait Searchable {
 }
 
 impl Searchable for Vec<BPMNElement> {
-    fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        for process in self {
-            let x = process.index_2_object(index);
-            if x.is_some() {
-                return x;
-            }
-        }
-        None
-    }
 
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         for element in self {

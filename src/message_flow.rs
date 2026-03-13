@@ -1,5 +1,6 @@
 use crate::parser::parser_state::GlobalIndex;
 
+/// A struct that represents a message flow in a BPMN model.
 #[derive(Clone, Debug)]
 pub struct BPMNMessageFlow {
     pub(crate) global_index: GlobalIndex,

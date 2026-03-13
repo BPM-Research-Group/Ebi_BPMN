@@ -12,12 +12,22 @@ use anyhow::{Context, Result, anyhow};
 use ebi_arithmetic::Signed;
 
 impl BusinessProcessModelAndNotation {
+    /// Verify whether the model is structurally correct using several, though not exhaustive, checks.
+    /// If the BPMN model is imported by [import_from_reader] or created using a [BPMNCreator], there is no need to call this method.
+    /// 
+    /// [import_from_reader]: BusinessProcessModelAndNotation::import_from_reader
+    /// [BPMNCreator]: crate::BPMNCreator
     pub fn is_structurally_correct(&self) -> Result<()> {
         //check elements
         for element in &self.elements {
             element
                 .verify_structural_correctness(self, self)
-                .with_context(|| anyhow!("Found a structural correctness issue with element `{}`.", element.id()))?;
+                .with_context(|| {
+                    anyhow!(
+                        "Found a structural correctness issue with element `{}`.",
+                        element.id()
+                    )
+                })?;
         }
 
         //check messages
@@ -189,7 +199,6 @@ impl StochasticBusinessProcessModelAndNotation {
     }
 }
 
-#[macro_export]
 macro_rules! verify_structural_correctness_initiation_mode {
     ($process:ident, $bpmn:ident) => {
         //verify initiation and termination
@@ -229,3 +238,4 @@ macro_rules! verify_structural_correctness_initiation_mode {
         }
     };
 }
+pub(crate) use verify_structural_correctness_initiation_mode;

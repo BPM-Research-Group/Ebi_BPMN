@@ -14,6 +14,7 @@ use std::{io::BufRead, str::FromStr};
 
 impl BusinessProcessModelAndNotation {
     /// Attempts to import a BPMN model. If `disallow_sequence_flow_weights` is set to true, parsing will fail if any sequence flow has a weight.
+    /// Will only succeed if the model is structurally correct.
     pub fn import_from_reader(
         reader: &mut dyn BufRead,
         disallow_sequence_flow_weights: bool,
@@ -30,14 +31,14 @@ impl BusinessProcessModelAndNotation {
             buf.clear();
             let (namespace, xml_event) = xml_reader
                 .read_resolved_event_into(&mut buf)
-                .with_context(|| "cannot read XML event")?;
+                .with_context(|| "Cannot read XML event.")?;
             let in_namespace = is_in_namespace(namespace);
             match (in_namespace, xml_event) {
                 //start tag
                 (Some(n), Event::Start(e)) => {
                     open_tag(&mut state, &e, n).with_context(|| {
                         format!(
-                            "start tag `{}` at position {}",
+                            "Start tag `{}` at position {}.",
                             String::from_utf8_lossy(e.local_name().as_ref()),
                             xml_reader.buffer_position()
                         )
@@ -47,7 +48,7 @@ impl BusinessProcessModelAndNotation {
                 //end of tag
                 (Some(n), Event::End(e)) => close_tag(&mut state, &e, n).with_context(|| {
                     format!(
-                        "close tag `{}` at position {}",
+                        "Close tag `{}` at position {}.",
                         String::from_utf8_lossy(e.local_name().as_ref()),
                         xml_reader.buffer_position()
                     )
@@ -56,7 +57,7 @@ impl BusinessProcessModelAndNotation {
                 //empty tag
                 (Some(n), Event::Empty(e)) => empty_tag(&mut state, &e, n).with_context(|| {
                     format!(
-                        "empty tag `{}` at position {}",
+                        "Empty tag `{}` at position {}.",
                         String::from_utf8_lossy(e.local_name().as_ref()),
                         xml_reader.buffer_position()
                     )
@@ -64,7 +65,7 @@ impl BusinessProcessModelAndNotation {
 
                 //end of file: check whether we can finish
                 (_, Event::Eof) => {
-                    can_eof(&state).with_context(|| "unexpected end of file")?;
+                    can_eof(&state).with_context(|| "Unexpected end of file.")?;
                     return Ok(state.to_model(disallow_sequence_flow_weights)?);
                 }
 

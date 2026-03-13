@@ -53,7 +53,6 @@ impl Openable for TagProcess {
     }
 }
 
-#[macro_export]
 macro_rules! process_internal_sequence_flows {
     ($draft_sequence_flows:ident, $sub_elements:ident, $state:ident) => {
         {
@@ -163,6 +162,7 @@ macro_rules! process_internal_sequence_flows {
         }
     };
 }
+pub(crate) use process_internal_sequence_flows;
 
 impl Closeable for TagProcess {
     fn close_tag(opened_tag: OpenedTag, _e: &BytesEnd, state: &mut ParserState) -> Result<()> {

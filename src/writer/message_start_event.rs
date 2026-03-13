@@ -1,7 +1,10 @@
 use crate::{
     BusinessProcessModelAndNotation,
     elements::message_start_event::BPMNMessageStartEvent,
-    traits::{processable::Processable, writable::Writable}, write_external_outgoing,
+    traits::{
+        processable::Processable,
+        writable::{Writable, write_external_outgoing},
+    },
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

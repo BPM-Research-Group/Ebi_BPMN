@@ -3,11 +3,9 @@ use crate::{
     elements::{collapsed_sub_process::BPMNCollapsedSubProcess, task::BPMNTask},
     message_flow::BPMNMessageFlow,
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
     traits::{
         objectable::BPMNObject, processable::Processable, searchable::Searchable,
-        transitionable::Transitionable,
     },
 };
 use anyhow::{Result, anyhow};
@@ -17,31 +15,32 @@ use ebi_activity_key::{ActivityKey, ActivityKeyTranslator, TranslateActivityKey}
 use ebi_derive::ActivityKey;
 use std::fmt::{Display, Formatter};
 
-/** A struct with a Business Process Model and Notation (BPMN) model.
- 
-Example:
-  ```
-  use std::io::prelude::*;
-  use std::io::BufReader;
-  use std::fs::File;
-  use ebi_bpmn::BusinessProcessModelAndNotation;
-  
-  fn main() -> anyhow::Result<()> {
-   let f = File::open("testfiles/model.bpmn")?;
-   let mut reader = BufReader::new(f);
-  
-   let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
-  
-   let mut marking = bpmn.get_initial_marking()?.unwrap();
-   assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
-   bpmn.execute_transition(&mut marking, 0)?;
-  
-   Ok(())
-  }
-  ```
-
-  To create a BPMN model programmatically, please consider using a [BPMNCreator].
-*/
+/// A struct with a Business Process Model and Notation (BPMN) model.
+///
+///Example:
+///  ```
+///  use std::io::prelude::*;
+///  use std::io::BufReader;
+///  use std::fs::File;
+///  use ebi_bpmn::BusinessProcessModelAndNotation;
+///
+///  fn main() -> anyhow::Result<()> {
+///   let f = File::open("testfiles/model.bpmn")?;
+///   let mut reader = BufReader::new(f);
+///
+///   let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
+///
+///   let mut marking = bpmn.get_initial_marking()?.unwrap();
+///  assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+///   bpmn.execute_transition(&mut marking, 0)?;
+///
+///  Ok(())
+///  }
+///  ```
+///
+///  To create a BPMN model programmatically, please consider using a [BPMNCreator].
+///
+/// [BPMNCreator]: crate::BPMNCreator
 
 #[derive(Clone, ActivityKey, Debug)]
 pub struct BusinessProcessModelAndNotation {
@@ -58,19 +57,22 @@ pub struct BusinessProcessModelAndNotation {
 }
 
 impl BusinessProcessModelAndNotation {
+    /// Returns the number of elements in the BPMN model (recurses).
     pub fn number_of_elements(&self) -> usize {
         self.elements().len()
     }
 
+    /// Returns the number of message flows in the BPMN model (does not recurse).
     pub fn number_of_message_flows(&self) -> usize {
         self.message_flows.len()
     }
 
-    /// returns all elements in the model (recursively)
+    /// Returns all elements in the model (recurses).
     pub fn elements(&self) -> Vec<&BPMNElement> {
         self.elements.all_elements_ref()
     }
 
+    /// Returns the parent of the element or flow with the given index (recursively).
     pub fn parent_of(&self, global_index: GlobalIndex) -> Option<&dyn Processable> {
         for element in &self.elements {
             let x = element.parent_of(global_index);
@@ -81,57 +83,52 @@ impl BusinessProcessModelAndNotation {
         None
     }
 
-    /// Returns all sequence flows (recursive)
+    /// Returns all sequence flows (recurses).
     pub fn sequence_flows(&self) -> Vec<&BPMNSequenceFlow> {
         self.elements.all_sequence_flows_ref()
     }
 
-    /// find an element with the given index
+    /// Find an element with the given index (recurses).
     pub fn global_index_2_element(&self, index: GlobalIndex) -> Option<&BPMNElement> {
         self.elements.global_index_2_element(index)
     }
 
-    /// find an element with the given index
+    /// Find an element with the given index and returns a mutable reference to it (recurses).
     pub fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
         self.elements.global_index_2_element_mut(index)
     }
 
-    /// find the object of the given index
-    pub fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        self.elements.index_2_object(index)
-    }
-
-    /// return the element that is the source of the given message flow
+    /// Returns the element that is the source of the given message flow.
     pub fn message_flow_index_2_source(&self, message_flow_index: usize) -> Result<&BPMNElement> {
         let message_flow = self
             .message_flows
             .get(message_flow_index)
-            .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
+            .ok_or_else(|| anyhow!("Message flow of index {} not found.", message_flow_index))?;
         self.global_index_2_element(message_flow.source_global_index)
             .ok_or_else(|| {
                 anyhow!(
-                    "the source of message flow `{}` was not found",
+                    "The source of message flow `{}` was not found.",
                     message_flow.id
                 )
             })
     }
 
-    /// return the element that is the target of the given message flow
+    /// Returns the element that is the target of the given message flow.
     pub fn message_flow_index_2_target(&self, message_flow_index: usize) -> Result<&BPMNElement> {
         let message_flow = self
             .message_flows
             .get(message_flow_index)
-            .ok_or_else(|| anyhow!("message flow of index {} not found", message_flow_index))?;
+            .ok_or_else(|| anyhow!("Message flow of index {} not found.", message_flow_index))?;
         self.global_index_2_element(message_flow.target_global_index)
             .ok_or_else(|| {
                 anyhow!(
-                    "the target of message flow `{}` was not found",
+                    "The target of message flow `{}` was not found.",
                     message_flow.id
                 )
             })
     }
 
-    /// return the sequence flow with the given global index
+    /// Returns the sequence flow with the given global index.
     pub fn global_index_2_sequence_flow_and_parent(
         &self,
         sequence_flow_global_index: GlobalIndex,
@@ -140,55 +137,13 @@ impl BusinessProcessModelAndNotation {
             .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
     }
 
-    pub fn transition_debug(
-        &self,
-        mut transition_index: usize,
-        marking: &BPMNMarking,
-    ) -> Option<String> {
-        for (element, sub_marking) in self
-            .elements
-            .iter()
-            .zip(marking.element_index_2_sub_markings.iter())
-        {
-            let number_of_transitions = element.number_of_transitions(sub_marking);
-            if transition_index < number_of_transitions {
-                return element.transition_debug(transition_index, sub_marking, self);
-            }
-            transition_index -= number_of_transitions;
-        }
-        None
-    }
-
-    /// Returns the global indices of sequence flows that get a token by executing this transition.
-    pub fn transition_2_marked_sequence_flows(
-        &self,
-        mut transition_index: TransitionIndex,
-        marking: &BPMNMarking,
-    ) -> Option<Vec<GlobalIndex>> {
-        for (element, sub_marking) in self
-            .elements
-            .iter()
-            .zip(marking.element_index_2_sub_markings.iter())
-        {
-            let number_of_transitions = element.number_of_transitions(sub_marking);
-            if transition_index < number_of_transitions {
-                return element.transition_2_marked_sequence_flows(
-                    transition_index,
-                    sub_marking,
-                    self,
-                );
-            }
-            transition_index -= number_of_transitions;
-        }
-        None
-    }
-
-    /// return the sequence flow with this index, if it exists (recurses)
+    /// Returns the sequence flow with this index, if it exists (recurses).
     pub fn global_index_2_sequence_flow_mut(
         &mut self,
         sequence_flow_global_index: GlobalIndex,
     ) -> Option<&mut BPMNSequenceFlow> {
-        self.elements.global_index_2_sequence_flow_mut(sequence_flow_global_index)
+        self.elements
+            .global_index_2_sequence_flow_mut(sequence_flow_global_index)
     }
 }
 

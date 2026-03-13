@@ -1,15 +1,13 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, execute_transition_xor_join_consume,
-    number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
-    }, transition_2_marked_sequence_flows_concurrent_split,
+        transitionable::{Transitionable, enabledness_xor_join_only, execute_transition_xor_join_consume, number_of_transitions_xor_join_only, transition_2_marked_sequence_flows_concurrent_split},
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};

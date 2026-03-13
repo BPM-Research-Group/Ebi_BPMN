@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
+    parser::parser_state::GlobalIndex,
     stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{
         processable::Processable,
@@ -206,6 +207,50 @@ impl BusinessProcessModelAndNotation {
             result += element.number_of_transitions(sub_marking);
         }
         result
+    }
+
+    /// Print a list of transitions at the current marking.
+    pub fn transition_debug(
+        &self,
+        mut transition_index: usize,
+        marking: &BPMNMarking,
+    ) -> Option<String> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_debug(transition_index, sub_marking, self);
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
+
+    /// Returns the global indices of sequence flows that get a token by executing this transition.
+    pub fn transition_2_marked_sequence_flows(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Vec<GlobalIndex>> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_marked_sequence_flows(
+                    transition_index,
+                    sub_marking,
+                    self,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
     }
 }
 

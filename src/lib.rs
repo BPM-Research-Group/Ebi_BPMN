@@ -1,6 +1,45 @@
-pub mod business_process_model_and_notation;
-pub mod conversion;
-pub mod creator;
+//! A BPMN crate written in pure Rust
+//!
+//! Contains a parser, a data structure and a writer.
+//! For now, this crate focuses on the behaviour of BPMN models; not on the data or resource perspectives.
+//! The crate provides methods to parse BPMN models, methods to write BPMN models, and methods to traverse the state space of a BPMN model.
+//! 
+//! A web-based tool to create BPMN models is [bpmn.io].
+//! 
+//! This create is intended as a crate to be used in other software. If you are an end user, please consider using the [Ebi] crate & tool, which provides user-accessible algorithms that use BPMN.
+//! 
+//! # Usage
+//! 
+//! The main struct is [BusinessProcessModelAndNotation], which contains methods for parsing, writing and state-space traversal.
+//! To create a BPMN model programmatically, consider the [BPMNCreator] struct.
+//! 
+//! To parse a BPMN model:
+//!  ```
+//!  use std::io::prelude::*;
+//!  use std::io::BufReader;
+//!  use std::fs::File;
+//!  use ebi_bpmn::BusinessProcessModelAndNotation;
+//!  
+//!  fn main() -> anyhow::Result<()> {
+//!   let f = File::open("testfiles/model.bpmn")?;
+//!   let mut reader = BufReader::new(f);
+//!  
+//!   let bpmn = BusinessProcessModelAndNotation::import_from_reader(&mut reader, true)?;
+//!  
+//!   let mut marking = bpmn.get_initial_marking()?.unwrap();
+//!   assert_eq!(bpmn.get_enabled_transitions(&marking)?, vec![0]);
+//!   bpmn.execute_transition(&mut marking, 0)?;
+//!  
+//!   Ok(())
+//!  }
+//!  ```
+//! 
+//! [Ebi]: https://crates.io/crates/ebi
+//! [bpmn.io]: https://bpmn.io
+
+pub(crate) mod business_process_model_and_notation;
+pub(crate) mod conversion;
+pub(crate) mod creator;
 pub mod element;
 pub mod elements {
     pub mod collapsed_pool;
@@ -24,13 +63,13 @@ pub mod elements {
     pub mod timer_intermediate_catch_event;
     pub mod timer_start_event;
 }
-pub mod exporter;
-pub mod importer;
-pub mod message_flow;
-pub mod semantics;
-pub mod sequence_flow;
-pub mod structure_checker;
-pub mod parser {
+pub(crate) mod exporter;
+pub(crate) mod importer;
+pub(crate) mod message_flow;
+pub(crate) mod semantics;
+pub(crate) mod sequence_flow;
+pub(crate) mod structure_checker;
+pub(crate) mod parser {
     pub mod parser;
     pub mod parser_state;
     pub mod parser_traits;
@@ -56,7 +95,7 @@ pub mod parser {
     pub mod tag_weight;
     pub mod tags;
 }
-pub mod stochastic_business_process_model_and_notation;
+pub(crate) mod stochastic_business_process_model_and_notation;
 pub mod traits {
     pub mod objectable;
     pub mod processable;
@@ -65,7 +104,7 @@ pub mod traits {
     pub mod transitionable;
     pub mod writable;
 }
-pub mod writer {
+pub(crate) mod writer {
     pub mod collapsed_pool;
     pub mod collapsed_sub_process;
     pub mod end_event;
@@ -92,3 +131,6 @@ pub mod writer {
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;
 pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
+pub use creator::BPMNCreator;
+pub use message_flow::BPMNMessageFlow;
+pub use sequence_flow::BPMNSequenceFlow;

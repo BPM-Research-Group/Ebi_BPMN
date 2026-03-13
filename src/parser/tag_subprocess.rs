@@ -9,10 +9,10 @@ use crate::{
         parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
+        tag_process::process_internal_sequence_flows,
         tag_sequence_flow::DraftSequenceFlow,
         tags::{OpenedTag, Tag},
     },
-    process_internal_sequence_flows,
     sequence_flow::BPMNSequenceFlow,
     traits::{objectable::BPMNObject, searchable::Searchable},
 };

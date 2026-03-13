@@ -1,5 +1,10 @@
 use crate::{
-    BusinessProcessModelAndNotation, elements::receive_task::BPMNReceiveTask, traits::{processable::Processable, writable::Writable}, write_external_sequence_flows
+    BusinessProcessModelAndNotation,
+    elements::receive_task::BPMNReceiveTask,
+    traits::{
+        processable::Processable,
+        writable::{Writable, write_external_sequence_flows},
+    },
 };
 use quick_xml::events::BytesText;
 

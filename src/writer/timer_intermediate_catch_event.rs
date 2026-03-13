@@ -1,8 +1,10 @@
 use crate::{
     BusinessProcessModelAndNotation,
     elements::timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
-    traits::{processable::Processable, writable::Writable},
-    write_external_sequence_flows,
+    traits::{
+        processable::Processable,
+        writable::{Writable, write_external_sequence_flows},
+    },
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

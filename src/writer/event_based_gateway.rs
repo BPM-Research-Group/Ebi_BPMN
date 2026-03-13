@@ -1,8 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     elements::event_based_gateway::BPMNEventBasedGateway,
-    traits::{processable::Processable, writable::Writable},
-    write_external_sequence_flows,
+    traits::{processable::Processable, writable::{Writable, write_external_sequence_flows}},
 };
 use quick_xml::events::BytesText;
 

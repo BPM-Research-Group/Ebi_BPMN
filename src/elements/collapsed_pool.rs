@@ -6,9 +6,8 @@ use crate::{
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
+        transitionable::{Transitionable, transition_2_marked_sequence_flows_concurrent_split},
     },
-    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};

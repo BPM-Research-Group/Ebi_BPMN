@@ -132,17 +132,6 @@ impl BPMNElementTrait for BPMNElement {
 }
 
 impl Searchable for BPMNElement {
-    fn index_2_object(&self, search_index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        if self.global_index() == search_index {
-            Some(self)
-        } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
-        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
-        {
-            elements.index_2_object(search_index)
-        } else {
-            None
-        }
-    }
 
     fn id_2_pool_and_global_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {

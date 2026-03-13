@@ -1,15 +1,16 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    execute_transition_parallel_split,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
+        transitionable::{
+            Transitionable, execute_transition_parallel_split,
+            transition_2_marked_sequence_flows_concurrent_split,
+        },
     },
-    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, prelude::BitVec};
