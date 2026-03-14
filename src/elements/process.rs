@@ -170,6 +170,10 @@ impl BPMNObject for BPMNProcess {
         self.global_index
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn id(&self) -> &str {
         &self.id
     }

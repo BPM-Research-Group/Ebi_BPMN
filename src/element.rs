@@ -374,6 +374,10 @@ impl BPMNObject for BPMNElement {
         enums!(self, id,)
     }
 
+    fn activity(&self) -> Option<Activity> {
+        enums!(self, activity,)
+    }
+
     fn local_index(&self) -> usize {
         enums!(self, local_index,)
     }

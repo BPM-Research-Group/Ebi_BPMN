@@ -64,6 +64,10 @@ impl BPMNObject for BPMNExclusiveGateway {
         &self.id
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn is_unconstrained_start_event(
         &self,
         _bpmn: &BusinessProcessModelAndNotation,

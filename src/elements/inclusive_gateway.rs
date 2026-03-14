@@ -66,6 +66,10 @@ impl BPMNObject for BPMNInclusiveGateway {
         &self.id
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn global_index(&self) -> GlobalIndex {
         self.global_index
     }

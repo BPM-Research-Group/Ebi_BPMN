@@ -1,5 +1,6 @@
 use crate::{BusinessProcessModelAndNotation, parser::parser_state::GlobalIndex};
 use anyhow::Result;
+use ebi_activity_key::Activity;
 
 pub(crate) static EMPTY_FLOWS: Vec<usize> = vec![];
 
@@ -13,6 +14,9 @@ pub trait BPMNObject {
 
     /// return the id
     fn id(&self) -> &str;
+
+    /// Returns the activity, if this element has one
+    fn activity(&self) -> Option<Activity>;
 
     /// return whether this is a start event that could initiate a process instance
     fn is_unconstrained_start_event(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool>;
@@ -64,6 +68,10 @@ impl BPMNObject for BusinessProcessModelAndNotation {
 
     fn id(&self) -> &str {
         &self.definitions_id
+    }
+
+    fn activity(&self) -> Option<Activity> {
+        None
     }
 
     fn is_unconstrained_start_event(

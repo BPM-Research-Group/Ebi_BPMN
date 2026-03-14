@@ -64,6 +64,10 @@ impl BPMNObject for BPMNCollapsedSubProcess {
         &self.id
     }
 
+    fn activity(&self) -> Option<Activity> {
+        Some(self.activity)
+    }
+
     fn local_index(&self) -> usize {
         self.local_index
     }

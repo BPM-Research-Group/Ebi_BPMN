@@ -94,6 +94,10 @@ impl BPMNObject for BPMNExpandedSubProcess {
         &self.id
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn local_index(&self) -> usize {
         self.local_index
     }

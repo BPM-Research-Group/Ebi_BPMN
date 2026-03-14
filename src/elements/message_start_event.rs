@@ -75,6 +75,10 @@ impl BPMNObject for BPMNMessageStartEvent {
         self.global_index
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn id(&self) -> &str {
         &self.id
     }
