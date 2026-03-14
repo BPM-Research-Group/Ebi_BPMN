@@ -50,6 +50,8 @@ pub trait Transitionable {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String>;
 
+    /// If the transition exists, return the weight of the transition, that is, the probabilistic cost incurrend when calling it.
+    /// Otherwise, return None.
     fn transition_weight(
         &self,
         transition_index: TransitionIndex,
