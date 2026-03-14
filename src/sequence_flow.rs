@@ -2,6 +2,7 @@ use ebi_arithmetic::{Fraction, Signed};
 
 use crate::parser::parser_state::GlobalIndex;
 
+/// A struct that represents a sequence flow in a BPMN model.
 #[derive(Clone, Debug)]
 pub struct BPMNSequenceFlow {
     pub(crate) global_index: GlobalIndex,
@@ -11,6 +12,12 @@ pub struct BPMNSequenceFlow {
     pub(crate) source_local_index: usize,
     pub(crate) target_global_index: GlobalIndex,
     pub(crate) target_local_index: usize,
+
+    /// A non-negative weight attached to the sequence flow.
+    /// Meaningless in a [BusinessProcessModelAndNotation] model, but provides semantics in an [StochasticBusinessProcessModelAndNotation] model.
+    /// 
+    /// [BusinessProcessModelAndNotation]: crate::BusinessProcessModelAndNotation
+    /// [StochasticBusinessProcessModelAndNotation]: crate::StochasticBusinessProcessModelAndNotation
     pub weight: Option<Fraction>,
 }
 

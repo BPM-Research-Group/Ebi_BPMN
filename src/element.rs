@@ -11,8 +11,8 @@ use crate::{
         message_intermediate_catch_event::BPMNMessageIntermediateCatchEvent,
         message_intermediate_throw_event::BPMNMessageIntermediateThrowEvent,
         message_start_event::BPMNMessageStartEvent, parallel_gateway::BPMNParallelGateway,
-        process::BPMNProcess, start_event::BPMNStartEvent, task::BPMNTask,
-        timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
+        process::BPMNProcess, receive_task::BPMNReceiveTask, start_event::BPMNStartEvent,
+        task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent,
     },
     parser::parser_state::GlobalIndex,
@@ -46,6 +46,7 @@ pub enum BPMNElement {
     MessageStartEvent(BPMNMessageStartEvent),
     ParallelGateway(BPMNParallelGateway),
     Process(BPMNProcess),
+    ReceiveTask(BPMNReceiveTask),
     StartEvent(BPMNStartEvent),
     Task(BPMNTask),
     TimerIntermediateCatchEvent(BPMNTimerIntermediateCatchEvent),
@@ -95,6 +96,7 @@ macro_rules! enums {
             BPMNElement::MessageStartEvent(x) => BPMNMessageStartEvent::$fn(x, $($v),*),
             BPMNElement::ParallelGateway(x) => BPMNParallelGateway::$fn(x, $($v),*),
             BPMNElement::Process(x) => BPMNProcess::$fn(x, $($v),*),
+            BPMNElement::ReceiveTask(x) => BPMNReceiveTask::$fn(x, $($v),*),
             BPMNElement::StartEvent(x) => BPMNStartEvent::$fn(x, $($v),*),
             BPMNElement::Task(x) => BPMNTask::$fn(x, $($v),*),
             BPMNElement::TimerIntermediateCatchEvent(x) => BPMNTimerIntermediateCatchEvent::$fn(x, $($v),*),
@@ -130,17 +132,6 @@ impl BPMNElementTrait for BPMNElement {
 }
 
 impl Searchable for BPMNElement {
-    fn index_2_object(&self, search_index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        if self.global_index() == search_index {
-            Some(self)
-        } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
-        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
-        {
-            elements.index_2_object(search_index)
-        } else {
-            None
-        }
-    }
 
     fn id_2_pool_and_global_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {

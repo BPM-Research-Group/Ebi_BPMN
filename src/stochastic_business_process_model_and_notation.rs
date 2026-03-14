@@ -4,7 +4,7 @@ use crate::{
     parser::{parser::NAMESPACE_SBPMN, parser_state::GlobalIndex},
     semantics::{BPMNMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
-    traits::{objectable::BPMNObject, processable::Processable},
+    traits::processable::Processable,
 };
 use anyhow::{Error, Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
@@ -15,7 +15,8 @@ use std::{
     io::BufRead,
     str::FromStr,
 };
-
+/** A struct with a stochastic Business Process Model and Notation (SBPMN) model.
+ **/
 #[derive(Clone, Debug)]
 pub struct StochasticBusinessProcessModelAndNotation {
     pub bpmn: BusinessProcessModelAndNotation,
@@ -68,11 +69,6 @@ impl StochasticBusinessProcessModelAndNotation {
     /// find an element with the given index
     pub fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
         self.bpmn.global_index_2_element_mut(index)
-    }
-
-    /// find the object of the given index
-    pub fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        self.bpmn.index_2_object(index)
     }
 
     /// return the element that is the source of the given message flow

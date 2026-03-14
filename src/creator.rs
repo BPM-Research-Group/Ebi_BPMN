@@ -21,6 +21,9 @@ use crate::{
 use anyhow::{Result, anyhow};
 use ebi_activity_key::{Activity, ActivityKey};
 
+/**
+ * A struct that assists with creating BPMN models programmatically.
+ */
 pub struct BPMNCreator {
     bpmn: BusinessProcessModelAndNotation,
     max_id: usize,

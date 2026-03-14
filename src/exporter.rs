@@ -13,6 +13,7 @@ use quick_xml::{
 use std::io::Write;
 
 impl BusinessProcessModelAndNotation {
+    /// Exports the model to a writer.
     pub fn export_to_writer(&self, f: &mut dyn Write) -> Result<()> {
         let mut x = Writer::new_with_indent(f, b'\t', 1);
 

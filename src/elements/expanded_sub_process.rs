@@ -1,19 +1,19 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    enabledness_xor_join_only, execute_transition_parallel_split,
-    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     sequence_flow::BPMNSequenceFlow,
+    structure_checker::verify_structural_correctness_initiation_mode,
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         searchable::Searchable,
         startable::{InitiationMode, Startable},
-        transitionable::Transitionable,
+        transitionable::{
+            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split, execute_transition_xor_join_consume, number_of_transitions_xor_join_only
+        },
     },
-    verify_structural_correctness_initiation_mode,
 };
 use anyhow::{Context, Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -415,12 +415,6 @@ impl Startable for BPMNExpandedSubProcess {
 }
 
 impl Searchable for BPMNExpandedSubProcess {
-    fn index_2_object(&self, index: GlobalIndex) -> Option<&dyn BPMNObject> {
-        if self.global_index == index {
-            return Some(self);
-        }
-        self.elements.index_2_object(index)
-    }
 
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id == id {
@@ -512,7 +506,6 @@ impl Searchable for BPMNExpandedSubProcess {
     }
 }
 
-#[macro_export]
 macro_rules! to_sub_marking {
     ($self:ident, $initiation_mode:ident) => {
         match $initiation_mode {
@@ -547,6 +540,7 @@ macro_rules! to_sub_marking {
         }
     };
 }
+pub(crate) use to_sub_marking;
 
 impl Processable for BPMNExpandedSubProcess {
     fn elements_non_recursive(&self) -> &Vec<BPMNElement> {

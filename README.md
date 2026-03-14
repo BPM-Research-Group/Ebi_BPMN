@@ -16,7 +16,7 @@ If you are an end user, please consider using the Ebi crate & tool, which provid
 * Expanded and collapsed pools
 * Message flows
 * Sequence flows
-* Tasks
+* Tasks and receive tasks
 * Expanded and collapsed sub-processes
 
 Other elements are gracefully ignored, as long as they do not have in- or outgoing message or sequence flows.
@@ -51,7 +51,8 @@ In accordance with the BPMN standard, a process instance can start as follows:
 The interpretation of BPMN of this crate differs from the BPMN 2.0.2 standard on the following aspects:
 * There is no difference made between a deadlock and proper termination. That is, a trace is considered finished if and as soon as it reaches a deadlock.
 * The inclusive (OR) gateway uses a slightly different semantics.
-* A completely empty model is assumed to have no traces (not the language with the empty trace).
+* A completely empty model is assumed to have no traces (as opposed to the language with the empty trace).
+* A task with an incoming message flow is allowed after an event-based gateway and will be treated as if it were a receive task.
 
 For more information on these elements, see [this Youtube playlist](https://youtu.be/k0XAej_0In8?si=37Bd6jOFPwqAURlV).
 

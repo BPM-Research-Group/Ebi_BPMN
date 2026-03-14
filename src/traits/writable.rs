@@ -40,7 +40,6 @@ vec_writable!(Vec<BPMNMessageFlow>);
 vec_writable!(Vec<&BPMNCollapsedPool>);
 vec_writable!(Vec<BPMNSequenceFlow>);
 
-#[macro_export]
 macro_rules! write_external_incoming {
     ($x: ident, $self:ident, $parent:ident) => {
         for incoming_sequence_flow in &$self.incoming_sequence_flows {
@@ -51,8 +50,8 @@ macro_rules! write_external_incoming {
         }
     };
 }
+pub(crate) use write_external_incoming;
 
-#[macro_export]
 macro_rules! write_external_outgoing {
     ($x: ident, $self:ident, $parent:ident) => {
         for outgoing_sequence_flow in &$self.outgoing_sequence_flows {
@@ -63,8 +62,8 @@ macro_rules! write_external_outgoing {
         }
     };
 }
+pub(crate) use write_external_outgoing;
 
-#[macro_export]
 macro_rules! write_external_sequence_flows {
     ($x: ident, $self:ident, $parent:ident) => {
         for incoming_sequence_flow in &$self.incoming_sequence_flows {
@@ -81,3 +80,4 @@ macro_rules! write_external_sequence_flows {
         }
     };
 }
+pub(crate) use write_external_sequence_flows;

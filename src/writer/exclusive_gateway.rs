@@ -1,7 +1,10 @@
 use crate::{
     BusinessProcessModelAndNotation,
     elements::exclusive_gateway::BPMNExclusiveGateway,
-    traits::{processable::Processable, writable::Writable}, write_external_sequence_flows,
+    traits::{
+        processable::Processable,
+        writable::{Writable, write_external_sequence_flows},
+    },
 };
 use quick_xml::events::BytesText;
 

@@ -1,16 +1,16 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    enabledness_xor_join_only, execute_transition_parallel_split,
-    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
+        transitionable::{
+            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
+            execute_transition_xor_join_consume, number_of_transitions_xor_join_only, transition_2_marked_sequence_flows_concurrent_split,
+        },
     },
-    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -195,9 +195,9 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
             if source.is_event_based_gateway() {
                 //special case: source is an event-based gateway
 
-                //remove all outgoing sequence flows
-                for outgoing_sequence_flow in source.outgoing_message_flows() {
-                    sub_marking.element_index_2_tokens[*outgoing_sequence_flow] -= 1;
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                for outgoing_sequence_flow in source.outgoing_sequence_flows() {
+                    sub_marking.sequence_flow_2_tokens[*outgoing_sequence_flow] -= 1;
                 }
             } else {
                 //not a special case

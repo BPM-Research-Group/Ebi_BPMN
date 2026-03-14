@@ -1,8 +1,10 @@
 use crate::{
     BusinessProcessModelAndNotation,
     elements::timer_start_event::BPMNTimerStartEvent,
-    traits::{processable::Processable, writable::Writable},
-    write_external_outgoing,
+    traits::{
+        processable::Processable,
+        writable::{Writable, write_external_outgoing},
+    },
 };
 use quick_xml::events::{BytesStart, BytesText, Event};
 

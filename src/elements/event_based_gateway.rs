@@ -1,17 +1,21 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
-    elements::{task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent},
-    enabledness_xor_join_only, execute_transition_parallel_split,
-    execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+    elements::{
+        receive_task::BPMNReceiveTask, task::BPMNTask,
+        timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
+    },
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
+        transitionable::{
+            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
+            execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+            transition_2_marked_sequence_flows_concurrent_split,
+        },
     },
-    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -82,7 +86,7 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                     | BPMNElement::StartEvent(_)
                     | BPMNElement::TimerStartEvent(_) => {
                         return Err(anyhow!(
-                            "element `{}` not allowed as a target of a sequence flow from an event-based gateway (standard page 297)",
+                            "Element `{}` not allowed as a target of a sequence flow from an event-based gateway (standard page 297).",
                             target.id()
                         ));
                     }
@@ -90,7 +94,7 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                     BPMNElement::MessageIntermediateCatchEvent(_) => {
                         if configuration.is_tasks() {
                             return Err(anyhow!(
-                                "after event-based gateway `{}`, cannot combine message intermediate events and receive tasks (standard page 297)",
+                                "After event-based gateway `{}`, cannot combine message intermediate events and receive tasks (standard page 297).",
                                 self.id()
                             ));
                         }
@@ -103,6 +107,16 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                         //always allowed
                     }
 
+                    BPMNElement::ReceiveTask(BPMNReceiveTask { .. }) => {
+                        if configuration.is_events() {
+                            return Err(anyhow!(
+                                "After event-based gateway `{}`, cannot combine message intermediate events and receive tasks (standard page 297).",
+                                self.id()
+                            ));
+                        }
+                        configuration = Configuration::Tasks;
+                    }
+
                     BPMNElement::Task(BPMNTask {
                         incoming_message_flow,
                         ..
@@ -110,13 +124,13 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                         //the task must have an incoming message flow
                         if !incoming_message_flow.is_some() {
                             return Err(anyhow!(
-                                "a task after an event-based gateway must have an incoming message flow"
+                                "A task after an event-based gateway must have an incoming message flow."
                             ));
                         }
 
                         if configuration.is_events() {
                             return Err(anyhow!(
-                                "after event-based gateway `{}`, cannot combine message intermediate events and receive tasks (standard page 297)",
+                                "After event-based gateway `{}`, cannot combine message intermediate events and receive tasks (standard page 297).",
                                 self.id()
                             ));
                         }

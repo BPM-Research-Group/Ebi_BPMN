@@ -1,15 +1,13 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    execute_transition_parallel_split,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::Transitionable,
+        transitionable::{Transitionable, execute_transition_parallel_split, transition_2_marked_sequence_flows_concurrent_split},
     },
-    transition_2_marked_sequence_flows_concurrent_split,
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -116,7 +114,6 @@ impl BPMNObject for BPMNStartEvent {
     }
 }
 
-#[macro_export]
 macro_rules! enabled_transitions_start_event {
     ($self:ident, $root_marking:ident, $sub_marking:ident,$parent:ident) => {
         if !$parent.is_sub_process() && $root_marking.root_initial_choice_token {
@@ -134,8 +131,8 @@ macro_rules! enabled_transitions_start_event {
         }
     };
 }
+pub(crate) use enabled_transitions_start_event;
 
-#[macro_export]
 macro_rules! execute_transition_start_event {
     ($self:ident, $root_marking:ident, $sub_marking:ident, $parent:ident) => {{
         //consume
@@ -157,6 +154,7 @@ macro_rules! execute_transition_start_event {
         execute_transition_parallel_split!($self, $sub_marking);
     }};
 }
+pub(crate) use execute_transition_start_event;
 
 impl Transitionable for BPMNStartEvent {
     fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {

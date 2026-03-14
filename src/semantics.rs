@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
+    parser::parser_state::GlobalIndex,
     stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{
         processable::Processable,
@@ -55,9 +56,10 @@ impl BPMNSubMarking {
 }
 
 impl BusinessProcessModelAndNotation {
-    /// BPMN 2.0.2 standard page 238
-    /// By convention, if the model is empty, it does not support any trace, and this function returns Ok(None).
-    /// If the model is structurally correct, this method will return Ok(..).
+    /// Returns the initial marking, as specified by the BPMN 2.0.2 standard on page 238.
+    /// Additionally, if the model is empty, it does not support any trace, and this function returns Ok(None).
+    /// If the model is structurally correct, this method will always return Ok(..).
+    /// If not, will return Err() but will not panic.
     pub fn get_initial_marking(&self) -> Result<Option<BPMNMarking>> {
         if self.elements.is_empty() {
             return Ok(None);
@@ -95,6 +97,9 @@ impl BusinessProcessModelAndNotation {
         }
     }
 
+    /// Updates the marking by executing the transition.
+    /// By contract, will return Ok() if the model is structurally correct and the transition was enabled.
+    /// May panic or return Err() otherwise.
     pub fn execute_transition(
         &self,
         marking: &mut BPMNMarking,
@@ -128,10 +133,15 @@ impl BusinessProcessModelAndNotation {
         ))
     }
 
+    /// Returns whether the marking is a final marking. That is, whether no transitions are enabled in it.
+    /// If the model is structurally correct, this function will always return Ok().
+    /// If the model is not structurally correct, this function may return Err() but will not panic.
     pub fn is_final_marking(&self, marking: &BPMNMarking) -> Result<bool> {
         Ok(self.get_enabled_transitions(marking)?.is_empty())
     }
 
+    /// Returns `true` if the transition exists and is unlabelled, otherwise, returns false.
+    /// Does not panic.
     pub fn is_transition_silent(
         &self,
         transition_index: TransitionIndex,
@@ -141,6 +151,7 @@ impl BusinessProcessModelAndNotation {
             .is_none()
     }
 
+    /// If the transition exists and is labelled, returns the label. Otherwise, returns None.
     pub fn get_transition_activity(
         &self,
         mut transition_index: TransitionIndex,
@@ -160,6 +171,8 @@ impl BusinessProcessModelAndNotation {
         None
     }
 
+    /// Returns the transitions that are enabled in the given `marking`.
+    /// By contract, will return Ok() if the model is structurally correct. Otherwise, it will return Err() but will not panic.
     pub fn get_enabled_transitions(&self, marking: &BPMNMarking) -> Result<Vec<TransitionIndex>> {
         let mut result = bitvec![0;0];
         for (element, sub_marking) in self
@@ -183,6 +196,7 @@ impl BusinessProcessModelAndNotation {
         Ok(result2)
     }
 
+    /// Returns the number of transitions of the current marking. Note that not all of these transitions are necessarily enabled.
     pub fn number_of_transitions(&self, marking: &BPMNMarking) -> usize {
         let mut result = 0;
         for (element, sub_marking) in self
@@ -193,6 +207,50 @@ impl BusinessProcessModelAndNotation {
             result += element.number_of_transitions(sub_marking);
         }
         result
+    }
+
+    /// Print a list of transitions at the current marking.
+    pub fn transition_debug(
+        &self,
+        mut transition_index: usize,
+        marking: &BPMNMarking,
+    ) -> Option<String> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_debug(transition_index, sub_marking, self);
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
+
+    /// Returns the global indices of sequence flows that get a token by executing this transition.
+    pub fn transition_2_marked_sequence_flows(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Vec<GlobalIndex>> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_marked_sequence_flows(
+                    transition_index,
+                    sub_marking,
+                    self,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
     }
 }
 
@@ -927,6 +985,101 @@ pub(crate) mod tests {
 
         bpmn.execute_transition(&mut marking, 9).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0; 0]);
+        assert!(bpmn.is_final_marking(&marking).unwrap());
+    }
+
+    #[test]
+    fn bpmn_eventbasedgateway() {
+        let fin = fs::read_to_string("testfiles/eventbasedgateway.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+        debug_transitions(&bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![1]);
+
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![2, 6, 7]
+        );
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3]);
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0; 0]);
+        assert!(bpmn.is_final_marking(&marking).unwrap());
+    }
+
+    #[test]
+    fn admission() {
+        let fin = fs::read_to_string("testfiles/admission.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+        debug_transitions(&bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![1]);
+
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3, 4]);
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![5]);
+
+        bpmn.execute_transition(&mut marking, 5).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![7]);
+
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![2]);
+
+        bpmn.execute_transition(&mut marking, 2).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3, 4]);
+
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![8]);
+
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6, 9]);
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![9, 11]);
+
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![10, 11]
+        );
+
+        bpmn.execute_transition(&mut marking, 10).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![11, 12]
+        );
+
+        bpmn.execute_transition(&mut marking, 11).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![12]);
+
+        bpmn.execute_transition(&mut marking, 12).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![12, 13]
+        );
+
+        bpmn.execute_transition(&mut marking, 12).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![13]);
+
+        bpmn.execute_transition(&mut marking, 13).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![13]);
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
+
+        bpmn.execute_transition(&mut marking, 13).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0; 0]);
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
 }

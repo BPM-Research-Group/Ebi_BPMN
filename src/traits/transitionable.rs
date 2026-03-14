@@ -177,7 +177,6 @@ impl Transitionable for Vec<BPMNElement> {
     }
 }
 
-#[macro_export]
 macro_rules! execute_transition_parallel_split {
     ($self:ident, $sub_marking:ident) => {
         for outgoing_sequence_flow in &$self.outgoing_sequence_flows {
@@ -185,15 +184,15 @@ macro_rules! execute_transition_parallel_split {
         }
     };
 }
+pub(crate) use execute_transition_parallel_split;
 
-#[macro_export]
 macro_rules! number_of_transitions_xor_join_only {
     ($s:ident) => {
         $s.incoming_sequence_flows.len().max(1)
     };
 }
+pub(crate) use number_of_transitions_xor_join_only;
 
-#[macro_export]
 macro_rules! enabledness_xor_join_only {
     ($self:ident, $sub_marking:ident) => {
         {
@@ -218,8 +217,8 @@ macro_rules! enabledness_xor_join_only {
         }
     };
 }
+pub(crate) use enabledness_xor_join_only;
 
-#[macro_export]
 macro_rules! execute_transition_xor_join_consume {
     ($self: ident, $sub_marking:ident, $transition_index:expr) => {
         if $self.incoming_sequence_flows.len() >= 1 {
@@ -232,8 +231,8 @@ macro_rules! execute_transition_xor_join_consume {
         }
     };
 }
+pub(crate) use execute_transition_xor_join_consume;
 
-#[macro_export]
 macro_rules! execute_transition_message_produce {
     ($self:ident, $root_marking:ident, $bpmn:ident) => {
         if let Some(message_flow_index) = $self.outgoing_message_flow {
@@ -246,8 +245,8 @@ macro_rules! execute_transition_message_produce {
         }
     };
 }
+pub(crate) use execute_transition_message_produce;
 
-#[macro_export]
 macro_rules! transition_2_marked_sequence_flows_concurrent_split {
     ($self:ident, $parent:ident) => {
         Some(
@@ -266,3 +265,4 @@ macro_rules! transition_2_marked_sequence_flows_concurrent_split {
         )
     };
 }
+pub(crate) use transition_2_marked_sequence_flows_concurrent_split;
