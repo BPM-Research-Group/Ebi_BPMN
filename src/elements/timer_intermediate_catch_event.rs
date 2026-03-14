@@ -68,6 +68,10 @@ impl BPMNObject for BPMNTimerIntermediateCatchEvent {
         self.global_index
     }
 
+    fn activity(&self) -> Option<Activity> {
+        None
+    }
+
     fn id(&self) -> &str {
         &self.id
     }

@@ -7,7 +7,10 @@ use crate::{
         objectable::BPMNObject,
         processable::Processable,
         transitionable::{
-            Transitionable, enabledness_xor_join_only, execute_transition_message_produce, execute_transition_parallel_split, execute_transition_xor_join_consume, number_of_transitions_xor_join_only, transition_2_marked_sequence_flows_concurrent_split
+            Transitionable, enabledness_xor_join_only, execute_transition_message_produce,
+            execute_transition_parallel_split, execute_transition_xor_join_consume,
+            number_of_transitions_xor_join_only,
+            transition_2_marked_sequence_flows_concurrent_split,
         },
     },
 };
@@ -71,6 +74,10 @@ impl BPMNObject for BPMNTask {
 
     fn global_index(&self) -> GlobalIndex {
         self.global_index
+    }
+
+    fn activity(&self) -> Option<Activity> {
+        Some(self.activity)
     }
 
     fn id(&self) -> &str {

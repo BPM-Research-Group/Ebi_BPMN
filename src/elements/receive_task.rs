@@ -70,6 +70,10 @@ impl BPMNObject for BPMNReceiveTask {
         self.global_index
     }
 
+    fn activity(&self) -> Option<Activity> {
+        Some(self.activity)
+    }
+
     fn id(&self) -> &str {
         &self.id
     }

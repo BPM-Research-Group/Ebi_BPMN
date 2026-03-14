@@ -6,7 +6,10 @@ use crate::{
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::{Transitionable, execute_transition_parallel_split, transition_2_marked_sequence_flows_concurrent_split},
+        transitionable::{
+            Transitionable, execute_transition_parallel_split,
+            transition_2_marked_sequence_flows_concurrent_split,
+        },
     },
 };
 use anyhow::{Result, anyhow};
@@ -56,6 +59,10 @@ impl BPMNObject for BPMNStartEvent {
 
     fn global_index(&self) -> GlobalIndex {
         self.global_index
+    }
+
+    fn activity(&self) -> Option<Activity> {
+        None
     }
 
     fn id(&self) -> &str {
