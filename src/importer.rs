@@ -194,4 +194,33 @@ mod tests {
         sbpmn.execute_transition(&mut marking, 3).unwrap();
         assert_eq!(sbpmn.get_enabled_transitions(&marking).unwrap(), [5]);
     }
+
+    #[test]
+    fn recourse() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string("testfiles/recourse.bpmn").unwrap();
+        let _bpmn = fin
+            .parse::<BusinessProcessModelAndNotation>()
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn credit_scoring_sync() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string("testfiles/credit-scoring-synchronous.bpmn").unwrap();
+        let _bpmn = fin
+            .parse::<BusinessProcessModelAndNotation>()
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn credit_scoring_async() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string("testfiles/credit-scoring-asynchronous.bpmn").unwrap();
+        let _bpmn = fin
+            .parse::<BusinessProcessModelAndNotation>()
+            .unwrap();
+    }
 }

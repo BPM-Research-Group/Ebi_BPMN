@@ -19,10 +19,11 @@ impl Writable for BPMNMessageIntermediateCatchEvent {
             .with_attribute(("id", self.id.as_str()))
             .write_inner_content(|x| {
                 write_external_sequence_flows!(x, self, parent);
-                x.write_event(Event::Empty(
-                    BytesStart::new("messageEventDefinition")
-                        .with_attributes([("id", self.message_marker_id.as_str())]),
-                ))?;
+                let mut b = BytesStart::new("messageEventDefinition");
+                if let Some(id) = &self.message_marker_id {
+                    b = b.with_attributes([("id", id.as_str())]);
+                }
+                x.write_event(Event::Empty(b))?;
                 Ok(())
             })?;
         Ok(())

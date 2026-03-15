@@ -36,7 +36,7 @@ impl Openable for TagTimerEventDefinition {
     where
         Self: Sized,
     {
-        let (_, id) = state.read_and_add_id(e)?;
+        let id = state.read_and_add_id_optional(e);
 
         Ok(OpenedTag::TimerEventDefinition { id })
     }

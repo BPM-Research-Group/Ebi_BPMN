@@ -7,7 +7,10 @@ use crate::{
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::{Transitionable, execute_transition_parallel_split, transition_2_marked_sequence_flows_concurrent_split},
+        transitionable::{
+            Transitionable, execute_transition_parallel_split,
+            transition_2_marked_sequence_flows_concurrent_split,
+        },
     },
 };
 use anyhow::{Result, anyhow};
@@ -20,7 +23,7 @@ pub struct BPMNMessageStartEvent {
     pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) local_index: usize,
-    pub(crate) message_marker_id: String,
+    pub(crate) message_marker_id: Option<String>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
     pub(crate) incoming_message_flow: Option<usize>,
 }
@@ -56,11 +59,6 @@ impl BPMNElementTrait for BPMNMessageStartEvent {
         _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
-        if self.incoming_message_flow.is_none() {
-            return Err(anyhow!(
-                "a message start event must have an incoming message flow"
-            ));
-        }
         Ok(())
     }
 }

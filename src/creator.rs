@@ -427,14 +427,14 @@ impl StartEventType {
                 id: format!("messagestartevent_{}", global_index.0),
                 local_index,
                 incoming_message_flow: None,
-                message_marker_id: format!("messagemarker_{}", global_index.0),
+                message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
                 outgoing_sequence_flows: vec![],
             }),
             StartEventType::Timer => BPMNElement::TimerStartEvent(BPMNTimerStartEvent {
                 global_index,
                 id: format!("timerstartevent_{}", global_index.0),
                 local_index,
-                timer_marker_id: format!("timermarker_{}", global_index.0),
+                timer_marker_id: Some(format!("timermarker_{}", global_index.0)),
                 outgoing_sequence_flows: vec![],
             }),
         }
@@ -460,7 +460,7 @@ impl EndEventType {
                 id: format!("startevent_{}", global_index.0),
                 local_index,
                 incoming_sequence_flows: vec![],
-                message_marker_id: format!("messagemarker_{}", global_index.0),
+                message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
                 outgoing_message_flow: None,
             }),
         }
@@ -503,7 +503,7 @@ impl IntermediateEventType {
                     local_index,
                     incoming_sequence_flows: vec![],
                     outgoing_sequence_flows: vec![],
-                    message_marker_id: format!("messagemarker_{}", global_index.0),
+                    message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
                     incoming_message_flow: None,
                 })
             }
@@ -514,7 +514,7 @@ impl IntermediateEventType {
                     local_index,
                     incoming_sequence_flows: vec![],
                     outgoing_sequence_flows: vec![],
-                    message_marker_id: format!("messagemarker_{}", global_index.0),
+                    message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
                     incoming_message_flow: None,
                 })
             }
@@ -523,7 +523,7 @@ impl IntermediateEventType {
                     global_index,
                     id: format!("timerintermediatethrowevent_{}", global_index.0),
                     local_index,
-                    timer_marker_id: format!("timermarker_{}", global_index.0),
+                    timer_marker_id: Some(format!("timermarker_{}", global_index.0)),
                     incoming_sequence_flows: vec![],
                     outgoing_sequence_flows: vec![],
                 })

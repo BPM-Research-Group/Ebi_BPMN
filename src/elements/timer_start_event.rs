@@ -23,7 +23,7 @@ pub struct BPMNTimerStartEvent {
     pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) local_index: usize,
-    pub(crate) timer_marker_id: String,
+    pub(crate) timer_marker_id: Option<String>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
 }
 

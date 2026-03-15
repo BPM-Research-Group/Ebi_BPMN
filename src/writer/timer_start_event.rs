@@ -19,10 +19,11 @@ impl Writable for BPMNTimerStartEvent {
             .with_attributes([("id", self.id.as_str())])
             .write_inner_content(|x| {
                 write_external_outgoing!(x, self, parent);
-                x.write_event(Event::Empty(
-                    BytesStart::new("timerEventDefinition")
-                        .with_attributes([("id", self.timer_marker_id.as_str())]),
-                ))?;
+                let mut b = BytesStart::new("timerEventDefinition");
+                if let Some(id) = &self.timer_marker_id {
+                    b = b.with_attributes([("id", id.as_str())]);
+                }
+                x.write_event(Event::Empty(b))?;
                 Ok(())
             })?;
         Ok(())

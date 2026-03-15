@@ -105,4 +105,11 @@ impl ParserState {
             Err(anyhow!("element must have an id"))
         }
     }
+
+    pub(crate) fn read_and_add_id_optional(&mut self, e: &BytesStart) -> Option<String> {
+        match self.read_and_add_id(e).ok() {
+            Some((_, s)) => Some(s),
+            None => None,
+        }
+    }
 }

@@ -151,7 +151,7 @@ pub(crate) enum OpenedTag {
     EndEvent {
         global_index: GlobalIndex,
         id: String,
-        message_marker_id: Option<String>,
+        message_marker_id: Option<Option<String>>,
     },
     EventBasedGateway {
         global_index: GlobalIndex,
@@ -168,16 +168,16 @@ pub(crate) enum OpenedTag {
     IntermediateCatchEvent {
         global_index: GlobalIndex,
         id: String,
-        message_marker_id: Option<String>,
-        timer_marker_id: Option<String>,
+        message_marker_id: Option<Option<String>>,
+        timer_marker_id: Option<Option<String>>,
     },
     IntermediateThrowEvent {
         global_index: GlobalIndex,
         id: String,
-        message_marker_id: Option<String>,
+        message_marker_id: Option<Option<String>>,
     },
     MessageEventDefinition {
-        id: String,
+        id: Option<String>,
     },
     MessageFlow {
         global_index: GlobalIndex,
@@ -223,8 +223,8 @@ pub(crate) enum OpenedTag {
     StartEvent {
         global_index: GlobalIndex,
         id: String,
-        message_marker_id: Option<String>,
-        timer_marker_id: Option<String>,
+        message_marker_id: Option<Option<String>>,
+        timer_marker_id: Option<Option<String>>,
     },
     Task {
         global_index: GlobalIndex,
@@ -232,7 +232,7 @@ pub(crate) enum OpenedTag {
         activity: Activity,
     },
     TimerEventDefinition {
-        id: String,
+        id: Option<String>,
     },
     Weight {
         weight: Fraction,

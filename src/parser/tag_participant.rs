@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use anyhow::Result;
-use quick_xml::events::BytesStart;
+use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagParticipant {}
 
@@ -55,11 +55,7 @@ impl Openable for TagParticipant {
 }
 
 impl Closeable for TagParticipant {
-    fn close_tag(
-        opened_tag: OpenedTag,
-        _e: &quick_xml::events::BytesEnd,
-        state: &mut ParserState,
-    ) -> Result<()> {
+    fn close_tag(opened_tag: OpenedTag, _e: &BytesEnd, state: &mut ParserState) -> Result<()> {
         match state.open_tags.iter_mut().last() {
             Some(OpenedTag::Collaboration {
                 collapsed_pools, ..
