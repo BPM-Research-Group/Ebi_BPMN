@@ -1,5 +1,5 @@
 use crate::{
-    BusinessProcessModelAndNotation,
+    BPMNSequenceFlow, BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
@@ -12,7 +12,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
 use ebi_activity_key::Activity;
-use ebi_arithmetic::{Fraction, One, Recip, Zero};
+use ebi_arithmetic::{Fraction, One, Recip};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
@@ -245,7 +245,7 @@ impl Transitionable for BPMNInclusiveGateway {
             if transition_index % 2 == 0 {
                 sub_marking.sequence_flow_2_tokens[*sequence_flow_index] += 1;
             }
-            transition_index <<= 1;
+            transition_index >>= 1;
         }
         Ok(())
     }
@@ -272,7 +272,7 @@ impl Transitionable for BPMNInclusiveGateway {
 
     fn transition_weight(
         &self,
-        mut transition_index: TransitionIndex,
+        transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<Fraction> {
@@ -302,22 +302,17 @@ impl Transitionable for BPMNInclusiveGateway {
                 .sum::<Fraction>();
         let s = Fraction::from(s_1) + s_2 * Fraction::from(sum_weights.clone());
 
-        if transition_index.count_ones() == self.outgoing_sequence_flows.len() as u32 {
+        let selected_sequence_flows =
+            transition_index_2_sequence_flows(self, parent, transition_index)?;
+        if selected_sequence_flows.len() == self.outgoing_sequence_flows.len() {
             //full set chosen
             Some(sum_weights / s)
         } else {
             //sub-set chosen
-            let mut sum_chosen = Fraction::zero();
-            for sequence_flow_index in &self.outgoing_sequence_flows {
-                if transition_index % 2 == 0 {
-                    sum_chosen += parent
-                        .sequence_flows_non_recursive()
-                        .get(*sequence_flow_index)?
-                        .weight
-                        .as_ref()?;
-                }
-                transition_index <<= 1;
-            }
+            let mut sum_chosen: Fraction = selected_sequence_flows
+                .into_iter()
+                .filter_map(|sequence_flow| sequence_flow.weight.as_ref())
+                .sum();
             sum_chosen *= transition_index.count_ones();
             let sum_chosen = sum_chosen.recip();
 
@@ -327,22 +322,34 @@ impl Transitionable for BPMNInclusiveGateway {
 
     fn transition_2_marked_sequence_flows<'a>(
         &'a self,
-        mut transition_index: TransitionIndex,
+        transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
-        let mut result = vec![];
-        for sequence_flow_index in &self.outgoing_sequence_flows {
-            if transition_index % 2 == 0 {
-                result.push(
-                    parent
-                        .sequence_flows_non_recursive()
-                        .get(*sequence_flow_index)?
-                        .global_index,
-                )
-            }
-            transition_index <<= 1;
-        }
-        Some(result)
+        Some(
+            transition_index_2_sequence_flows(self, parent, transition_index)?
+                .into_iter()
+                .map(|sequence_flow| sequence_flow.global_index())
+                .collect::<Vec<_>>(),
+        )
     }
+}
+
+fn transition_index_2_sequence_flows<'a>(
+    gateway: &'a BPMNInclusiveGateway,
+    parent: &'a dyn Processable,
+    mut transition_index: usize,
+) -> Option<Vec<&'a BPMNSequenceFlow>> {
+    let mut result = vec![];
+    for sequence_flow_index in &gateway.outgoing_sequence_flows {
+        if transition_index % 2 == 0 {
+            result.push(
+                parent
+                    .sequence_flows_non_recursive()
+                    .get(*sequence_flow_index)?,
+            );
+        }
+        transition_index >>= 1;
+    }
+    Some(result)
 }

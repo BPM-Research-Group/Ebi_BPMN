@@ -1082,4 +1082,103 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0; 0]);
         assert!(bpmn.is_final_marking(&marking).unwrap());
     }
+
+    #[test]
+    fn dispatch_of_goods() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string("testfiles/Dispatch-of-goods.bpmn").unwrap();
+        let bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+        debug_transitions(&bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6]);
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![7]);
+
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![8, 15]);
+
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![9, 10, 15]
+        );
+
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![0, 1, 2, 15]
+        );
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![3, 4, 15]
+        );
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 15]);
+
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![5, 15]);
+    }
+
+    #[test]
+    fn stochastic_dispatch_of_goods() {
+        let fin = fs::read_to_string("testfiles/Dispatch-of-goods-uni.sbpmn").unwrap();
+        let bpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
+        debug_transitions(&bpmn.bpmn, &marking);
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6]);
+        assert_eq!(
+            bpmn.get_transition_weight(6, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 6).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![7]);
+        assert_eq!(
+            bpmn.get_transition_weight(7, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 7).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![8, 15]);
+        assert_eq!(
+            bpmn.get_transition_weight(8, &marking).unwrap(),
+            Fraction::one()
+        );
+
+        bpmn.execute_transition(&mut marking, 8).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![9, 10, 15]
+        );
+        assert_eq!(bpmn.get_transition_weight(9, &marking).unwrap(), f!(1, 2));
+
+        bpmn.execute_transition(&mut marking, 9).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![0, 1, 2, 15]
+        );
+        assert_eq!(bpmn.get_transition_weight(0, &marking).unwrap(), f!(1, 3));
+        assert_eq!(bpmn.get_transition_weight(1, &marking).unwrap(), f!(1, 3));
+        assert_eq!(bpmn.get_transition_weight(2, &marking).unwrap(), f!(1, 3));
+
+        bpmn.execute_transition(&mut marking, 0).unwrap();
+        assert_eq!(
+            bpmn.get_enabled_transitions(&marking).unwrap(),
+            vec![3, 4, 15]
+        );
+
+        bpmn.execute_transition(&mut marking, 3).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 15]);
+
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![5, 15]);
+    }
 }

@@ -128,14 +128,15 @@ dependencies = [
 
 [[package]]
 name = "ebi_arithmetic"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae191f1a01a31e8d535ffbfb081de2dd3710992e277ab9adbdf5f6111fba819b"
+checksum = "8c77487f9da75006b1ccbb84b6850f2f0aa0059b29e3f8903f5ea13df90cf27f"
 dependencies = [
  "anyhow",
  "itertools",
  "malachite",
  "rand",
+ "rand_chacha",
  "serial_test",
 ]
 

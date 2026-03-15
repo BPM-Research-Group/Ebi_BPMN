@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions id="Definitions_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" exporter="Ebi-bpmn" xmlns:sbpmn="https://www.ebitools.org/sbpmn/20260305">
+	<collaboration id="Collaboration_0geryc1">
+	</collaboration>
+	<process id="Process_1" isExecutable="true">
+		<inclusiveGateway id="InclusiveGateway_0p2e5vq">
+			<incoming>SequenceFlow_0iu9po7</incoming>
+			<outgoing>SequenceFlow_1j94oja</outgoing>
+			<outgoing>SequenceFlow_1dlbln9</outgoing>
+		</inclusiveGateway>
+		<task id="Task_12j0pib" name="Insure parcel">
+			<incoming>SequenceFlow_1j94oja</incoming>
+			<outgoing>SequenceFlow_0kz5g1t</outgoing>
+		</task>
+		<task id="Task_0jsoxba" name="Write package
+label">
+			<incoming>SequenceFlow_1dlbln9</incoming>
+			<outgoing>SequenceFlow_0mp5byl</outgoing>
+		</task>
+		<inclusiveGateway id="InclusiveGateway_1dgb4sg">
+			<incoming>SequenceFlow_0mp5byl</incoming>
+			<incoming>SequenceFlow_0kz5g1t</incoming>
+			<outgoing>SequenceFlow_0buzwss</outgoing>
+		</inclusiveGateway>
+		<startEvent id="StartEvent_1">
+			<outgoing>SequenceFlow_14a0oky</outgoing>
+		</startEvent>
+		<parallelGateway id="ParallelGateway_02fgrfq">
+			<incoming>SequenceFlow_14a0oky</incoming>
+			<outgoing>SequenceFlow_023hzxi</outgoing>
+			<outgoing>SequenceFlow_1ujhfx4</outgoing>
+		</parallelGateway>
+		<task id="Task_0vaxgaa" name="Clarify shipment method">
+			<incoming>SequenceFlow_023hzxi</incoming>
+			<outgoing>SequenceFlow_1rss71o</outgoing>
+		</task>
+		<exclusiveGateway id="ExclusiveGateway_1mpgzhg">
+			<incoming>SequenceFlow_1rss71o</incoming>
+			<outgoing>SequenceFlow_0iu9po7</outgoing>
+			<outgoing>SequenceFlow_1xv6wk4</outgoing>
+		</exclusiveGateway>
+		<task id="Task_0e6hvnj" name="Get 3 offers
+from logistic
+companies">
+			<incoming>SequenceFlow_1xv6wk4</incoming>
+			<outgoing>SequenceFlow_1pq8ub3</outgoing>
+		</task>
+		<task id="Task_0s79ile" name="Select logistic
+company and
+place order">
+			<incoming>SequenceFlow_1pq8ub3</incoming>
+			<outgoing>SequenceFlow_0ajhekx</outgoing>
+		</task>
+		<exclusiveGateway id="ExclusiveGateway_1ouv9kf">
+			<incoming>SequenceFlow_0ajhekx</incoming>
+			<incoming>SequenceFlow_0buzwss</incoming>
+			<outgoing>SequenceFlow_035vf60</outgoing>
+		</exclusiveGateway>
+		<task id="Task_05ftug5" name="Package goods">
+			<incoming>SequenceFlow_1ujhfx4</incoming>
+			<outgoing>SequenceFlow_0b2nw5c</outgoing>
+		</task>
+		<exclusiveGateway id="ExclusiveGateway_0z5sib0">
+			<incoming>SequenceFlow_035vf60</incoming>
+			<incoming>SequenceFlow_0b2nw5c</incoming>
+			<outgoing>SequenceFlow_06kfaev</outgoing>
+		</exclusiveGateway>
+		<task id="Task_0sl26uo" name="Prepare for
+picking up
+goods">
+			<incoming>SequenceFlow_06kfaev</incoming>
+			<outgoing>SequenceFlow_0v64x8b</outgoing>
+		</task>
+		<endEvent id="EndEvent_1fx9yp3">
+			<incoming>SequenceFlow_0v64x8b</incoming>
+		</endEvent>
+		<sequenceFlow id="SequenceFlow_0iu9po7" sourceRef="ExclusiveGateway_1mpgzhg" targetRef="InclusiveGateway_0p2e5vq">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1j94oja" sourceRef="InclusiveGateway_0p2e5vq" targetRef="Task_12j0pib">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1dlbln9" sourceRef="InclusiveGateway_0p2e5vq" targetRef="Task_0jsoxba">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0mp5byl" sourceRef="Task_0jsoxba" targetRef="InclusiveGateway_1dgb4sg">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0kz5g1t" sourceRef="Task_12j0pib" targetRef="InclusiveGateway_1dgb4sg">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_14a0oky" sourceRef="StartEvent_1" targetRef="ParallelGateway_02fgrfq">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_023hzxi" sourceRef="ParallelGateway_02fgrfq" targetRef="Task_0vaxgaa">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1rss71o" sourceRef="Task_0vaxgaa" targetRef="ExclusiveGateway_1mpgzhg">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1xv6wk4" sourceRef="ExclusiveGateway_1mpgzhg" targetRef="Task_0e6hvnj">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1pq8ub3" sourceRef="Task_0e6hvnj" targetRef="Task_0s79ile">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0ajhekx" sourceRef="Task_0s79ile" targetRef="ExclusiveGateway_1ouv9kf">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0buzwss" sourceRef="InclusiveGateway_1dgb4sg" targetRef="ExclusiveGateway_1ouv9kf">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_035vf60" sourceRef="ExclusiveGateway_1ouv9kf" targetRef="ExclusiveGateway_0z5sib0">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0b2nw5c" sourceRef="Task_05ftug5" targetRef="ExclusiveGateway_0z5sib0">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_06kfaev" sourceRef="ExclusiveGateway_0z5sib0" targetRef="Task_0sl26uo">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_0v64x8b" sourceRef="Task_0sl26uo" targetRef="EndEvent_1fx9yp3">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+		<sequenceFlow id="SequenceFlow_1ujhfx4" sourceRef="ParallelGateway_02fgrfq" targetRef="Task_05ftug5">
+			<sbpmn:weight constant="1"/>
+		</sequenceFlow>
+	</process>
+</definitions>
