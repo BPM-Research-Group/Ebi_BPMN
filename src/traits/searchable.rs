@@ -6,7 +6,6 @@ use crate::{
 };
 
 pub(crate) trait Searchable {
-
     /// find an object with the given id, returns (pool index, element index)
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)>;
 
@@ -41,11 +40,13 @@ pub(crate) trait Searchable {
     fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement>;
 
     /// find a local element with the given index
+    fn local_index_2_element(&self, index: usize) -> Option<&BPMNElement>;
+
+    /// find a local element with the given index
     fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement>;
 }
 
 impl Searchable for Vec<BPMNElement> {
-
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         for element in self {
             let x = element.id_2_pool_and_global_index(id);
@@ -123,6 +124,10 @@ impl Searchable for Vec<BPMNElement> {
         self.iter_mut()
             .filter_map(|element| element.global_index_2_element_mut(index))
             .next()
+    }
+
+    fn local_index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        self.get(index)
     }
 
     fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {

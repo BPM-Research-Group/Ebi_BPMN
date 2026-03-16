@@ -11,7 +11,8 @@ use crate::{
         searchable::Searchable,
         startable::{InitiationMode, Startable},
         transitionable::{
-            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split, execute_transition_xor_join_consume, number_of_transitions_xor_join_only
+            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
+            execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
         },
     },
 };
@@ -359,7 +360,7 @@ impl Transitionable for BPMNExpandedSubProcess {
         None
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -381,10 +382,45 @@ impl Transitionable for BPMNExpandedSubProcess {
             //own transitions
             let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
             if transition_index < sub_number_of_transitions {
-                return self.elements.transition_2_marked_sequence_flows(
+                return self.elements.transition_2_produced_sequence_flow_tokens(
                     transition_index,
                     &sub_marking,
                     self,
+                );
+            }
+            transition_index -= sub_number_of_transitions;
+        }
+        None
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        //start transition
+        if transition_index < number_of_transitions_xor_join_only!(self) {
+            return Some(vec![]);
+        }
+        transition_index -= number_of_transitions_xor_join_only!(self);
+
+        for sub_marking in &marking.element_index_2_sub_markings[self.local_index] {
+            if transition_index == 0 {
+                //end transition
+                return Some(vec![]);
+            }
+            transition_index -= 1;
+
+            //own transitions
+            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            if transition_index < sub_number_of_transitions {
+                return self.elements.transition_2_produced_message_flow_tokens(
+                    transition_index,
+                    &sub_marking,
+                    self,
+                    bpmn,
                 );
             }
             transition_index -= sub_number_of_transitions;
@@ -415,7 +451,6 @@ impl Startable for BPMNExpandedSubProcess {
 }
 
 impl Searchable for BPMNExpandedSubProcess {
-
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id == id {
             Some((Some(self.local_index), self.global_index))
@@ -499,6 +534,10 @@ impl Searchable for BPMNExpandedSubProcess {
 
     fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
         self.elements.global_index_2_element_mut(index)
+    }
+
+    fn local_index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        self.elements.local_index_2_element(index)
     }
 
     fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {

@@ -1,11 +1,18 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, elements::expanded_sub_process::to_sub_marking, parser::parser_state::GlobalIndex, semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex}, sequence_flow::BPMNSequenceFlow, structure_checker::verify_structural_correctness_initiation_mode, traits::{
+    BusinessProcessModelAndNotation,
+    element::{BPMNElement, BPMNElementTrait},
+    elements::expanded_sub_process::to_sub_marking,
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    sequence_flow::BPMNSequenceFlow,
+    structure_checker::verify_structural_correctness_initiation_mode,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         searchable::Searchable,
         startable::{InitiationMode, Startable},
         transitionable::Transitionable,
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
@@ -23,7 +30,6 @@ pub struct BPMNProcess {
 }
 
 impl Searchable for BPMNProcess {
-    
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id == id {
             Some((Some(self.local_index), self.global_index))
@@ -107,6 +113,10 @@ impl Searchable for BPMNProcess {
 
     fn global_index_2_element_mut(&mut self, index: GlobalIndex) -> Option<&mut BPMNElement> {
         self.elements.global_index_2_element_mut(index)
+    }
+
+    fn local_index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        self.elements.local_index_2_element(index)
     }
 
     fn local_index_2_element_mut(&mut self, index: usize) -> Option<&mut BPMNElement> {
@@ -285,14 +295,29 @@ impl Transitionable for BPMNProcess {
             .transition_weight(transition_index, marking, self)
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
         _parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
         self.elements
-            .transition_2_marked_sequence_flows(transition_index, marking, self)
+            .transition_2_produced_sequence_flow_tokens(transition_index, marking, self)
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        self.elements.transition_2_produced_message_flow_tokens(
+            transition_index,
+            marking,
+            self,
+            bpmn,
+        )
     }
 }
 

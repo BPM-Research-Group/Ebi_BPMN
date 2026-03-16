@@ -242,7 +242,7 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_2_marked_sequence_flows(
+                return element.transition_2_produced_sequence_flow_tokens(
                     transition_index,
                     sub_marking,
                     self,

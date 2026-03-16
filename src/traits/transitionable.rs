@@ -60,11 +60,20 @@ pub trait Transitionable {
     ) -> Option<Fraction>;
 
     /// Returns the sequence flows that get a token by executing this transition.
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
+    ) -> Option<Vec<GlobalIndex>>;
+
+    /// Returns the message flows that get a token by executing this transition.
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<Vec<GlobalIndex>>;
 }
 
@@ -158,7 +167,7 @@ impl Transitionable for Vec<BPMNElement> {
         None
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -167,10 +176,32 @@ impl Transitionable for Vec<BPMNElement> {
         for element in self.iter() {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
-                return element.transition_2_marked_sequence_flows(
+                return element.transition_2_produced_sequence_flow_tokens(
                     transition_index,
                     marking,
                     parent,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        for element in self.iter() {
+            let number_of_transitions = element.number_of_transitions(marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_produced_message_flow_tokens(
+                    transition_index,
+                    marking,
+                    parent,
+                    bpmn,
                 );
             }
             transition_index -= number_of_transitions;
@@ -268,3 +299,20 @@ macro_rules! transition_2_marked_sequence_flows_concurrent_split {
     };
 }
 pub(crate) use transition_2_marked_sequence_flows_concurrent_split;
+
+macro_rules! transition_2_produce_message_flow {
+    ($self:ident, $bpmn:ident) => {
+        if let Some(message_flow_index) = $self.outgoing_message_flow {
+            let message_flow = $bpmn.message_flows.get(message_flow_index)?;
+            let target = $bpmn.message_flow_index_2_target(message_flow_index).ok()?;
+            if !target.incoming_messages_are_ignored() {
+                Some(vec![message_flow.global_index()])
+            } else {
+                Some(vec![])
+            }
+        } else {
+            Some(vec![])
+        }
+    };
+}
+pub(crate) use transition_2_produce_message_flow;

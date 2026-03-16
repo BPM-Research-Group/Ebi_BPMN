@@ -95,6 +95,7 @@ pub(crate) mod parser {
     pub mod tag_weight;
     pub mod tags;
 }
+pub mod partially_ordered_run;
 pub(crate) mod stochastic_business_process_model_and_notation;
 pub mod traits {
     pub mod objectable;

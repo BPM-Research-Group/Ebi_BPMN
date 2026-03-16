@@ -132,7 +132,6 @@ impl BPMNElementTrait for BPMNElement {
 }
 
 impl Searchable for BPMNElement {
-
     fn id_2_pool_and_global_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {
             Some((Some(self.local_index()), self.global_index()))
@@ -258,6 +257,16 @@ impl Searchable for BPMNElement {
             None
         }
     }
+
+    fn local_index_2_element(&self, index: usize) -> Option<&BPMNElement> {
+        if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
+        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
+        {
+            elements.local_index_2_element(index)
+        } else {
+            None
+        }
+    }
 }
 
 impl Transitionable for BPMNElement {
@@ -327,7 +336,7 @@ impl Transitionable for BPMNElement {
         enums!(self, transition_weight, transition_index, marking, parent)
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -335,10 +344,27 @@ impl Transitionable for BPMNElement {
     ) -> Option<Vec<GlobalIndex>> {
         enums!(
             self,
-            transition_2_marked_sequence_flows,
+            transition_2_produced_sequence_flow_tokens,
             transition_index,
             marking,
             parent
+        )
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        enums!(
+            self,
+            transition_2_produced_message_flow_tokens,
+            transition_index,
+            marking,
+            parent,
+            bpmn
         )
     }
 }

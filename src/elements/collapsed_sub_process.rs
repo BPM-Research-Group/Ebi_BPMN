@@ -202,12 +202,27 @@ impl Transitionable for BPMNCollapsedSubProcess {
         Some(Fraction::one())
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
         transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        Some(
+            self.outgoing_message_flows
+                .iter()
+                .map(|message_flow_index| bpmn.message_flows[*message_flow_index].global_index())
+                .collect::<Vec<_>>(),
+        )
     }
 }

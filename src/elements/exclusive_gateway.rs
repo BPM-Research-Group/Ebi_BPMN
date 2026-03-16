@@ -330,7 +330,7 @@ impl Transitionable for BPMNExclusiveGateway {
         }
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
@@ -374,5 +374,15 @@ impl Transitionable for BPMNExclusiveGateway {
                 }
             }
         }
+    }
+    
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        Some(vec![])
     }
 }

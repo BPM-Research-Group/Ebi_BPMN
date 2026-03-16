@@ -10,7 +10,7 @@ use crate::{
             Transitionable, enabledness_xor_join_only, execute_transition_message_produce,
             execute_transition_parallel_split, execute_transition_xor_join_consume,
             number_of_transitions_xor_join_only,
-            transition_2_marked_sequence_flows_concurrent_split,
+            transition_2_marked_sequence_flows_concurrent_split, transition_2_produce_message_flow,
         },
     },
 };
@@ -192,12 +192,22 @@ impl Transitionable for BPMNMessageIntermediateThrowEvent {
         Some(Fraction::one())
     }
 
-    fn transition_2_marked_sequence_flows<'a>(
+    fn transition_2_produced_sequence_flow_tokens<'a>(
         &'a self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
         transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+    }
+
+    fn transition_2_produced_message_flow_tokens<'a>(
+        &'a self,
+        _transition_index: TransitionIndex,
+        _marking: &BPMNSubMarking,
+        _parent: &'a dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<GlobalIndex>> {
+        transition_2_produce_message_flow!(self, bpmn)
     }
 }
