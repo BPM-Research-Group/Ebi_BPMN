@@ -59,10 +59,11 @@ impl StochasticBusinessProcessModelAndNotation {
             for element in &self.bpmn.elements {
                 if let BPMNElement::Process(process) = element {
                     start_elements
-                        .extend(process.unconstrained_start_events_without_recursing(&self.bpmn));
+                        .extend(process.unconstrained_start_events_without_recursing(&self.bpmn)?);
                 }
             }
             if start_elements.len() > 1 {
+                println!("start elements {:?}", start_elements);
                 return Err(anyhow!("An SBPMN model can have at most one start event."));
             }
         }
