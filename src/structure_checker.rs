@@ -14,7 +14,7 @@ use ebi_arithmetic::Signed;
 impl BusinessProcessModelAndNotation {
     /// Verify whether the model is structurally correct using several, though not exhaustive, checks.
     /// If the BPMN model is imported by [import_from_reader] or created using a [BPMNCreator], there is no need to call this method.
-    /// 
+    ///
     /// [import_from_reader]: BusinessProcessModelAndNotation::import_from_reader
     /// [BPMNCreator]: crate::BPMNCreator
     pub fn is_structurally_correct(&self) -> Result<()> {
@@ -59,10 +59,11 @@ impl StochasticBusinessProcessModelAndNotation {
             for element in &self.bpmn.elements {
                 if let BPMNElement::Process(process) = element {
                     start_elements
-                        .extend(process.unconstrained_start_events_without_recursing(&self.bpmn));
+                        .extend(process.unconstrained_start_events_without_recursing(&self.bpmn)?);
                 }
             }
             if start_elements.len() > 1 {
+                println!("start elements {:?}", start_elements);
                 return Err(anyhow!("An SBPMN model can have at most one start event."));
             }
         }
@@ -141,6 +142,7 @@ impl StochasticBusinessProcessModelAndNotation {
                 | BPMNElement::ExpandedSubProcess(_)
                 | BPMNElement::IntermediateCatchEvent(_)
                 | BPMNElement::IntermediateThrowEvent(_)
+                | BPMNElement::ManualTask(_)
                 | BPMNElement::MessageEndEvent(_)
                 | BPMNElement::MessageIntermediateCatchEvent(_)
                 | BPMNElement::MessageIntermediateThrowEvent(_)
@@ -151,7 +153,8 @@ impl StochasticBusinessProcessModelAndNotation {
                 | BPMNElement::StartEvent(_)
                 | BPMNElement::Task(_)
                 | BPMNElement::TimerIntermediateCatchEvent(_)
-                | BPMNElement::TimerStartEvent(_) => {}
+                | BPMNElement::TimerStartEvent(_)
+                | BPMNElement::UserTask(_) => {}
                 BPMNElement::EventBasedGateway(BPMNEventBasedGateway {
                     outgoing_sequence_flows,
                     ..
@@ -209,7 +212,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
             //there must be end events
             if $process.end_events_without_recursing().is_empty() {
                 return Err(anyhow!(
-                    "process `{}` has start events but no end events",
+                    "Process `{}` has start events but no end events.",
                     $process.id
                 ));
             }
@@ -219,7 +222,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
                 if element.can_have_incoming_sequence_flows() {
                     if element.incoming_sequence_flows().is_empty() {
                         return Err(anyhow!(
-                            "given that there are start events in process `{}`, element `{}` should have an incoming sequence flow",
+                            "Given that there are start events in process `{}`, element `{}` should have an incoming sequence flow.",
                             $process.id,
                             element.id()
                         ));
@@ -228,7 +231,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
                 if element.can_have_outgoing_sequence_flows() {
                     if element.outgoing_sequence_flows().is_empty() {
                         return Err(anyhow!(
-                            "given that there are start events in process `{}`, element `{}` should have an outgoing sequence flow",
+                            "Given that there are start events in process `{}`, element `{}` should have an outgoing sequence flow.",
                             $process.id,
                             element.id()
                         ));

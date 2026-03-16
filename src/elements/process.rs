@@ -25,6 +25,9 @@ pub struct BPMNProcess {
     pub global_index: GlobalIndex,
     pub id: String,
     pub local_index: usize,
+    pub name: Option<String>,
+    pub participant_global_index: Option<GlobalIndex>,
+    pub participant_id: Option<String>,
     pub elements: Vec<BPMNElement>,
     pub sequence_flows: Vec<BPMNSequenceFlow>,
 }

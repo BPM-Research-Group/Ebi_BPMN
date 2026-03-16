@@ -67,7 +67,30 @@ impl Startable for Vec<BPMNElement> {
 
     fn end_events_without_recursing(&self) -> Vec<&BPMNElement> {
         self.iter()
-            .filter(|element| element.is_end_event())
+            .filter(|element| match element {
+                BPMNElement::CollapsedPool(_)
+                | BPMNElement::CollapsedSubProcess(_)
+                | BPMNElement::EventBasedGateway(_)
+                | BPMNElement::ExclusiveGateway(_)
+                | BPMNElement::ExpandedSubProcess(_)
+                | BPMNElement::InclusiveGateway(_)
+                | BPMNElement::IntermediateCatchEvent(_)
+                | BPMNElement::IntermediateThrowEvent(_)
+                | BPMNElement::ManualTask(_)
+                | BPMNElement::MessageIntermediateCatchEvent(_)
+                | BPMNElement::MessageIntermediateThrowEvent(_)
+                | BPMNElement::MessageStartEvent(_)
+                | BPMNElement::ParallelGateway(_)
+                | BPMNElement::Process(_)
+                | BPMNElement::ReceiveTask(_)
+                | BPMNElement::StartEvent(_)
+                | BPMNElement::Task(_)
+                | BPMNElement::TimerIntermediateCatchEvent(_)
+                | BPMNElement::TimerStartEvent(_)
+                | BPMNElement::UserTask(_) => false,
+
+                BPMNElement::EndEvent(_) | BPMNElement::MessageEndEvent(_) => true,
+            })
             .collect()
     }
 }

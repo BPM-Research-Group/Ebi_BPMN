@@ -50,7 +50,7 @@ pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) ->
 
             OpenedTag::close_tag(most_recent_open_tag, e, state).with_context(|| {
                 anyhow!(
-                    "close tag `{}`",
+                    "At the closing of tag `{}`.",
                     String::from_utf8_lossy(&most_recent_open_tag_name)
                 )
             })?;

@@ -69,12 +69,15 @@ impl BPMNCreator {
         (self.max_id, ())
     }
 
-    pub fn add_process(&mut self) -> Container {
+    pub fn add_process(&mut self, name: Option<String>) -> Container {
         let global_index = self.new_global_index();
         let process = BPMNElement::Process(BPMNProcess {
             global_index,
             id: format!("process_{}", global_index.0),
             local_index: self.bpmn.elements.len(),
+            name,
+            participant_global_index: None,
+            participant_id: None,
             elements: vec![],
             sequence_flows: vec![],
         });

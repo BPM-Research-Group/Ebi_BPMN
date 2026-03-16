@@ -1,4 +1,5 @@
 use crate::{
+    GlobalIndex,
     elements::collapsed_pool::BPMNCollapsedPool,
     importer::parse_attribute,
     parser::{
@@ -54,11 +55,21 @@ impl Openable for TagParticipant {
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct DraftTagParticipant {
+    pub(crate) global_index: GlobalIndex,
+    pub(crate) id: String,
+    pub(crate) name: Option<String>,
+    pub(crate) process_id: String,
+}
+
 impl Closeable for TagParticipant {
     fn close_tag(opened_tag: OpenedTag, _e: &BytesEnd, state: &mut ParserState) -> Result<()> {
         match state.open_tags.iter_mut().last() {
             Some(OpenedTag::Collaboration {
-                collapsed_pools, ..
+                collapsed_pools,
+                draft_participants,
+                ..
             }) => {
                 if let OpenedTag::Participant {
                     global_index,
@@ -67,9 +78,14 @@ impl Closeable for TagParticipant {
                     process_id,
                 } = opened_tag
                 {
-                    if process_id.is_some() {
-                        //this is an expanded pool
-                        //not a BPMN element (that's the process)
+                    if let Some(process_id) = process_id {
+                        //this is not a BPMN element (that's the process)
+                        draft_participants.push(DraftTagParticipant {
+                            global_index,
+                            id,
+                            name,
+                            process_id,
+                        });
                     } else {
                         //this is a collapsed pool
                         let local_index = collapsed_pools.len();

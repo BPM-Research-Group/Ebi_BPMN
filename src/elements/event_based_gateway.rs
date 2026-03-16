@@ -63,7 +63,7 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                 //the target must not have any other incominge sequence flows
                 if target.incoming_sequence_flows().len() > 1 {
                     return Err(anyhow!(
-                        "element `{}` cannot have other incoming sequence flows besides from its preceding event-based gateway",
+                        "Element `{}` cannot have other incoming sequence flows besides from its preceding event-based gateway.",
                         target.id()
                     ));
                 }
@@ -76,20 +76,23 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                     | BPMNElement::ExclusiveGateway(_)
                     | BPMNElement::ExpandedSubProcess(_)
                     | BPMNElement::InclusiveGateway(_)
-                    | BPMNElement::IntermediateCatchEvent(_)
                     | BPMNElement::IntermediateThrowEvent(_)
+                    | BPMNElement::ManualTask(_)
                     | BPMNElement::MessageEndEvent(_)
                     | BPMNElement::MessageIntermediateThrowEvent(_)
                     | BPMNElement::MessageStartEvent(_)
                     | BPMNElement::ParallelGateway(_)
                     | BPMNElement::Process(_)
                     | BPMNElement::StartEvent(_)
-                    | BPMNElement::TimerStartEvent(_) => {
+                    | BPMNElement::TimerStartEvent(_)
+                    | BPMNElement::UserTask(_) => {
                         return Err(anyhow!(
                             "Element `{}` not allowed as a target of a sequence flow from an event-based gateway (standard page 297).",
                             target.id()
                         ));
                     }
+
+                    BPMNElement::IntermediateCatchEvent(_) => {}
 
                     BPMNElement::MessageIntermediateCatchEvent(_) => {
                         if configuration.is_tasks() {

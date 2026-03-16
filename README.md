@@ -16,7 +16,7 @@ If you are an end user, please consider using the Ebi crate & tool, which provid
 * Expanded and collapsed pools
 * Message flows
 * Sequence flows
-* Tasks and receive tasks
+* Tasks, and receive, user and manual tasks
 * Expanded and collapsed sub-processes
 
 Other elements are gracefully ignored, as long as they do not have in- or outgoing message or sequence flows.

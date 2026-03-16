@@ -4,11 +4,12 @@ use crate::{
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
     traits::{
-        objectable::{BPMNObject, EMPTY_FLOWS},
+        objectable::BPMNObject,
         processable::Processable,
         transitionable::{
-            Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
-            execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+            Transitionable, enabledness_xor_join_only, execute_transition_message_produce,
+            execute_transition_parallel_split, execute_transition_xor_join_consume,
+            number_of_transitions_xor_join_only,
             transition_2_marked_sequence_flows_concurrent_split,
         },
     },
@@ -19,15 +20,18 @@ use ebi_activity_key::Activity;
 use ebi_arithmetic::{Fraction, One};
 
 #[derive(Debug, Clone)]
-pub struct BPMNIntermediateCatchEvent {
+pub struct BPMNUserTask {
     pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
     pub(crate) local_index: usize,
+    pub activity: Activity,
     pub(crate) incoming_sequence_flows: Vec<usize>,
     pub(crate) outgoing_sequence_flows: Vec<usize>,
+    pub(crate) incoming_message_flow: Option<usize>,
+    pub(crate) outgoing_message_flow: Option<usize>,
 }
 
-impl BPMNElementTrait for BPMNIntermediateCatchEvent {
+impl BPMNElementTrait for BPMNUserTask {
     fn add_incoming_sequence_flow(&mut self, flow_index: usize) -> Result<()> {
         self.incoming_sequence_flows.push(flow_index);
         Ok(())
@@ -38,12 +42,20 @@ impl BPMNElementTrait for BPMNIntermediateCatchEvent {
         Ok(())
     }
 
-    fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
-        Err(anyhow!("none events cannot have incoming message flows"))
+    fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {
+        if self.incoming_message_flow.is_some() {
+            return Err(anyhow!("cannot add a second incoming message flow"));
+        }
+        self.incoming_message_flow = Some(flow_index);
+        Ok(())
     }
 
-    fn add_outgoing_message_flow(&mut self, _flow_index: usize) -> Result<()> {
-        Err(anyhow!("none events cannot have outgoing message flows"))
+    fn add_outgoing_message_flow(&mut self, flow_index: usize) -> Result<()> {
+        if self.outgoing_message_flow.is_some() {
+            return Err(anyhow!("cannot add a second outgoing message flow"));
+        }
+        self.outgoing_message_flow = Some(flow_index);
+        Ok(())
     }
 
     fn verify_structural_correctness(
@@ -55,7 +67,7 @@ impl BPMNElementTrait for BPMNIntermediateCatchEvent {
     }
 }
 
-impl BPMNObject for BPMNIntermediateCatchEvent {
+impl BPMNObject for BPMNUserTask {
     fn local_index(&self) -> usize {
         self.local_index
     }
@@ -64,12 +76,12 @@ impl BPMNObject for BPMNIntermediateCatchEvent {
         self.global_index
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn activity(&self) -> Option<Activity> {
+        Some(self.activity)
     }
 
-    fn activity(&self) -> Option<Activity> {
-        None
+    fn id(&self) -> &str {
+        &self.id
     }
 
     fn is_unconstrained_start_event(
@@ -90,17 +102,28 @@ impl BPMNObject for BPMNIntermediateCatchEvent {
     fn outgoing_sequence_flows(&self) -> &[usize] {
         &self.outgoing_sequence_flows
     }
-
     fn incoming_message_flows(&self) -> &[usize] {
-        &EMPTY_FLOWS
+        &self.incoming_message_flow.as_slice()
     }
 
     fn outgoing_message_flows(&self) -> &[usize] {
-        &EMPTY_FLOWS
+        &self.outgoing_message_flow.as_slice()
     }
 
-    fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        Ok(self.incoming_sequence_flows().len() == 0)
+    fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.is_collapsed_pool() {
+                //a message from a collapsed pool is always there
+                Ok(true)
+            } else {
+                //otherwise, the message must be there = the instance has already started
+                Ok(false)
+            }
+        } else {
+            //there is no constraining message, so this message start event can start a process instance
+            Ok(true)
+        }
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
@@ -124,30 +147,48 @@ impl BPMNObject for BPMNIntermediateCatchEvent {
     }
 }
 
-impl Transitionable for BPMNIntermediateCatchEvent {
+impl Transitionable for BPMNUserTask {
     fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         number_of_transitions_xor_join_only!(self)
     }
 
     fn enabled_transitions(
         &self,
-        _root_marking: &BPMNRootMarking,
+        root_marking: &BPMNRootMarking,
         sub_marking: &BPMNSubMarking,
         _parent: &dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
+        //check whether a message is present
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //there is a connected message flow
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if !source.outgoing_message_flows_always_have_tokens() {
+                //this message must actually be there
+
+                if root_marking.message_flow_2_tokens[message_flow_index] == 0 {
+                    //message is not present; all transitions are not enabled
+                    return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
+                }
+            } else {
+                //if the message flow has always tokens, we do not need to check the marking
+            }
+        } else {
+            //if there is no incoming message flow, there is no restriction
+        }
+
         Ok(enabledness_xor_join_only!(self, sub_marking))
     }
 
     fn execute_transition(
         &self,
         transition_index: TransitionIndex,
-        _root_marking: &mut BPMNRootMarking,
+        root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
         parent: &dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
-        //consume
+        //consume token
         if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
             let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
             let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
@@ -167,8 +208,29 @@ impl Transitionable for BPMNIntermediateCatchEvent {
             execute_transition_xor_join_consume!(self, sub_marking, transition_index);
         }
 
+        //consume message
+        {
+            //check whether a message is present
+            if let Some(message_flow_index) = self.incoming_message_flow {
+                //there is a connected message flow
+                let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+                if !source.outgoing_message_flows_always_have_tokens() {
+                    //this message must actually be there
+                    if !source.outgoing_messages_cannot_be_removed() {
+                        root_marking.message_flow_2_tokens[message_flow_index] -= 1;
+                    }
+                } else {
+                    //if the message flow has always tokens, we do not need to check the marking
+                }
+            } else {
+                //if there is no incoming message flow, there is no restriction
+            }
+        }
+
         //produce
         execute_transition_parallel_split!(self, sub_marking);
+        execute_transition_message_produce!(self, root_marking, bpmn);
+
         Ok(())
     }
 
@@ -177,18 +239,20 @@ impl Transitionable for BPMNIntermediateCatchEvent {
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
     ) -> Option<Activity> {
-        None
+        Some(self.activity)
     }
 
     fn transition_debug(
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Option<String> {
         Some(format!(
-            "intermediate catch event `{}`; internal transition {}",
-            self.id, transition_index
+            "task `{}`; internal transition {}; label `{}`",
+            self.id,
+            transition_index,
+            bpmn.activity_key.deprocess_activity(&self.activity)
         ))
     }
 
@@ -201,22 +265,12 @@ impl Transitionable for BPMNIntermediateCatchEvent {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
+    fn transition_2_marked_sequence_flows<'a>(
         &'a self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
         transition_2_marked_sequence_flows_concurrent_split!(self, parent)
-    }
-
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
-        _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
     }
 }
