@@ -63,7 +63,7 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                 //the target must not have any other incominge sequence flows
                 if target.incoming_sequence_flows().len() > 1 {
                     return Err(anyhow!(
-                        "element `{}` cannot have other incoming sequence flows besides from its preceding event-based gateway",
+                        "Element `{}` cannot have other incoming sequence flows besides from its preceding event-based gateway.",
                         target.id()
                     ));
                 }

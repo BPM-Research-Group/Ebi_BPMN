@@ -1,6 +1,7 @@
 use crate::{
     element::{BPMNElement, BPMNElementTrait},
     elements::process::BPMNProcess,
+    importer::parse_attribute,
     parser::{
         parser::NameSpace,
         parser_state::ParserState,
@@ -44,9 +45,12 @@ impl Openable for TagProcess {
     {
         let (index, id) = state.read_and_add_id(e)?;
 
+        let name = parse_attribute(e, "name");
+
         Ok(OpenedTag::Process {
             global_index: index,
             id,
+            name,
             elements: vec![],
             draft_sequence_flows: vec![],
         })
@@ -169,6 +173,7 @@ impl Closeable for TagProcess {
         if let OpenedTag::Process {
             global_index,
             id,
+            name,
             elements: mut sub_elements,
             draft_sequence_flows,
         } = opened_tag
@@ -187,7 +192,10 @@ impl Closeable for TagProcess {
                 super_elements.push(BPMNElement::Process(BPMNProcess {
                     global_index,
                     id,
+                    name,
                     local_index,
+                    participant_global_index: None,
+                    participant_id: None,
                     elements: sub_elements,
                     sequence_flows,
                 }));

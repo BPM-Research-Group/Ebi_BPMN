@@ -203,7 +203,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn credit_scoring_sync() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
         let fin = fs::read_to_string("testfiles/credit-scoring-synchronous.bpmn").unwrap();
@@ -211,7 +210,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn credit_scoring_async() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
         let fin = fs::read_to_string("testfiles/credit-scoring-asynchronous.bpmn").unwrap();
@@ -247,17 +245,39 @@ mod tests {
     #[should_panic]
     fn camunda_credit_scoring() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
-        let fin =
-            fs::read_to_string("testfiles/Exercise5_CreditScoring_cf6f52570b7843b4b30c3e46c7472e32.bpmn").unwrap();
+        let fin = fs::read_to_string(
+            "testfiles/Exercise5_CreditScoring_cf6f52570b7843b4b30c3e46c7472e32.bpmn",
+        )
+        .unwrap();
         let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 
     #[test]
     fn camunda_credit_scoring_2() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
-        let fin =
-            fs::read_to_string("testfiles/Exercise_5_ba1485aebed7460fbb21dade8e766308.bpmn").unwrap();
+        let fin = fs::read_to_string("testfiles/Exercise_5_ba1485aebed7460fbb21dade8e766308.bpmn")
+            .unwrap();
         let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
-    
+
+    #[test]
+    #[should_panic]
+    fn camunda_restaurant() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string(
+            "testfiles/Self_service_restaurant_68f4ca540e614a5da586e3ea733cc838.bpmn",
+        )
+        .unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+
+    #[test]
+    fn camunda_credit_scoring_3() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string(
+            "testfiles/schufa_-_english_9036e9ee5ce6477f9e5f77de6a1f71d7.bpmn",
+        )
+        .unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
 }

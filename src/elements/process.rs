@@ -1,11 +1,18 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, elements::expanded_sub_process::to_sub_marking, parser::parser_state::GlobalIndex, semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex}, sequence_flow::BPMNSequenceFlow, structure_checker::verify_structural_correctness_initiation_mode, traits::{
+    BusinessProcessModelAndNotation,
+    element::{BPMNElement, BPMNElementTrait},
+    elements::expanded_sub_process::to_sub_marking,
+    parser::parser_state::GlobalIndex,
+    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    sequence_flow::BPMNSequenceFlow,
+    structure_checker::verify_structural_correctness_initiation_mode,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         searchable::Searchable,
         startable::{InitiationMode, Startable},
         transitionable::Transitionable,
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::prelude::BitVec;
@@ -18,12 +25,14 @@ pub struct BPMNProcess {
     pub global_index: GlobalIndex,
     pub id: String,
     pub local_index: usize,
+    pub name: Option<String>,
+    pub participant_global_index: Option<GlobalIndex>,
+    pub participant_id: Option<String>,
     pub elements: Vec<BPMNElement>,
     pub sequence_flows: Vec<BPMNSequenceFlow>,
 }
 
 impl Searchable for BPMNProcess {
-    
     fn id_2_pool_and_global_index(&self, id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id == id {
             Some((Some(self.local_index), self.global_index))

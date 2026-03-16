@@ -1,5 +1,6 @@
 use crate::{
     element::{BPMNElement, BPMNElementTrait},
+    elements::collapsed_pool::BPMNCollapsedPool,
     message_flow::BPMNMessageFlow,
     parser::{
         parser::{NAMESPACE_SBPMN, NameSpace},
@@ -11,6 +12,7 @@ use crate::{
     traits::searchable::Searchable,
 };
 use anyhow::{Context, Result, anyhow};
+use itertools::Itertools;
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub struct Definitions {}
@@ -62,6 +64,7 @@ impl Openable for Definitions {
             collaboration_id: None,
             stochastic_namespace: find_stochastic_namespace_declaration(e),
             draft_message_flows: vec![],
+            draft_participants: vec![],
             elements: vec![],
         })
     }
@@ -78,9 +81,70 @@ impl Closeable for Definitions {
             collaboration_id,
             stochastic_namespace,
             draft_message_flows,
+            mut draft_participants,
             mut elements,
         } = opened_tag
         {
+            //match participants and processes
+            if collaboration_index.is_some() {
+                for element in &mut elements {
+                    if let BPMNElement::Process(process) = element {
+                        //find the participant
+                        if let Some((i, participant)) = draft_participants
+                            .iter()
+                            .find_position(|participant| participant.process_id == process.id)
+                        {
+                            process.participant_global_index = Some(participant.global_index);
+                            process.participant_id = Some(participant.id.clone());
+                            process.name = participant.name.clone();
+                            draft_participants.remove(i);
+                        }
+                    }
+                }
+            }
+
+            //leniency: find unused participants and introduce collapsed pools for them
+            for draft_participant in draft_participants {
+                let local_index = elements.len();
+                elements.push(BPMNElement::CollapsedPool(BPMNCollapsedPool {
+                    global_index: draft_participant.global_index,
+                    id: draft_participant.id,
+                    local_index,
+                    name: draft_participant.name,
+                    incoming_message_flows: vec![],
+                    outgoing_message_flows: vec![],
+                }));
+            }
+
+            //leniency: transform empty expanded pools (process) into collapsed pools
+            for element in elements.iter_mut() {
+                match element {
+                    BPMNElement::Process(process) => {
+                        if process.elements.is_empty() {
+                            if let (Some(global_index), Some(id)) = (
+                                process.participant_global_index,
+                                process.participant_id.clone(),
+                            ) {
+                                let local_index = process.local_index;
+                                let name = process.name.clone();
+                                std::mem::swap(
+                                    element,
+                                    &mut BPMNElement::CollapsedPool(BPMNCollapsedPool {
+                                        global_index,
+                                        id,
+                                        local_index,
+                                        name,
+                                        incoming_message_flows: vec![],
+                                        outgoing_message_flows: vec![],
+                                    }),
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
             //finalise the message flows
             let mut message_flows = Vec::with_capacity(draft_message_flows.len());
             for draft_message_flows in draft_message_flows {
@@ -103,8 +167,8 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
-                        } else if let Some(_) = state.ids.get(&target_id) {
-                            anyhow!("Could not find source `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps the this tag cannot have outgoing messages flows.", target_id, id)
+                        } else if let Some(_) = state.ids.get(&source_id) {
+                            anyhow!("Could not find source `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps this tag cannot have outgoing messages flows.", source_id, id)
                         } else {
                             anyhow!(
                                 "Could not find source `{}` of message flow `{}`.",
@@ -139,14 +203,14 @@ impl Closeable for Definitions {
                                 tag
                             )
                         } else if let Some(_) = state.ids.get(&target_id) {
-                            anyhow!("Could not find target `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps the this tag cannot have incoming messages flows.", target_id, id)
+                            anyhow!("Could not find target `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps this tag cannot have incoming messages flows.", target_id, id)
                         } else {
-                        anyhow!(
-                            "Could not find target `{}` of message flow `{}`.",
-                            target_id,
-                            id
-                        )
-                    }
+                            anyhow!(
+                                "Could not find target `{}` of message flow `{}`.",
+                                target_id,
+                                id
+                            )
+                        }
                     })?;
 
                 //link to target element or pool

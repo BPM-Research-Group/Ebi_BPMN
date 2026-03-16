@@ -44,6 +44,7 @@ impl Openable for Collaboration {
             global_index: index,
             id,
             collapsed_pools: vec![],
+            draft_participants: vec![],
             message_flows: vec![],
         })
     }
@@ -54,6 +55,7 @@ impl Closeable for Collaboration {
         let index = state.open_tags.len() - 1;
         if let Some(OpenedTag::Definitions {
             draft_message_flows: message_flows,
+            draft_participants,
             elements,
             collaboration_index,
             collaboration_id,
@@ -64,17 +66,21 @@ impl Closeable for Collaboration {
                 global_index: index,
                 id,
                 collapsed_pools: sub_collapsed_pools,
+                draft_participants: sub_draft_participants,
                 message_flows: sub_message_flows,
             } = opened_tag
             {
                 //verify that there is only one collaboration
                 if collaboration_index.is_some() {
-                    return Err(anyhow!("second collaboration found"));
+                    return Err(anyhow!(
+                        "Only one collaboration is supported, but multiple were found."
+                    ));
                 }
 
                 *collaboration_index = Some(index);
                 *collaboration_id = Some(id);
 
+                draft_participants.extend(sub_draft_participants);
                 message_flows.extend(sub_message_flows);
                 elements.extend(
                     sub_collapsed_pools

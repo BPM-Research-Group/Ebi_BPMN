@@ -17,7 +17,7 @@ use crate::{
         tag_message_event_definition::TagMessageEventDefinition,
         tag_message_flow::{DraftMessageFlow, TagMessageFlow},
         tag_parallel_gateway::TagParallelGateway,
-        tag_participant::TagParticipant,
+        tag_participant::{DraftTagParticipant, TagParticipant},
         tag_process::TagProcess,
         tag_receive_task::TagReceiveTask,
         tag_sequence_flow::{DraftSequenceFlow, TagSequenceFlow},
@@ -145,6 +145,7 @@ pub(crate) enum OpenedTag {
         global_index: GlobalIndex,
         id: String,
         collapsed_pools: Vec<BPMNCollapsedPool>,
+        draft_participants: Vec<DraftTagParticipant>,
         message_flows: Vec<DraftMessageFlow>,
     },
     Definitions {
@@ -154,6 +155,7 @@ pub(crate) enum OpenedTag {
         collaboration_id: Option<String>,
         stochastic_namespace: bool,
         draft_message_flows: Vec<DraftMessageFlow>,
+        draft_participants: Vec<DraftTagParticipant>,
         elements: Vec<BPMNElement>,
     },
     EndEvent {
@@ -211,6 +213,7 @@ pub(crate) enum OpenedTag {
     Process {
         global_index: GlobalIndex,
         id: String,
+        name: Option<String>,
         elements: Vec<BPMNElement>,
         draft_sequence_flows: Vec<DraftSequenceFlow>,
     },
