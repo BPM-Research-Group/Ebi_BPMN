@@ -77,13 +77,15 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                     | BPMNElement::ExpandedSubProcess(_)
                     | BPMNElement::InclusiveGateway(_)
                     | BPMNElement::IntermediateThrowEvent(_)
+                    | BPMNElement::ManualTask(_)
                     | BPMNElement::MessageEndEvent(_)
                     | BPMNElement::MessageIntermediateThrowEvent(_)
                     | BPMNElement::MessageStartEvent(_)
                     | BPMNElement::ParallelGateway(_)
                     | BPMNElement::Process(_)
                     | BPMNElement::StartEvent(_)
-                    | BPMNElement::TimerStartEvent(_) => {
+                    | BPMNElement::TimerStartEvent(_)
+                    | BPMNElement::UserTask(_) => {
                         return Err(anyhow!(
                             "Element `{}` not allowed as a target of a sequence flow from an event-based gateway (standard page 297).",
                             target.id()

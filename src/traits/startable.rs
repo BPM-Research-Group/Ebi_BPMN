@@ -76,6 +76,7 @@ impl Startable for Vec<BPMNElement> {
                 | BPMNElement::InclusiveGateway(_)
                 | BPMNElement::IntermediateCatchEvent(_)
                 | BPMNElement::IntermediateThrowEvent(_)
+                | BPMNElement::ManualTask(_)
                 | BPMNElement::MessageIntermediateCatchEvent(_)
                 | BPMNElement::MessageIntermediateThrowEvent(_)
                 | BPMNElement::MessageStartEvent(_)
@@ -85,7 +86,8 @@ impl Startable for Vec<BPMNElement> {
                 | BPMNElement::StartEvent(_)
                 | BPMNElement::Task(_)
                 | BPMNElement::TimerIntermediateCatchEvent(_)
-                | BPMNElement::TimerStartEvent(_) => false,
+                | BPMNElement::TimerStartEvent(_)
+                | BPMNElement::UserTask(_) => false,
 
                 BPMNElement::EndEvent(_) | BPMNElement::MessageEndEvent(_) => true,
             })

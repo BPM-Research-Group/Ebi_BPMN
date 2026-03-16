@@ -6,14 +6,14 @@ use crate::{
         exclusive_gateway::BPMNExclusiveGateway, expanded_sub_process::BPMNExpandedSubProcess,
         inclusive_gateway::BPMNInclusiveGateway,
         intermediate_catch_event::BPMNIntermediateCatchEvent,
-        intermediate_throw_event::BPMNIntermediateThrowEvent,
+        intermediate_throw_event::BPMNIntermediateThrowEvent, manual_task::BPMNManualTask,
         message_end_event::BPMNMessageEndEvent,
         message_intermediate_catch_event::BPMNMessageIntermediateCatchEvent,
         message_intermediate_throw_event::BPMNMessageIntermediateThrowEvent,
         message_start_event::BPMNMessageStartEvent, parallel_gateway::BPMNParallelGateway,
         process::BPMNProcess, receive_task::BPMNReceiveTask, start_event::BPMNStartEvent,
         task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
-        timer_start_event::BPMNTimerStartEvent,
+        timer_start_event::BPMNTimerStartEvent, user_task::BPMNUserTask,
     },
     parser::parser_state::GlobalIndex,
     semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
@@ -40,6 +40,7 @@ pub enum BPMNElement {
     InclusiveGateway(BPMNInclusiveGateway),
     IntermediateCatchEvent(BPMNIntermediateCatchEvent),
     IntermediateThrowEvent(BPMNIntermediateThrowEvent),
+    ManualTask(BPMNManualTask),
     MessageEndEvent(BPMNMessageEndEvent),
     MessageIntermediateCatchEvent(BPMNMessageIntermediateCatchEvent),
     MessageIntermediateThrowEvent(BPMNMessageIntermediateThrowEvent),
@@ -51,6 +52,7 @@ pub enum BPMNElement {
     Task(BPMNTask),
     TimerIntermediateCatchEvent(BPMNTimerIntermediateCatchEvent),
     TimerStartEvent(BPMNTimerStartEvent),
+    UserTask(BPMNUserTask),
 }
 
 pub trait BPMNElementTrait {
@@ -86,6 +88,7 @@ macro_rules! enums {
             BPMNElement::InclusiveGateway(x) => BPMNInclusiveGateway::$fn(x, $($v),*),
             BPMNElement::IntermediateCatchEvent(x) => BPMNIntermediateCatchEvent::$fn(x, $($v),*),
             BPMNElement::IntermediateThrowEvent(x) => BPMNIntermediateThrowEvent::$fn(x, $($v),*),
+            BPMNElement::ManualTask(x) => BPMNManualTask::$fn(x, $($v),*),
             BPMNElement::MessageEndEvent(x) => BPMNMessageEndEvent::$fn(x, $($v),*),
             BPMNElement::MessageIntermediateCatchEvent(x) => {
                 BPMNMessageIntermediateCatchEvent::$fn(x, $($v),*)
@@ -101,6 +104,7 @@ macro_rules! enums {
             BPMNElement::Task(x) => BPMNTask::$fn(x, $($v),*),
             BPMNElement::TimerIntermediateCatchEvent(x) => BPMNTimerIntermediateCatchEvent::$fn(x, $($v),*),
             BPMNElement::TimerStartEvent(x) => BPMNTimerStartEvent::$fn(x, $($v),*),
+            BPMNElement::UserTask(x) => BPMNUserTask::$fn(x, $($v),*)
         }
     };
 }
@@ -132,7 +136,6 @@ impl BPMNElementTrait for BPMNElement {
 }
 
 impl Searchable for BPMNElement {
-
     fn id_2_pool_and_global_index(&self, search_id: &str) -> Option<(Option<usize>, GlobalIndex)> {
         if self.id() == search_id && self.is_collapsed_pool() {
             Some((Some(self.local_index()), self.global_index()))

@@ -13,6 +13,7 @@ use crate::{
         tag_inclusive_gateway::TagInclusiveGateway,
         tag_intermediate_catch_event::TagIntermediateCatchEvent,
         tag_intermediate_throw_event::TagIntermediateThrowEvent,
+        tag_manual_task::TagManualTask,
         tag_message_event_definition::TagMessageEventDefinition,
         tag_message_flow::{DraftMessageFlow, TagMessageFlow},
         tag_parallel_gateway::TagParallelGateway,
@@ -24,6 +25,7 @@ use crate::{
         tag_subprocess::TagSubProcess,
         tag_task::TagTask,
         tag_timer_event_definition::TagTimerEventDefinition,
+        tag_user_task::TagUserTask,
         tag_weight::TagWeight,
     },
 };
@@ -44,6 +46,7 @@ pub(crate) enum Tag {
     InclusiveGateway,
     IntermediateCatchEvent,
     IntermediateThrowEvent,
+    ManualTask,
     MessageEventDefinition,
     MessageFlow,
     ParallelGateway,
@@ -55,6 +58,7 @@ pub(crate) enum Tag {
     StartEvent,
     Task,
     TimerEventDefinition,
+    UserTask,
     Weight,
 }
 
@@ -91,6 +95,8 @@ impl Recognisable for Tag {
                 Tag::TimerEventDefinition => TagTimerEventDefinition::recognise_tag(e, state, n),
                 Tag::Weight => TagWeight::recognise_tag(e, state, n),
                 Tag::ReceiveTask => TagReceiveTask::recognise_tag(e, state, n),
+                Tag::ManualTask => TagManualTask::recognise_tag(e, state, n),
+                Tag::UserTask => TagUserTask::recognise_tag(e, state, n),
             };
             if x.is_some() {
                 return x;
@@ -126,6 +132,8 @@ impl Openable for Tag {
             Tag::TimerEventDefinition => TagTimerEventDefinition::open_tag(tag, e, state),
             Tag::Weight => TagWeight::open_tag(tag, e, state),
             Tag::ReceiveTask => TagReceiveTask::open_tag(tag, e, state),
+            Tag::ManualTask => TagManualTask::open_tag(tag, e, state),
+            Tag::UserTask => TagUserTask::open_tag(tag, e, state),
         }
     }
 }
@@ -175,6 +183,11 @@ pub(crate) enum OpenedTag {
         global_index: GlobalIndex,
         id: String,
         message_marker_id: Option<Option<String>>,
+    },
+    ManualTask {
+        global_index: GlobalIndex,
+        id: String,
+        activity: Activity,
     },
     MessageEventDefinition {
         id: Option<String>,
@@ -234,6 +247,11 @@ pub(crate) enum OpenedTag {
     TimerEventDefinition {
         id: Option<String>,
     },
+    UserTask {
+        global_index: GlobalIndex,
+        id: String,
+        activity: Activity,
+    },
     Weight {
         weight: Fraction,
     },
@@ -279,6 +297,8 @@ impl Closeable for OpenedTag {
             }
             OpenedTag::Weight { .. } => TagWeight::close_tag(opened_tag, e, state),
             OpenedTag::ReceiveTask { .. } => TagReceiveTask::close_tag(opened_tag, e, state),
+            OpenedTag::ManualTask { .. } => TagManualTask::close_tag(opened_tag, e, state),
+            OpenedTag::UserTask { .. } => TagUserTask::close_tag(opened_tag, e, state),
         }
     }
 }

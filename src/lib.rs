@@ -51,6 +51,7 @@ pub mod elements {
     pub mod inclusive_gateway;
     pub mod intermediate_catch_event;
     pub mod intermediate_throw_event;
+    pub mod manual_task;
     pub mod message_end_event;
     pub mod message_intermediate_catch_event;
     pub mod message_intermediate_throw_event;
@@ -62,6 +63,7 @@ pub mod elements {
     pub mod task;
     pub mod timer_intermediate_catch_event;
     pub mod timer_start_event;
+    pub mod user_task;
 }
 pub(crate) mod exporter;
 pub(crate) mod importer;
@@ -81,6 +83,7 @@ pub(crate) mod parser {
     pub mod tag_inclusive_gateway;
     pub mod tag_intermediate_catch_event;
     pub mod tag_intermediate_throw_event;
+    pub mod tag_manual_task;
     pub mod tag_message_event_definition;
     pub mod tag_message_flow;
     pub mod tag_parallel_gateway;
@@ -92,6 +95,7 @@ pub(crate) mod parser {
     pub mod tag_subprocess;
     pub mod tag_task;
     pub mod tag_timer_event_definition;
+    pub mod tag_user_task;
     pub mod tag_weight;
     pub mod tags;
 }
@@ -114,6 +118,7 @@ pub(crate) mod writer {
     pub mod inclusive_gateway;
     pub mod intermediate_catch_event;
     pub mod intermediate_throw_event;
+    pub mod manual_task;
     pub mod message_end_event;
     pub mod message_flow;
     pub mod message_intermediate_catch_event;
@@ -127,6 +132,7 @@ pub(crate) mod writer {
     pub mod task;
     pub mod timer_intermediate_catch_event;
     pub mod timer_start_event;
+    pub mod user_task;
 }
 
 pub use business_process_model_and_notation::BusinessProcessModelAndNotation;

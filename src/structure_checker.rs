@@ -14,7 +14,7 @@ use ebi_arithmetic::Signed;
 impl BusinessProcessModelAndNotation {
     /// Verify whether the model is structurally correct using several, though not exhaustive, checks.
     /// If the BPMN model is imported by [import_from_reader] or created using a [BPMNCreator], there is no need to call this method.
-    /// 
+    ///
     /// [import_from_reader]: BusinessProcessModelAndNotation::import_from_reader
     /// [BPMNCreator]: crate::BPMNCreator
     pub fn is_structurally_correct(&self) -> Result<()> {
@@ -141,6 +141,7 @@ impl StochasticBusinessProcessModelAndNotation {
                 | BPMNElement::ExpandedSubProcess(_)
                 | BPMNElement::IntermediateCatchEvent(_)
                 | BPMNElement::IntermediateThrowEvent(_)
+                | BPMNElement::ManualTask(_)
                 | BPMNElement::MessageEndEvent(_)
                 | BPMNElement::MessageIntermediateCatchEvent(_)
                 | BPMNElement::MessageIntermediateThrowEvent(_)
@@ -151,7 +152,8 @@ impl StochasticBusinessProcessModelAndNotation {
                 | BPMNElement::StartEvent(_)
                 | BPMNElement::Task(_)
                 | BPMNElement::TimerIntermediateCatchEvent(_)
-                | BPMNElement::TimerStartEvent(_) => {}
+                | BPMNElement::TimerStartEvent(_)
+                | BPMNElement::UserTask(_) => {}
                 BPMNElement::EventBasedGateway(BPMNEventBasedGateway {
                     outgoing_sequence_flows,
                     ..
