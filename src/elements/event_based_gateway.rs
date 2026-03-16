@@ -76,7 +76,6 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                     | BPMNElement::ExclusiveGateway(_)
                     | BPMNElement::ExpandedSubProcess(_)
                     | BPMNElement::InclusiveGateway(_)
-                    | BPMNElement::IntermediateCatchEvent(_)
                     | BPMNElement::IntermediateThrowEvent(_)
                     | BPMNElement::MessageEndEvent(_)
                     | BPMNElement::MessageIntermediateThrowEvent(_)
@@ -90,6 +89,8 @@ impl BPMNElementTrait for BPMNEventBasedGateway {
                             target.id()
                         ));
                     }
+
+                    BPMNElement::IntermediateCatchEvent(_) => {}
 
                     BPMNElement::MessageIntermediateCatchEvent(_) => {
                         if configuration.is_tasks() {

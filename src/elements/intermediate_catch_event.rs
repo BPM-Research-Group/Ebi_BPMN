@@ -8,7 +8,8 @@ use crate::{
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
-            execute_transition_xor_join_consume, number_of_transitions_xor_join_only, transition_2_marked_sequence_flows_concurrent_split,
+            execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+            transition_2_marked_sequence_flows_concurrent_split,
         },
     },
 };
@@ -143,11 +144,28 @@ impl Transitionable for BPMNIntermediateCatchEvent {
         transition_index: TransitionIndex,
         _root_marking: &mut BPMNRootMarking,
         sub_marking: &mut BPMNSubMarking,
-        _parent: &dyn Processable,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+            let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+            let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
+            if source.is_event_based_gateway() {
+                //special case: source is an event-based gateway
+
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                for outgoing_sequence_flow in source.outgoing_sequence_flows() {
+                    sub_marking.sequence_flow_2_tokens[*outgoing_sequence_flow] -= 1;
+                }
+            } else {
+                //not a special case
+                execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+            }
+        } else {
+            //not a special case
+            execute_transition_xor_join_consume!(self, sub_marking, transition_index);
+        }
 
         //produce
         execute_transition_parallel_split!(self, sub_marking);

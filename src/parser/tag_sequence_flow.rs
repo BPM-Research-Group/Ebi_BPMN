@@ -51,10 +51,10 @@ impl Openable for TagSequenceFlow {
                     weight: None,
                 })
             } else {
-                Err(anyhow!("sequence flow must have a target"))
+                Err(anyhow!("Sequence flow `{}` does not have a target", id))
             }
         } else {
-            Err(anyhow!("sequence flow must have a source"))
+            Err(anyhow!("Sequence flow `{}` does not have a source", id))
         }
     }
 }

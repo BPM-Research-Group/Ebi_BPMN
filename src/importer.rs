@@ -38,7 +38,7 @@ impl BusinessProcessModelAndNotation {
                 (Some(n), Event::Start(e)) => {
                     open_tag(&mut state, &e, n).with_context(|| {
                         format!(
-                            "Start tag `{}` at position {}.",
+                            "Tag `{}` at position {}.",
                             String::from_utf8_lossy(e.local_name().as_ref()),
                             xml_reader.buffer_position()
                         )
@@ -48,7 +48,7 @@ impl BusinessProcessModelAndNotation {
                 //end of tag
                 (Some(n), Event::End(e)) => close_tag(&mut state, &e, n).with_context(|| {
                     format!(
-                        "Close tag `{}` at position {}.",
+                        "Tag `{}` at position {}.",
                         String::from_utf8_lossy(e.local_name().as_ref()),
                         xml_reader.buffer_position()
                     )
@@ -57,7 +57,7 @@ impl BusinessProcessModelAndNotation {
                 //empty tag
                 (Some(n), Event::Empty(e)) => empty_tag(&mut state, &e, n).with_context(|| {
                     format!(
-                        "Empty tag `{}` at position {}.",
+                        "Tag `{}` at position {}.",
                         String::from_utf8_lossy(e.local_name().as_ref()),
                         xml_reader.buffer_position()
                     )
@@ -199,9 +199,7 @@ mod tests {
     fn recourse() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
         let fin = fs::read_to_string("testfiles/recourse.bpmn").unwrap();
-        let _bpmn = fin
-            .parse::<BusinessProcessModelAndNotation>()
-            .unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 
     #[test]
@@ -209,9 +207,7 @@ mod tests {
     fn credit_scoring_sync() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
         let fin = fs::read_to_string("testfiles/credit-scoring-synchronous.bpmn").unwrap();
-        let _bpmn = fin
-            .parse::<BusinessProcessModelAndNotation>()
-            .unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 
     #[test]
@@ -219,8 +215,31 @@ mod tests {
     fn credit_scoring_async() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
         let fin = fs::read_to_string("testfiles/credit-scoring-asynchronous.bpmn").unwrap();
-        let _bpmn = fin
-            .parse::<BusinessProcessModelAndNotation>()
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn camunda_dispatch_of_goods() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin = fs::read_to_string("testfiles/Exercise1_18550dfe434d4b1ab796685f63d461f5.bpmn")
             .unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+
+    #[test]
+    fn camunda_recourse() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin =
+            fs::read_to_string("testfiles/Ex_3_906bd7c47cfb4257ac43aa297c2da4cf.bpmn").unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+
+    #[test]
+    fn camunda_recourse_2() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin =
+            fs::read_to_string("testfiles/ex_5_c70fdbb34707491aa86dfa0e8cf7ab74.bpmn").unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 }
