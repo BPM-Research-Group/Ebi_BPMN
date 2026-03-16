@@ -242,4 +242,22 @@ mod tests {
             fs::read_to_string("testfiles/ex_5_c70fdbb34707491aa86dfa0e8cf7ab74.bpmn").unwrap();
         let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
+
+    #[test]
+    #[should_panic]
+    fn camunda_credit_scoring() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin =
+            fs::read_to_string("testfiles/Exercise5_CreditScoring_cf6f52570b7843b4b30c3e46c7472e32.bpmn").unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+
+    #[test]
+    fn camunda_credit_scoring_2() {
+        // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
+        let fin =
+            fs::read_to_string("testfiles/Exercise_5_ba1485aebed7460fbb21dade8e766308.bpmn").unwrap();
+        let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
+    }
+    
 }

@@ -209,7 +209,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
             //there must be end events
             if $process.end_events_without_recursing().is_empty() {
                 return Err(anyhow!(
-                    "process `{}` has start events but no end events",
+                    "Process `{}` has start events but no end events.",
                     $process.id
                 ));
             }
@@ -219,7 +219,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
                 if element.can_have_incoming_sequence_flows() {
                     if element.incoming_sequence_flows().is_empty() {
                         return Err(anyhow!(
-                            "given that there are start events in process `{}`, element `{}` should have an incoming sequence flow",
+                            "Given that there are start events in process `{}`, element `{}` should have an incoming sequence flow.",
                             $process.id,
                             element.id()
                         ));
@@ -228,7 +228,7 @@ macro_rules! verify_structural_correctness_initiation_mode {
                 if element.can_have_outgoing_sequence_flows() {
                     if element.outgoing_sequence_flows().is_empty() {
                         return Err(anyhow!(
-                            "given that there are start events in process `{}`, element `{}` should have an outgoing sequence flow",
+                            "Given that there are start events in process `{}`, element `{}` should have an outgoing sequence flow.",
                             $process.id,
                             element.id()
                         ));

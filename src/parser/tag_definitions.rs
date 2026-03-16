@@ -103,6 +103,8 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
+                        } else if let Some(_) = state.ids.get(&target_id) {
+                            anyhow!("Could not find source `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps the this tag cannot have outgoing messages flows.", target_id, id)
                         } else {
                             anyhow!(
                                 "Could not find source `{}` of message flow `{}`.",
@@ -120,7 +122,7 @@ impl Closeable for Definitions {
                         .with_context(|| anyhow!("message flow `{}`", id))?;
                 } else {
                     return Err(anyhow!(
-                        "could not find source `{}` of message flow `{}`",
+                        "Could not find source `{}` of message flow `{}`.",
                         source_id,
                         id
                     ));
@@ -136,6 +138,8 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
+                        } else if let Some(_) = state.ids.get(&target_id) {
+                            anyhow!("Could not find target `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps the this tag cannot have incoming messages flows.", target_id, id)
                         } else {
                         anyhow!(
                             "Could not find target `{}` of message flow `{}`.",
