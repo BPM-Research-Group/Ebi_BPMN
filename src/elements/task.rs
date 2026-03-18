@@ -1,16 +1,18 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    semantics::TransitionIndex,
     traits::{
         objectable::BPMNObject,
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_message_produce,
             execute_transition_parallel_split, execute_transition_xor_join_consume,
-            number_of_transitions_xor_join_only,
-            transition_2_marked_sequence_flows_concurrent_split, transition_2_produce_message_flow,
+            number_of_transitions_xor_join_only, transition_2_consumed_tokens_message,
+            transition_2_consumed_tokens_xor_join, transition_2_produced_tokens_concurrent_split,
+            transition_2_produced_tokens_message,
         },
     },
 };
@@ -265,22 +267,60 @@ impl Transitionable for BPMNTask {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
+    fn transition_2_consumed_tokens<'a>(
         &'a self,
-        _transition_index: TransitionIndex,
+        transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>> {
+        let mut result = task_consumed_tokens!(self, transition_index, parent);
+
+        //messages
+        result.append(&mut transition_2_consumed_tokens_message!(self, bpmn));
+        Some(result)
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_produce_message_flow!(self, bpmn)
+    ) -> Option<Vec<Token>> {
+        let mut result = transition_2_produced_tokens_concurrent_split!(self, parent);
+        result.append(&mut transition_2_produced_tokens_message!(self, bpmn));
+        Some(result)
     }
 }
+
+macro_rules! task_consumed_tokens {
+    ($self:ident, $transition_index:ident, $parent:ident) => {
+        if let Some(sequence_flow_index) = $self.incoming_sequence_flows.iter().next() {
+            let sequence_flow = &$parent.sequence_flows_non_recursive()[*sequence_flow_index];
+            let source = &$parent.elements_non_recursive()[sequence_flow.source_local_index];
+            if source.is_event_based_gateway() {
+                //special case: source is an event-based gateway
+
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                source
+                    .outgoing_sequence_flows()
+                    .iter()
+                    .map(|outgoing_sequence_flow| {
+                        Token::SequenceFlow(
+                            $parent.sequence_flows_non_recursive()[*outgoing_sequence_flow]
+                                .global_index,
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                //not a special case
+                transition_2_consumed_tokens_xor_join!($self, $transition_index, $parent)
+            }
+        } else {
+            //not a special case
+            transition_2_consumed_tokens_xor_join!($self, $transition_index, $parent)
+        }
+    };
+}
+pub(crate) use task_consumed_tokens;

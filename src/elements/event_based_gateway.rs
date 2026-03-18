@@ -1,21 +1,16 @@
 use crate::{
-    BusinessProcessModelAndNotation,
-    element::{BPMNElement, BPMNElementTrait},
-    elements::{
+    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, elements::{
         receive_task::BPMNReceiveTask, task::BPMNTask,
         timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
-    },
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    traits::{
+    }, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
             execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
-            transition_2_marked_sequence_flows_concurrent_split,
+            transition_2_consumed_tokens_concurrent_split,
         },
-    },
+    }
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -302,7 +297,7 @@ impl Transitionable for BPMNEventBasedGateway {
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
-        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+        transition_2_consumed_tokens_concurrent_split!(self, parent)
     }
 
     fn transition_2_produced_message_flow_tokens<'a>(

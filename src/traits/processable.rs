@@ -13,13 +13,13 @@ pub trait Processable: BPMNObject + Debug {
     /// Returns the elements of this process, but does not recurse.
     fn elements_non_recursive(&self) -> &Vec<BPMNElement>;
 
-    /// return the sequence flows of this process, but do not recurse
+    /// return the sequence flows of this process, but do not recurse.
     fn sequence_flows_non_recursive(&self) -> &Vec<BPMNSequenceFlow>;
 
     /// return a initial marking
     fn to_sub_marking(&self, initiation_mode: &InitiationMode) -> Result<BPMNSubMarking>;
 
-    /// return whether this is a sub-process, i.e. not a pool or a root of the model
+    /// return whether this is a sub-process, i.e. not a pool or a root of the model.
     fn is_sub_process(&self) -> bool;
 
     /// return the element that is the target of the given sequence flow

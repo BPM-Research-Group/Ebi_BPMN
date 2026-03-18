@@ -1,7 +1,6 @@
 use crate::{
-    BPMNMarking, StochasticBusinessProcessModelAndNotation,
-    semantics::{Token, TransitionIndex},
-    traits::{objectable::BPMNObject, searchable::Searchable},
+    BPMNMarking, StochasticBusinessProcessModelAndNotation, marking::Token,
+    semantics::TransitionIndex,
 };
 use anyhow::{Result, anyhow};
 use ebi_activity_key::Activity;
@@ -20,25 +19,17 @@ pub struct PartiallyOrderedRun {
 
 impl PartiallyOrderedRun {
     pub fn new_random(sbpmn: &StochasticBusinessProcessModelAndNotation) -> Result<Self> {
-        if let Some(initial_marking) = sbpmn.get_initial_marking()? {
-            let mut run = Self::from_initial_marking(&initial_marking, sbpmn)?;
-
+        let mut run = Self::from_initial_marking(sbpmn)?;
+        run.execute_free_transitions_exhaustively(sbpmn)?;
+        while !run.terminated {
+            run.execute_random_transition(sbpmn)?;
             run.execute_free_transitions_exhaustively(sbpmn)?;
-            while !run.terminated {
-                run.execute_random_transition(sbpmn)?;
-                run.execute_free_transitions_exhaustively(sbpmn)?;
-            }
-
-            Ok(run)
-        } else {
-            Err(anyhow!("SBPMN does not have partially ordered runs."))
         }
+
+        Ok(run)
     }
 
-    pub fn from_initial_marking(
-        marking: &BPMNMarking,
-        sbpmn: &StochasticBusinessProcessModelAndNotation,
-    ) -> Result<Self> {
+    pub fn from_initial_marking(sbpmn: &StochasticBusinessProcessModelAndNotation) -> Result<Self> {
         let mut result = Self {
             state_2_token: vec![],
             state_2_input_edge: vec![],
@@ -48,72 +39,23 @@ impl PartiallyOrderedRun {
             edge_2_outputs: vec![],
             terminated: false,
         };
-        //add messages
-        for (message_flow_index, message_tokens) in marking
-            .root_marking
-            .message_flow_2_tokens
-            .iter()
-            .enumerate()
-        {
-            for _ in 0..*message_tokens {
-                let message_flow = sbpmn
-                    .bpmn
-                    .message_flows
-                    .get(message_flow_index)
-                    .ok_or_else(|| anyhow!("message flow not found"))?;
-                result
-                    .state_2_token
-                    .push(Token::MessageFlow(message_flow.global_index));
+        if let Some(initial_marking) = sbpmn.get_initial_marking()? {
+            for token in initial_marking.to_tokens(&sbpmn.bpmn)? {
+                result.state_2_token.push(token);
                 result.state_2_input_edge.push(None);
                 result.state_2_output_edge.push(None);
             }
+            Ok(result)
+        } else {
+            Err(anyhow!("SBPMN does not have partially ordered runs."))
         }
-
-        for (element_index, sub_marking) in marking.element_index_2_sub_markings.iter().enumerate()
-        {
-            let element = sbpmn
-                .bpmn
-                .elements
-                .get(element_index)
-                .ok_or_else(|| anyhow!("element not found"))?;
-
-            //add initial choice tokens
-            if sub_marking.initial_choice_token {
-                result.state_2_token.push(Token::Start {
-                    in_process: element.global_index(),
-                });
-                result.state_2_input_edge.push(None);
-                result.state_2_output_edge.push(None);
-            }
-
-            //add element tokens
-            for (sub_element_index, tokens) in sub_marking.element_index_2_tokens.iter().enumerate()
-            {
-                for _ in 0..*tokens {
-                    let sub_element = element
-                        .local_index_2_element(sub_element_index)
-                        .ok_or_else(|| anyhow!("message flow not found"))?;
-                    result
-                        .state_2_token
-                        .push(Token::ParallelElement(sub_element.global_index()));
-                    result.state_2_input_edge.push(None);
-                    result.state_2_output_edge.push(None);
-                }
-            }
-        }
-
-        Ok(result)
     }
 
     /// Front states are states that have no outgoing edge. That is, the token is still there.
     fn front_states(&self) -> Vec<usize> {
-        let mut result = vec![];
-        for (i, outputs) in self.edge_2_outputs.iter().enumerate() {
-            if outputs.is_empty() {
-                result.push(i)
-            }
-        }
-        result
+        (0..self.number_of_states())
+            .filter(|state| self.state_2_output_edge[*state].is_none())
+            .collect()
     }
 
     fn get_marking(

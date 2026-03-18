@@ -227,9 +227,11 @@ impl Closeable for Definitions {
                     ));
                 }
 
+                let local_index = message_flows.len();
                 message_flows.push(BPMNMessageFlow {
                     global_index,
                     id,
+                    local_index,
                     source_global_index: source_element_index,
                     source_pool_index: source_pool_index
                         .ok_or_else(|| anyhow!("pool not found"))?,

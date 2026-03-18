@@ -2,8 +2,9 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     elements::expanded_sub_process::to_sub_marking,
+    marking::{BPMNRootMarking, BPMNSubMarking},
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    semantics::TransitionIndex,
     sequence_flow::BPMNSequenceFlow,
     structure_checker::verify_structural_correctness_initiation_mode,
     traits::{

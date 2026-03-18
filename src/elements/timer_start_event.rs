@@ -2,14 +2,15 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
     elements::start_event::{enabled_transitions_start_event, execute_transition_start_event},
+    marking::{BPMNRootMarking, BPMNSubMarking},
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    semantics::TransitionIndex,
     traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::{
             Transitionable, execute_transition_parallel_split,
-            transition_2_marked_sequence_flows_concurrent_split,
+            transition_2_consumed_tokens_concurrent_split,
         },
     },
 };
@@ -196,7 +197,7 @@ impl Transitionable for BPMNTimerStartEvent {
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
     ) -> Option<Vec<GlobalIndex>> {
-        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+        transition_2_consumed_tokens_concurrent_split!(self, parent)
     }
 
     fn transition_2_produced_message_flow_tokens<'a>(

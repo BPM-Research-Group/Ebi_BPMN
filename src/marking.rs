@@ -1,6 +1,8 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElement, semantics::Token,
-    traits::processable::Processable,
+    BusinessProcessModelAndNotation, GlobalIndex,
+    element::BPMNElement,
+    if_not::IfNot,
+    traits::{objectable::BPMNObject, processable::Processable, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
 use std::fmt::Display;
@@ -12,6 +14,7 @@ pub struct BPMNMarking {
 }
 
 impl BPMNMarking {
+    /// Creates a new marking that is empty.
     pub fn new_empty(bpmn: &BusinessProcessModelAndNotation) -> Self {
         let mut marking = BPMNMarking {
             element_index_2_sub_markings: vec![],
@@ -38,6 +41,58 @@ impl BPMNMarking {
         marking
     }
 
+    pub fn to_tokens(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<Vec<Token>> {
+        let mut result = vec![];
+
+        //root start
+        if self.root_marking.root_initial_choice_token {
+            result.push(Token::RootStart);
+        }
+
+        //messages
+        for (message_flow_index, message_tokens) in
+            self.root_marking.message_flow_2_tokens.iter().enumerate()
+        {
+            for _ in 0..*message_tokens {
+                let message_flow = bpmn
+                    .message_flows
+                    .get(message_flow_index)
+                    .if_not("message flow not found")?;
+                result.push(Token::MessageFlow(message_flow.global_index));
+            }
+        }
+
+        // sub-markings
+        for (element_index, sub_marking) in self.element_index_2_sub_markings.iter().enumerate() {
+            let element = bpmn
+                .elements
+                .get(element_index)
+                .if_not("Element not found.")?;
+
+            //add initial choice tokens
+            if sub_marking.initial_choice_token {
+                result.push(Token::SubProcessStart {
+                    in_process: element.global_index(),
+                });
+                return Err(anyhow!("Sub-processes are not supported here for now."));
+            }
+
+            //add element tokens
+            for (sub_element_index, tokens) in sub_marking.element_index_2_tokens.iter().enumerate()
+            {
+                for _ in 0..*tokens {
+                    let sub_element = element
+                        .local_index_2_element(sub_element_index)
+                        .ok_or_else(|| anyhow!("message flow not found"))?;
+                    result.push(Token::Element(sub_element.global_index()));
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Updates the marking with the token.
     pub fn add_token(
         &mut self,
         token: &Token,
@@ -47,20 +102,49 @@ impl BPMNMarking {
             Token::SequenceFlow(sequence_flow_global_index) => {
                 let (sequence_flow, parent) = bpmn
                     .global_index_2_sequence_flow_and_parent(*sequence_flow_global_index)
-                    .ok_or_else(|| anyhow!("Sequence flow not found."))?;
+                    .if_not("Sequence flow not found.")?;
+                if parent.is_sub_process() {
+                    return Err(anyhow!("Sub-processes are not supported for now."));
+                }
                 self.element_index_2_sub_markings
                     .get_mut(parent.local_index())
-                    .ok_or_else(|| anyhow!("Parent not found."))?
+                    .if_not("Parent not found.")?
                     .sequence_flow_2_tokens[sequence_flow.local_index] += 1;
             }
             Token::MessageFlow(message_flow_global_index) => {
                 let message_flow = bpmn
                     .global_index_2_message_flow(*message_flow_global_index)
-                    .ok_or_else(|| anyhow!("Message flow not found."))?;
+                    .if_not("Message flow not found.")?;
                 self.root_marking.message_flow_2_tokens[message_flow.local_index] += 1;
             }
-            Token::Start { in_process } => todo!(),
-            Token::ParallelElement(_) => todo!(),
+            Token::RootStart => {
+                self.root_marking.root_initial_choice_token = true;
+            }
+            Token::SubProcessStart { .. } => {
+                return Err(anyhow!("Sub-processes are not supported for now."));
+            }
+            Token::Element(global_index) => {
+                let element = bpmn
+                    .global_index_2_element(*global_index)
+                    .if_not("Element not found.")?;
+                let parent = bpmn
+                    .parent_of(element.global_index())
+                    .if_not("Parent not found.")?;
+
+                if parent.is_sub_process() {
+                    return Err(anyhow!("Sub-processes are not supported for now."));
+                }
+
+                let sub_marking = self
+                    .element_index_2_sub_markings
+                    .get_mut(parent.local_index())
+                    .if_not("Sub-marking not found.")?;
+
+                *sub_marking
+                    .element_index_2_tokens
+                    .get_mut(parent.local_index())
+                    .if_not("Element not found.")? += 1;
+            }
         }
         Ok(())
     }
@@ -95,4 +179,22 @@ impl BPMNSubMarking {
             element_index_2_sub_markings: vec![],
         }
     }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub enum Token {
+    /// A token on a sequence flow.
+    SequenceFlow(GlobalIndex),
+
+    /// A token on a message flow
+    MessageFlow(GlobalIndex),
+
+    /// A virtual token that allows start events at the root to fire.
+    RootStart,
+
+    /// A virtual token that allows start events of a sub-process to fire.
+    SubProcessStart { in_process: GlobalIndex },
+
+    /// A token in front of an element on a virtual sequence flow; used if there are no start events to start the process with.
+    Element(GlobalIndex),
 }

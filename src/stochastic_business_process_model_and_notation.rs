@@ -98,16 +98,6 @@ impl StochasticBusinessProcessModelAndNotation {
         self.bpmn.transition_debug(transition_index, marking)
     }
 
-    /// Returns the global indices of sequence flows that get a token by executing this transition.
-    pub fn transition_2_produced_sequence_flows<'a>(
-        &'a mut self,
-        marking: &BPMNMarking,
-        transition_index: TransitionIndex,
-    ) -> Option<Vec<GlobalIndex>> {
-        self.bpmn
-            .transition_2_produced_sequence_flows(transition_index, marking)
-    }
-
     /// return the sequence flow with this index, if it exists (recurses)
     pub fn global_index_2_sequence_flow_mut(
         &mut self,

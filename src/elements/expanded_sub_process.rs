@@ -1,11 +1,5 @@
 use crate::{
-    BusinessProcessModelAndNotation,
-    element::{BPMNElement, BPMNElementTrait},
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    sequence_flow::BPMNSequenceFlow,
-    structure_checker::verify_structural_correctness_initiation_mode,
-    traits::{
+    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, sequence_flow::BPMNSequenceFlow, structure_checker::verify_structural_correctness_initiation_mode, traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         searchable::Searchable,
@@ -14,7 +8,7 @@ use crate::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
             execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
         },
-    },
+    }
 };
 use anyhow::{Context, Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};

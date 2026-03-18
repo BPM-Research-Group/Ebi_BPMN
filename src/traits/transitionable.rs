@@ -1,8 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    semantics::TransitionIndex,
     traits::processable::Processable,
 };
 use anyhow::{Result, anyhow};
@@ -59,22 +59,23 @@ pub trait Transitionable {
         parent: &dyn Processable,
     ) -> Option<Fraction>;
 
-    /// Returns the sequence flows that get a token by executing this transition.
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    /// Returns the tokens that are consumed when this transition is fired, or None if the transition does not exist.
+    fn transition_2_consumed_tokens(
+        &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>>;
-
-    /// Returns the message flows that get a token by executing this transition.
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
-        transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>>;
+    ) -> Option<Vec<Token>>;
+
+    /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
+    fn transition_2_produced_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>>;
 }
 
 impl Transitionable for Vec<BPMNElement> {
@@ -167,19 +168,21 @@ impl Transitionable for Vec<BPMNElement> {
         None
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
+    fn transition_2_consumed_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>> {
         for element in self.iter() {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
-                return element.transition_2_produced_sequence_flow_tokens(
+                return element.transition_2_consumed_tokens(
                     transition_index,
                     marking,
                     parent,
+                    bpmn,
                 );
             }
             transition_index -= number_of_transitions;
@@ -187,17 +190,17 @@ impl Transitionable for Vec<BPMNElement> {
         None
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
+    fn transition_2_produced_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
+    ) -> Option<Vec<Token>> {
         for element in self.iter() {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
-                return element.transition_2_produced_message_flow_tokens(
+                return element.transition_2_consumed_tokens(
                     transition_index,
                     marking,
                     parent,
@@ -280,39 +283,83 @@ macro_rules! execute_transition_message_produce {
 }
 pub(crate) use execute_transition_message_produce;
 
-macro_rules! transition_2_marked_sequence_flows_concurrent_split {
-    ($self:ident, $parent:ident) => {
-        Some(
-            $self
-                .outgoing_sequence_flows()
-                .iter()
-                .filter_map(|sequence_flow_id| {
-                    Some(
-                        $parent
-                            .sequence_flows_non_recursive()
-                            .get(*sequence_flow_id)?
-                            .global_index,
-                    )
-                })
-                .collect(),
-        )
-    };
-}
-pub(crate) use transition_2_marked_sequence_flows_concurrent_split;
-
-macro_rules! transition_2_produce_message_flow {
-    ($self:ident, $bpmn:ident) => {
-        if let Some(message_flow_index) = $self.outgoing_message_flow {
-            let message_flow = $bpmn.message_flows.get(message_flow_index)?;
-            let target = $bpmn.message_flow_index_2_target(message_flow_index).ok()?;
-            if !target.incoming_messages_are_ignored() {
-                Some(vec![message_flow.global_index()])
-            } else {
-                Some(vec![])
-            }
+macro_rules! transition_2_consumed_tokens_xor_join {
+    ($self:ident, $transition_index:expr, $parent:ident) => {
+        if $self.incoming_sequence_flows.len() >= 1 {
+            //we are in initiation mode 1
+            let sequence_flow_index = $self.incoming_sequence_flows[$transition_index];
+            vec![Token::SequenceFlow(
+                $parent.sequence_flows_non_recursive()[sequence_flow_index].global_index,
+            )]
         } else {
-            Some(vec![])
+            //we are in initiation mode 2
+            vec![Token::Element($self.global_index)]
         }
     };
 }
-pub(crate) use transition_2_produce_message_flow;
+pub(crate) use transition_2_consumed_tokens_xor_join;
+
+macro_rules! transition_2_produced_tokens_concurrent_split {
+    ($self:ident, $parent:ident) => {
+        $self
+            .outgoing_sequence_flows()
+            .iter()
+            .filter_map(|sequence_flow_id| {
+                Some(Token::SequenceFlow(
+                    $parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_id)?
+                        .global_index,
+                ))
+            })
+            .collect::<Vec<_>>()
+    };
+}
+pub(crate) use transition_2_produced_tokens_concurrent_split;
+
+macro_rules! transition_2_consumed_tokens_message {
+    ($self:ident, $bpmn:ident) => {
+        //check whether a message is present
+        if let Some(message_flow_index) = $self.incoming_message_flow {
+            //there is a connected message flow
+            let source = $bpmn.message_flow_index_2_source(message_flow_index).ok()?;
+            if !source.outgoing_message_flows_always_have_tokens() {
+                //this message must actually be there
+                if !source.outgoing_messages_cannot_be_removed() {
+                    vec![Token::MessageFlow(
+                        $bpmn.message_flows[message_flow_index].global_index,
+                    )]
+                } else {
+                    vec![]
+                }
+            } else {
+                //if the message flow has always tokens, we do not need to check the marking
+                vec![]
+            }
+        } else {
+            //if there is no incoming message flow, there is no restriction
+            vec![]
+        }
+    };
+}
+pub(crate) use transition_2_consumed_tokens_message;
+
+macro_rules! transition_2_produced_tokens_message {
+    ($self:ident, $bpmn:ident) => {
+        if let Some(message_flow_index) = $self.outgoing_message_flow {
+            {
+                let target = $bpmn.message_flow_index_2_target(message_flow_index).ok()?;
+                if !target.incoming_messages_are_ignored() {
+                    vec![Token::MessageFlow(
+                        $bpmn.message_flows[message_flow_index].global_index,
+                    )]
+                } else {
+                    vec![]
+                }
+            }
+        } else {
+            vec![]
+        }
+    };
+}
+pub(crate) use transition_2_produced_tokens_message;

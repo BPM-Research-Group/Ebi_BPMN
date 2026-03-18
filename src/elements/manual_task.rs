@@ -1,18 +1,15 @@
 use crate::{
-    BusinessProcessModelAndNotation,
-    element::BPMNElementTrait,
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    traits::{
+    BusinessProcessModelAndNotation, element::BPMNElementTrait, elements::task::task_consumed_tokens, marking::{BPMNRootMarking, BPMNSubMarking, Token}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
         objectable::BPMNObject,
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_message_produce,
             execute_transition_parallel_split, execute_transition_xor_join_consume,
-            number_of_transitions_xor_join_only,
-            transition_2_marked_sequence_flows_concurrent_split,
+            number_of_transitions_xor_join_only, transition_2_consumed_tokens_message,
+            transition_2_consumed_tokens_xor_join, transition_2_produced_tokens_concurrent_split,
+            transition_2_produced_tokens_message,
         },
-    },
+    }
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -265,22 +262,27 @@ impl Transitionable for BPMNManualTask {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
+    fn transition_2_consumed_tokens<'a>(
         &'a self,
-        _transition_index: TransitionIndex,
+        transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_marked_sequence_flows_concurrent_split!(self, parent)
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>> {
+        let mut result = task_consumed_tokens!(self, transition_index, parent);
+        result.append(&mut transition_2_consumed_tokens_message!(self, bpmn));
+        Some(result)
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>> {
+        let mut result = transition_2_produced_tokens_concurrent_split!(self, parent);
+        result.append(&mut transition_2_produced_tokens_message!(self, bpmn));
+        Some(result)
     }
 }

@@ -1,8 +1,7 @@
 use crate::{
     BPMNMarking, BusinessProcessModelAndNotation,
     element::BPMNElement,
-    marking::BPMNRootMarking,
-    parser::parser_state::GlobalIndex,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{
         processable::Processable,
@@ -191,12 +190,12 @@ impl BusinessProcessModelAndNotation {
         None
     }
 
-    /// Returns the global indices of sequence flows that get a token by executing this transition.
-    pub fn transition_2_produced_sequence_flows(
+    /// Returns the tokens that are consumed when this transition is fired, or None if the transition does not exist.
+    pub fn transition_2_consumed_tokens(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
-    ) -> Option<Vec<GlobalIndex>> {
+    ) -> Option<Vec<Token>> {
         for (element, sub_marking) in self
             .elements
             .iter()
@@ -204,9 +203,10 @@ impl BusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_2_produced_sequence_flow_tokens(
+                return element.transition_2_consumed_tokens(
                     transition_index,
                     sub_marking,
+                    self,
                     self,
                 );
             }
@@ -215,18 +215,29 @@ impl BusinessProcessModelAndNotation {
         None
     }
 
-    pub fn transition_2_consumed_tokens(
-        &self,
-        mut transition_index: TransitionIndex,
-        marking: &BPMNMarking,
-    ) -> Option<Vec<Token>> {
-    }
-
+    /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
     pub fn transition_2_produced_tokens(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
     ) -> Option<Vec<Token>> {
+        for (element, sub_marking) in self
+            .elements
+            .iter()
+            .zip(marking.element_index_2_sub_markings.iter())
+        {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_produced_tokens(
+                    transition_index,
+                    sub_marking,
+                    self,
+                    self,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        None
     }
 }
 
@@ -300,20 +311,6 @@ impl StochasticBusinessProcessModelAndNotation {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum Token {
-    /// A token on a sequence flow.
-    SequenceFlow(GlobalIndex),
-
-    /// A token on a message flow
-    MessageFlow(GlobalIndex),
-
-    /// A virtual token in front of every start event; used to get the process started.
-    Start { in_process: GlobalIndex },
-
-    /// A token in front of an element on a virtual sequence flow; used if there are no start events to start the process with.
-    ParallelElement(GlobalIndex),
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
     use ebi_arithmetic::{Fraction, One, f};

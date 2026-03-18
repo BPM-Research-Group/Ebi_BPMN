@@ -15,8 +15,9 @@ use crate::{
         task::BPMNTask, timer_intermediate_catch_event::BPMNTimerIntermediateCatchEvent,
         timer_start_event::BPMNTimerStartEvent, user_task::BPMNUserTask,
     },
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
+    semantics::TransitionIndex,
     sequence_flow::BPMNSequenceFlow,
     traits::{
         objectable::BPMNObject, processable::Processable, searchable::Searchable,
@@ -337,34 +338,42 @@ impl Transitionable for BPMNElement {
         marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<ebi_arithmetic::Fraction> {
-        enums!(self, transition_probabilistic_penalty, transition_index, marking, parent)
-    }
-
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
-        transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
         enums!(
             self,
-            transition_2_produced_sequence_flow_tokens,
+            transition_probabilistic_penalty,
             transition_index,
             marking,
             parent
         )
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
+    ) -> Option<Vec<Token>> {
         enums!(
             self,
-            transition_2_produced_message_flow_tokens,
+            transition_2_consumed_tokens,
+            transition_index,
+            marking,
+            parent,
+            bpmn
+        )
+    }
+
+    fn transition_2_produced_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Option<Vec<Token>> {
+        enums!(
+            self,
+            transition_2_produced_tokens,
             transition_index,
             marking,
             parent,
@@ -379,9 +388,8 @@ impl Writable for BPMNElement {
         x: &mut Writer<W>,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> anyhow::Result<()> {
+    ) -> Result<()> {
         enums!(self, write, x, parent, bpmn)?;
-
         Ok(())
     }
 }

@@ -1,13 +1,9 @@
 use crate::{
-    BusinessProcessModelAndNotation,
-    element::BPMNElementTrait,
-    parser::parser_state::GlobalIndex,
-    semantics::{BPMNRootMarking, BPMNSubMarking, TransitionIndex},
-    traits::{
+    BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    },
+    }
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};

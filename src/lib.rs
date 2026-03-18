@@ -66,6 +66,7 @@ pub mod elements {
     pub mod user_task;
 }
 pub(crate) mod exporter;
+pub(crate) mod if_not;
 pub(crate) mod importer;
 pub(crate) mod marking;
 pub(crate) mod message_flow;
@@ -144,8 +145,8 @@ pub use creator::EndEventType;
 pub use creator::GatewayType;
 pub use creator::IntermediateEventType;
 pub use creator::StartEventType;
+pub use marking::BPMNMarking;
 pub use message_flow::BPMNMessageFlow;
 pub use parser::parser_state::GlobalIndex;
-pub use marking::BPMNMarking;
 pub use sequence_flow::BPMNSequenceFlow;
 pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
