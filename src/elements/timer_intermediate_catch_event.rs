@@ -198,7 +198,7 @@ impl Transitionable for BPMNTimerIntermediateCatchEvent {
         ))
     }
 
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         _transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,

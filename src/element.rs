@@ -331,13 +331,13 @@ impl Transitionable for BPMNElement {
         enums!(self, transition_debug, transition_index, marking, bpmn)
     }
 
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<ebi_arithmetic::Fraction> {
-        enums!(self, transition_weight, transition_index, marking, parent)
+        enums!(self, transition_probabilistic_penalty, transition_index, marking, parent)
     }
 
     fn transition_2_produced_sequence_flow_tokens<'a>(

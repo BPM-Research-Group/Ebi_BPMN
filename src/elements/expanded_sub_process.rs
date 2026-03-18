@@ -328,7 +328,7 @@ impl Transitionable for BPMNExpandedSubProcess {
         None
     }
 
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -353,7 +353,7 @@ impl Transitionable for BPMNExpandedSubProcess {
             if transition_index < sub_number_of_transitions {
                 return self
                     .elements
-                    .transition_weight(transition_index, &sub_marking, self);
+                    .transition_probabilistic_penalty(transition_index, &sub_marking, self);
             }
             transition_index -= sub_number_of_transitions;
         }

@@ -4,9 +4,7 @@ use crate::{
     message_flow::BPMNMessageFlow,
     parser::parser_state::GlobalIndex,
     sequence_flow::BPMNSequenceFlow,
-    traits::{
-        objectable::BPMNObject, processable::Processable, searchable::Searchable,
-    },
+    traits::{objectable::BPMNObject, processable::Processable, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
 #[cfg(any(test, feature = "testactivities"))]
@@ -126,6 +124,16 @@ impl BusinessProcessModelAndNotation {
                     message_flow.id
                 )
             })
+    }
+
+    /// Returns the sequence flow with the given global index.
+    pub fn global_index_2_message_flow(
+        &self,
+        message_flow_global_index: GlobalIndex,
+    ) -> Option<&BPMNMessageFlow> {
+        self.message_flows
+            .iter()
+            .find(|message_flow| message_flow.global_index == message_flow_global_index)
     }
 
     /// Returns the sequence flow with the given global index.

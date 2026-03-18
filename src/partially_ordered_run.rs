@@ -1,37 +1,53 @@
-use std::collections::VecDeque;
-
 use crate::{
-    BPMNMarking, BusinessProcessModelAndNotation, GlobalIndex,
-    StochasticBusinessProcessModelAndNotation,
+    BPMNMarking, StochasticBusinessProcessModelAndNotation,
+    semantics::{Token, TransitionIndex},
     traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
 use ebi_activity_key::Activity;
+use ebi_arithmetic::{ChooseRandomly, Fraction, One};
 
-/// A hypergraph representing a
+/// A hypergraph representing a partially ordered run of an SBPMN model
 pub struct PartiallyOrderedRun {
-    state_2_token: Vec<Token>,
-    edge_2_inputs: Vec<Vec<usize>>,
-    edge_2_outputs: Vec<Vec<usize>>,
-
-    edge_2_activity: Vec<Option<Activity>>,
+    pub state_2_token: Vec<Token>,
+    pub state_2_output_edge: Vec<Option<usize>>,
+    pub state_2_input_edge: Vec<Option<usize>>,
+    pub edge_2_inputs: Vec<Vec<usize>>,
+    pub edge_2_outputs: Vec<Vec<usize>>,
+    pub edge_2_activity: Vec<Option<Activity>>,
+    terminated: bool,
 }
 
 impl PartiallyOrderedRun {
-    pub fn new() -> Self {
-        Self {
-            state_2_token: vec![],
-            edge_2_inputs: vec![],
-            edge_2_outputs: vec![],
-            edge_2_activity: vec![],
+    pub fn new_random(sbpmn: &StochasticBusinessProcessModelAndNotation) -> Result<Self> {
+        if let Some(initial_marking) = sbpmn.get_initial_marking()? {
+            let mut run = Self::from_initial_marking(&initial_marking, sbpmn)?;
+
+            run.execute_free_transitions_exhaustively(sbpmn)?;
+            while !run.terminated {
+                run.execute_random_transition(sbpmn)?;
+                run.execute_free_transitions_exhaustively(sbpmn)?;
+            }
+
+            Ok(run)
+        } else {
+            Err(anyhow!("SBPMN does not have partially ordered runs."))
         }
     }
 
-    pub fn add_initial_marking(
-        &mut self,
+    pub fn from_initial_marking(
         marking: &BPMNMarking,
-        bpmn: &BusinessProcessModelAndNotation,
-    ) -> Result<()> {
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<Self> {
+        let mut result = Self {
+            state_2_token: vec![],
+            state_2_input_edge: vec![],
+            state_2_output_edge: vec![],
+            edge_2_activity: vec![],
+            edge_2_inputs: vec![],
+            edge_2_outputs: vec![],
+            terminated: false,
+        };
         //add messages
         for (message_flow_index, message_tokens) in marking
             .root_marking
@@ -40,27 +56,34 @@ impl PartiallyOrderedRun {
             .enumerate()
         {
             for _ in 0..*message_tokens {
-                let message_flow = bpmn
+                let message_flow = sbpmn
+                    .bpmn
                     .message_flows
                     .get(message_flow_index)
                     .ok_or_else(|| anyhow!("message flow not found"))?;
-                self.state_2_token
+                result
+                    .state_2_token
                     .push(Token::MessageFlow(message_flow.global_index));
+                result.state_2_input_edge.push(None);
+                result.state_2_output_edge.push(None);
             }
         }
 
         for (element_index, sub_marking) in marking.element_index_2_sub_markings.iter().enumerate()
         {
-            let element = bpmn
+            let element = sbpmn
+                .bpmn
                 .elements
                 .get(element_index)
                 .ok_or_else(|| anyhow!("element not found"))?;
 
             //add initial choice tokens
             if sub_marking.initial_choice_token {
-                self.state_2_token.push(Token::Start {
+                result.state_2_token.push(Token::Start {
                     in_process: element.global_index(),
                 });
+                result.state_2_input_edge.push(None);
+                result.state_2_output_edge.push(None);
             }
 
             //add element tokens
@@ -70,10 +93,181 @@ impl PartiallyOrderedRun {
                     let sub_element = element
                         .local_index_2_element(sub_element_index)
                         .ok_or_else(|| anyhow!("message flow not found"))?;
-                    self.state_2_token
+                    result
+                        .state_2_token
                         .push(Token::ParallelElement(sub_element.global_index()));
+                    result.state_2_input_edge.push(None);
+                    result.state_2_output_edge.push(None);
                 }
             }
+        }
+
+        Ok(result)
+    }
+
+    /// Front states are states that have no outgoing edge. That is, the token is still there.
+    fn front_states(&self) -> Vec<usize> {
+        let mut result = vec![];
+        for (i, outputs) in self.edge_2_outputs.iter().enumerate() {
+            if outputs.is_empty() {
+                result.push(i)
+            }
+        }
+        result
+    }
+
+    fn get_marking(
+        &self,
+        front_states: &Vec<usize>,
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<BPMNMarking> {
+        //create empty marking
+        let mut marking = BPMNMarking::new_empty(&sbpmn.bpmn);
+
+        //fill the marking
+        for token in front_states.iter().map(|state| &self.state_2_token[*state]) {
+            marking.add_token(token, &sbpmn.bpmn);
+        }
+
+        Ok(marking)
+    }
+
+    fn tokens_to_states(
+        &self,
+        tokens: Vec<Token>,
+        front_states: &Vec<usize>,
+    ) -> Result<Vec<usize>> {
+        let mut result = Vec::with_capacity(tokens.len());
+        for token in &tokens {
+            for state in front_states {
+                if &self.state_2_token[*state] == token {
+                    result.push(*state);
+                }
+            }
+        }
+        if result.len() == tokens.len() {
+            Ok(result)
+        } else {
+            Err(anyhow!("not all tokens found"))
+        }
+    }
+
+    fn execute_random_transition(
+        &mut self,
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        //create a marking
+        let front_states = self.front_states();
+        let marking = self.get_marking(&front_states, sbpmn)?;
+        let enabled_transitions = sbpmn.get_enabled_transitions(&marking)?;
+        if enabled_transitions.is_empty() {
+            self.terminated = true;
+            return Ok(());
+        }
+
+        //gather probabilities
+        let mut outgoing_probabilities = vec![];
+        for transition in &enabled_transitions {
+            outgoing_probabilities.push(
+                sbpmn
+                    .get_transition_probabilistic_penalty(*transition, &marking)
+                    .ok_or_else(|| anyhow!("transition not found"))?,
+            );
+        }
+
+        // choose a transition
+        let i = Fraction::choose_randomly(&outgoing_probabilities)?;
+        let chosen_transition = enabled_transitions[i];
+
+        // execute transition
+        self.execute_transition(chosen_transition, &marking, &front_states, sbpmn)?;
+        Ok(())
+    }
+
+    /// Execute all transitions that have no probabilistic cost attached.
+    pub fn execute_free_transitions_exhaustively(
+        &mut self,
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        while self.execute_a_free_transition(sbpmn)? {}
+
+        Ok(())
+    }
+
+    /// Find an arbitrary transition without weight cost and execute it.
+    /// Returns whether a transition was executed.
+    fn execute_a_free_transition(
+        &mut self,
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<bool> {
+        //create a marking
+        let front_states = self.front_states();
+        let marking = self.get_marking(&front_states, sbpmn)?;
+
+        for transition_index in sbpmn.get_enabled_transitions(&marking)? {
+            if let Some(weight) =
+                sbpmn.get_transition_probabilistic_penalty(transition_index, &marking)
+                && weight.is_one()
+            {
+                self.execute_transition(transition_index, &marking, &front_states, sbpmn)?;
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    /// Execute a transition
+    pub fn execute_transition(
+        &mut self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+        front_states: &Vec<usize>,
+        sbpmn: &StochasticBusinessProcessModelAndNotation,
+    ) -> Result<()> {
+        let new_edge = self.number_of_edges();
+
+        //get the activity
+        let activity = sbpmn
+            .bpmn
+            .get_transition_activity(transition_index, &marking);
+        self.edge_2_activity.push(activity);
+
+        //consume tokens
+        {
+            let consumed_tokens = sbpmn
+                .bpmn
+                .transition_2_consumed_tokens(transition_index, &marking)
+                .ok_or_else(|| anyhow!("Could not obtain consumed tokens."))?;
+            let consume_states = self.tokens_to_states(consumed_tokens, &front_states)?;
+
+            //add to states
+            for state in &consume_states {
+                self.state_2_output_edge[*state] = Some(new_edge);
+            }
+
+            //add to edge
+            self.edge_2_inputs.push(consume_states);
+        }
+
+        //produce tokens
+        {
+            let produced_tokens = sbpmn
+                .bpmn
+                .transition_2_produced_tokens(transition_index, &marking)
+                .ok_or_else(|| anyhow!("Could not obtain produced tokens."))?;
+
+            // add states
+            let mut new_states = vec![];
+            for token in produced_tokens {
+                let new_state = self.number_of_states();
+                self.state_2_token.push(token);
+                self.state_2_input_edge.push(Some(new_edge));
+                self.state_2_output_edge.push(None);
+                new_states.push(new_state);
+            }
+
+            // add to edge
+            self.edge_2_outputs.push(new_states);
         }
 
         Ok(())
@@ -85,39 +279,5 @@ impl PartiallyOrderedRun {
 
     pub fn number_of_edges(&self) -> usize {
         self.edge_2_activity.len()
-    }
-}
-
-pub enum Token {
-    /// A token on a sequence flow.
-    SequenceFlow(GlobalIndex),
-
-    /// A token on a message flow
-    MessageFlow(GlobalIndex),
-
-    /// A virtual token in front of every start event; used to get the process started.
-    Start { in_process: GlobalIndex },
-
-    /// A token in front of an element on a virtual sequence flow; used if there are no start events to start the process with.
-    ParallelElement(GlobalIndex),
-}
-
-pub fn random_partially_ordered_run(
-    sbpmn: &StochasticBusinessProcessModelAndNotation,
-) -> Result<PartiallyOrderedRun> {
-    if let Some(initial_marking) = sbpmn.get_initial_marking()? {
-        let mut run = PartiallyOrderedRun::new();
-        run.add_initial_marking(&initial_marking, &sbpmn.bpmn)?;
-
-        let mut queue = VecDeque::new();
-        queue.extend(0..run.number_of_states());
-
-        while let Some(state_index) = queue.pop_front() {
-
-        }
-
-        Ok(run)
-    } else {
-        Err(anyhow!("SBPMN does not have partially ordered runs."))
     }
 }

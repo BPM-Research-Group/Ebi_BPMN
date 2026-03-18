@@ -269,7 +269,7 @@ impl Transitionable for BPMNExclusiveGateway {
         ))
     }
 
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         transition_index: TransitionIndex,
         _marking: &BPMNSubMarking,

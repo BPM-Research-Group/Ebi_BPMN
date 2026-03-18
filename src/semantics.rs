@@ -1,8 +1,7 @@
-use std::fmt::Display;
-
 use crate::{
-    BusinessProcessModelAndNotation,
+    BPMNMarking, BusinessProcessModelAndNotation,
     element::BPMNElement,
+    marking::BPMNRootMarking,
     parser::parser_state::GlobalIndex,
     stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     traits::{
@@ -17,43 +16,6 @@ use ebi_activity_key::Activity;
 use ebi_arithmetic::Fraction;
 
 pub type TransitionIndex = usize;
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct BPMNMarking {
-    pub(crate) element_index_2_sub_markings: Vec<BPMNSubMarking>,
-    pub(crate) root_marking: BPMNRootMarking,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct BPMNRootMarking {
-    pub(crate) root_initial_choice_token: bool,
-    pub(crate) message_flow_2_tokens: Vec<u64>,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct BPMNSubMarking {
-    pub(crate) sequence_flow_2_tokens: Vec<u64>,
-    pub(crate) initial_choice_token: bool,
-    pub(crate) element_index_2_tokens: Vec<u64>,
-    pub(crate) element_index_2_sub_markings: Vec<Vec<BPMNSubMarking>>,
-}
-
-impl Display for BPMNMarking {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", stringify!(self))
-    }
-}
-
-impl BPMNSubMarking {
-    pub(crate) fn new_empty() -> Self {
-        Self {
-            sequence_flow_2_tokens: vec![],
-            initial_choice_token: false,
-            element_index_2_tokens: vec![],
-            element_index_2_sub_markings: vec![],
-        }
-    }
-}
 
 impl BusinessProcessModelAndNotation {
     /// Returns the initial marking, as specified by the BPMN 2.0.2 standard on page 238.
@@ -230,7 +192,7 @@ impl BusinessProcessModelAndNotation {
     }
 
     /// Returns the global indices of sequence flows that get a token by executing this transition.
-    pub fn transition_2_marked_sequence_flows(
+    pub fn transition_2_produced_sequence_flows(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
@@ -251,6 +213,20 @@ impl BusinessProcessModelAndNotation {
             transition_index -= number_of_transitions;
         }
         None
+    }
+
+    pub fn transition_2_consumed_tokens(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Vec<Token>> {
+    }
+
+    pub fn transition_2_produced_tokens(
+        &self,
+        mut transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Option<Vec<Token>> {
     }
 }
 
@@ -298,7 +274,7 @@ impl StochasticBusinessProcessModelAndNotation {
         self.bpmn.number_of_transitions(marking)
     }
 
-    pub fn get_transition_weight(
+    pub fn get_transition_probabilistic_penalty(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
@@ -311,12 +287,31 @@ impl StochasticBusinessProcessModelAndNotation {
         {
             let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
-                return element.transition_weight(transition_index, sub_marking, &self.bpmn);
+                return element.transition_probabilistic_penalty(
+                    transition_index,
+                    sub_marking,
+                    &self.bpmn,
+                );
             }
             transition_index -= number_of_transitions;
         }
         None
     }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum Token {
+    /// A token on a sequence flow.
+    SequenceFlow(GlobalIndex),
+
+    /// A token on a message flow
+    MessageFlow(GlobalIndex),
+
+    /// A virtual token in front of every start event; used to get the process started.
+    Start { in_process: GlobalIndex },
+
+    /// A token in front of an element on a virtual sequence flow; used if there are no start events to start the process with.
+    ParallelElement(GlobalIndex),
 }
 
 #[cfg(test)]
@@ -909,77 +904,97 @@ pub(crate) mod tests {
         debug_transitions(&bpmn.bpmn, &marking);
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [0]);
         assert_eq!(
-            bpmn.get_transition_weight(0, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(0, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 0).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [1]);
         assert_eq!(
-            bpmn.get_transition_weight(1, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(1, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 1).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [2, 3]);
         assert_eq!(
-            bpmn.get_transition_weight(3, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(3, &marking)
+                .unwrap(),
             Fraction::one()
         );
         assert_eq!(
-            bpmn.get_transition_weight(2, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(2, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 2).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [3]);
         assert_eq!(
-            bpmn.get_transition_weight(3, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(3, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 3).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [4, 5]);
-        assert_eq!(bpmn.get_transition_weight(4, &marking).unwrap(), f!(1, 3));
-        assert_eq!(bpmn.get_transition_weight(5, &marking).unwrap(), f!(2, 3));
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(4, &marking)
+                .unwrap(),
+            f!(1, 3)
+        );
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(5, &marking)
+                .unwrap(),
+            f!(2, 3)
+        );
 
         bpmn.execute_transition(&mut marking, 4).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [6, 7]);
         assert_eq!(
-            bpmn.get_transition_weight(6, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(6, &marking)
+                .unwrap(),
             Fraction::one()
         );
         assert_eq!(
-            bpmn.get_transition_weight(7, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(7, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 6).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [7, 9]);
         assert_eq!(
-            bpmn.get_transition_weight(7, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(7, &marking)
+                .unwrap(),
             Fraction::one()
         );
         assert_eq!(
-            bpmn.get_transition_weight(9, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(9, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 7).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [8, 9]);
         assert_eq!(
-            bpmn.get_transition_weight(8, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(8, &marking)
+                .unwrap(),
             Fraction::one()
         );
         assert_eq!(
-            bpmn.get_transition_weight(9, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(9, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 8).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), [9]);
         assert_eq!(
-            bpmn.get_transition_weight(9, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(9, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
@@ -1135,21 +1150,24 @@ pub(crate) mod tests {
         debug_transitions(&bpmn.bpmn, &marking);
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6]);
         assert_eq!(
-            bpmn.get_transition_weight(6, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(6, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 6).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![7]);
         assert_eq!(
-            bpmn.get_transition_weight(7, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(7, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
         bpmn.execute_transition(&mut marking, 7).unwrap();
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![8, 15]);
         assert_eq!(
-            bpmn.get_transition_weight(8, &marking).unwrap(),
+            bpmn.get_transition_probabilistic_penalty(8, &marking)
+                .unwrap(),
             Fraction::one()
         );
 
@@ -1158,16 +1176,32 @@ pub(crate) mod tests {
             bpmn.get_enabled_transitions(&marking).unwrap(),
             vec![9, 10, 15]
         );
-        assert_eq!(bpmn.get_transition_weight(9, &marking).unwrap(), f!(1, 2));
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(9, &marking)
+                .unwrap(),
+            f!(1, 2)
+        );
 
         bpmn.execute_transition(&mut marking, 9).unwrap();
         assert_eq!(
             bpmn.get_enabled_transitions(&marking).unwrap(),
             vec![0, 1, 2, 15]
         );
-        assert_eq!(bpmn.get_transition_weight(0, &marking).unwrap(), f!(1, 3));
-        assert_eq!(bpmn.get_transition_weight(1, &marking).unwrap(), f!(1, 3));
-        assert_eq!(bpmn.get_transition_weight(2, &marking).unwrap(), f!(1, 3));
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(0, &marking)
+                .unwrap(),
+            f!(1, 3)
+        );
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(1, &marking)
+                .unwrap(),
+            f!(1, 3)
+        );
+        assert_eq!(
+            bpmn.get_transition_probabilistic_penalty(2, &marking)
+                .unwrap(),
+            f!(1, 3)
+        );
 
         bpmn.execute_transition(&mut marking, 0).unwrap();
         assert_eq!(

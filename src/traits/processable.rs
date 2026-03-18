@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElement,
-    semantics::BPMNSubMarking,
+    marking::BPMNSubMarking,
     sequence_flow::BPMNSequenceFlow,
     traits::{objectable::BPMNObject, startable::InitiationMode},
 };
@@ -10,7 +10,7 @@ use std::fmt::Debug;
 
 /// a trait with methods for container elements
 pub trait Processable: BPMNObject + Debug {
-    /// return the elements of this process, but do not recurse
+    /// Returns the elements of this process, but does not recurse.
     fn elements_non_recursive(&self) -> &Vec<BPMNElement>;
 
     /// return the sequence flows of this process, but do not recurse

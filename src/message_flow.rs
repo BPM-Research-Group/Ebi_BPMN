@@ -5,6 +5,7 @@ use crate::parser::parser_state::GlobalIndex;
 pub struct BPMNMessageFlow {
     pub(crate) global_index: GlobalIndex,
     pub(crate) id: String,
+    pub(crate) local_index: usize,
     pub(crate) source_pool_index: usize,
     pub(crate) source_global_index: GlobalIndex,
     pub(crate) target_pool_index: usize,

@@ -52,7 +52,7 @@ pub trait Transitionable {
 
     /// If the transition exists, return the weight of the transition, that is, the probabilistic cost incurrend when calling it.
     /// Otherwise, return None.
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -151,7 +151,7 @@ impl Transitionable for Vec<BPMNElement> {
         None
     }
 
-    fn transition_weight(
+    fn transition_probabilistic_penalty(
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNSubMarking,
@@ -160,7 +160,7 @@ impl Transitionable for Vec<BPMNElement> {
         for element in self.iter() {
             let number_of_transitions = element.number_of_transitions(marking);
             if transition_index < number_of_transitions {
-                return element.transition_weight(transition_index, marking, parent);
+                return element.transition_probabilistic_penalty(transition_index, marking, parent);
             }
             transition_index -= number_of_transitions;
         }
