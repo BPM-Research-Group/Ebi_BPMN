@@ -181,7 +181,7 @@ impl BPMNSubMarking {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Token {
     /// A token on a sequence flow.
     SequenceFlow(GlobalIndex),

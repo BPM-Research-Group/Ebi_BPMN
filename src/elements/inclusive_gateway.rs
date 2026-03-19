@@ -1,9 +1,15 @@
 use crate::{
-    BPMNSequenceFlow, BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BPMNSequenceFlow, BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    if_not::IfNotDefault,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -299,7 +305,7 @@ impl Transitionable for BPMNInclusiveGateway {
         let s = Fraction::from(s_1) + s_2 * Fraction::from(sum_weights.clone());
 
         let selected_sequence_flows =
-            transition_index_2_sequence_flows(self, parent, transition_index)?;
+            transition_index_2_sequence_flows(self, parent, transition_index).ok()?;
         if selected_sequence_flows.len() == self.outgoing_sequence_flows.len() {
             //full set chosen
             Some(sum_weights / s)
@@ -316,28 +322,48 @@ impl Transitionable for BPMNInclusiveGateway {
         }
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
-        transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(
-            transition_index_2_sequence_flows(self, parent, transition_index)?
-                .into_iter()
-                .map(|sequence_flow| sequence_flow.global_index())
-                .collect::<Vec<_>>(),
-        )
+    fn transition_2_consumed_tokens(
+        &self,
+        _transition_index: TransitionIndex,
+        _root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        if self.incoming_sequence_flows.len() == 0 {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow
+            Ok(vec![Token::Element(self.global_index)])
+        } else {
+            //consume a token from each incoming sequence flow that has one
+            let mut result = vec![];
+            for sequence_flow_index in &self.incoming_sequence_flows {
+                if sub_marking.sequence_flow_2_tokens[*sequence_flow_index] > 0 {
+                    let sequence_flow = parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_index)
+                        .and_if_not_error_default()?;
+                    result.push(Token::SequenceFlow(sequence_flow.global_index));
+                }
+            }
+            Ok(result)
+        }
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
-        _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+    fn transition_2_produced_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Ok(
+            transition_index_2_sequence_flows(self, parent, transition_index)?
+                .into_iter()
+                .map(|sequence_flow| Token::SequenceFlow(sequence_flow.global_index()))
+                .collect::<Vec<_>>(),
+        )
     }
 }
 
@@ -345,17 +371,18 @@ fn transition_index_2_sequence_flows<'a>(
     gateway: &'a BPMNInclusiveGateway,
     parent: &'a dyn Processable,
     mut transition_index: usize,
-) -> Option<Vec<&'a BPMNSequenceFlow>> {
+) -> Result<Vec<&'a BPMNSequenceFlow>> {
     let mut result = vec![];
     for sequence_flow_index in &gateway.outgoing_sequence_flows {
         if transition_index % 2 == 0 {
             result.push(
                 parent
                     .sequence_flows_non_recursive()
-                    .get(*sequence_flow_index)?,
+                    .get(*sequence_flow_index)
+                    .and_if_not_error_default()?,
             );
         }
         transition_index >>= 1;
     }
-    Some(result)
+    Ok(result)
 }

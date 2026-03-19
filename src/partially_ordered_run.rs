@@ -5,8 +5,10 @@ use crate::{
 use anyhow::{Context, Result, anyhow};
 use ebi_activity_key::Activity;
 use ebi_arithmetic::{ChooseRandomly, Fraction, One};
+use std::fmt::Debug;
 
 /// A hypergraph representing a partially ordered run of an SBPMN model
+#[derive(Clone)]
 pub struct PartiallyOrderedRun {
     pub state_2_token: Vec<Token>,
     pub state_2_output_edge: Vec<Option<usize>>,
@@ -68,7 +70,7 @@ impl PartiallyOrderedRun {
 
         //fill the marking
         for token in front_states.iter().map(|state| &self.state_2_token[*state]) {
-            marking.add_token(token, &sbpmn.bpmn);
+            marking.add_token(token, &sbpmn.bpmn)?;
         }
 
         Ok(marking)
@@ -221,5 +223,61 @@ impl PartiallyOrderedRun {
 
     pub fn number_of_edges(&self) -> usize {
         self.edge_2_activity.len()
+    }
+}
+
+impl Debug for PartiallyOrderedRun {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "partially ordered run")?;
+        writeln!(f, "# number of states\n{}", self.number_of_states())?;
+        for state in 0..self.number_of_states() {
+            writeln!(
+                f,
+                "# state {} token\n{:?}",
+                state, self.state_2_token[state]
+            )?;
+        }
+        writeln!(f, "# number of edges\n{}", self.number_of_edges())?;
+        for edge in 0..self.number_of_edges() {
+            writeln!(f, "# edge {}", edge)?;
+            writeln!(f, "# activity\n{:?}", self.edge_2_activity[edge])?;
+            writeln!(
+                f,
+                "# number of input states\n{}",
+                self.edge_2_inputs[edge].len()
+            )?;
+            for input in &self.edge_2_inputs[edge] {
+                writeln!(f, "{}", input)?;
+            }
+            writeln!(
+                f,
+                "# number of output states\n{}",
+                self.edge_2_outputs[edge].len()
+            )?;
+            for output in &self.edge_2_outputs[edge] {
+                writeln!(f, "{}", output)?;
+            }
+        }
+        write!(f, "")
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use crate::{
+        partially_ordered_run::PartiallyOrderedRun,
+        stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
+    };
+    use std::fs::{self};
+
+    #[test]
+    fn po_run() {
+        let fin = fs::read_to_string("testfiles/model.sbpmn").unwrap();
+        let sbpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let run = PartiallyOrderedRun::new_random(&sbpmn).unwrap();
+        println!("{:?}", run);
     }
 }
