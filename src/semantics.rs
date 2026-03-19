@@ -195,7 +195,7 @@ impl BusinessProcessModelAndNotation {
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         for (element, sub_marking) in self
             .elements
             .iter()
@@ -205,6 +205,7 @@ impl BusinessProcessModelAndNotation {
             if transition_index < number_of_transitions {
                 return element.transition_2_consumed_tokens(
                     transition_index,
+                    &marking.root_marking,
                     sub_marking,
                     self,
                     self,
@@ -212,7 +213,7 @@ impl BusinessProcessModelAndNotation {
             }
             transition_index -= number_of_transitions;
         }
-        None
+        Err(anyhow!("Transition not found."))
     }
 
     /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
@@ -220,7 +221,7 @@ impl BusinessProcessModelAndNotation {
         &self,
         mut transition_index: TransitionIndex,
         marking: &BPMNMarking,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         for (element, sub_marking) in self
             .elements
             .iter()
@@ -230,6 +231,7 @@ impl BusinessProcessModelAndNotation {
             if transition_index < number_of_transitions {
                 return element.transition_2_produced_tokens(
                     transition_index,
+                    &marking.root_marking,
                     sub_marking,
                     self,
                     self,
@@ -237,7 +239,7 @@ impl BusinessProcessModelAndNotation {
             }
             transition_index -= number_of_transitions;
         }
-        None
+        Err(anyhow!("Transition not found."))
     }
 }
 
@@ -308,9 +310,26 @@ impl StochasticBusinessProcessModelAndNotation {
         }
         None
     }
+
+    /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
+    pub fn transition_2_consumed_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Result<Vec<Token>> {
+        self.bpmn.transition_2_consumed_tokens(transition_index, marking)
+    }
+
+    /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
+    pub fn transition_2_produced_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        marking: &BPMNMarking,
+    ) -> Result<Vec<Token>> {
+        self.bpmn.transition_2_produced_tokens(transition_index, marking)
+    }
 }
 
-#[derive(Clone, PartialEq, Eq)]
 #[cfg(test)]
 pub(crate) mod tests {
     use ebi_arithmetic::{Fraction, One, f};

@@ -57,7 +57,7 @@ impl BPMNMarking {
                 let message_flow = bpmn
                     .message_flows
                     .get(message_flow_index)
-                    .if_not("message flow not found")?;
+                    .and_if_not("message flow not found")?;
                 result.push(Token::MessageFlow(message_flow.global_index));
             }
         }
@@ -67,7 +67,7 @@ impl BPMNMarking {
             let element = bpmn
                 .elements
                 .get(element_index)
-                .if_not("Element not found.")?;
+                .and_if_not("Element not found.")?;
 
             //add initial choice tokens
             if sub_marking.initial_choice_token {
@@ -102,19 +102,19 @@ impl BPMNMarking {
             Token::SequenceFlow(sequence_flow_global_index) => {
                 let (sequence_flow, parent) = bpmn
                     .global_index_2_sequence_flow_and_parent(*sequence_flow_global_index)
-                    .if_not("Sequence flow not found.")?;
+                    .and_if_not("Sequence flow not found.")?;
                 if parent.is_sub_process() {
                     return Err(anyhow!("Sub-processes are not supported for now."));
                 }
                 self.element_index_2_sub_markings
                     .get_mut(parent.local_index())
-                    .if_not("Parent not found.")?
+                    .and_if_not("Parent not found.")?
                     .sequence_flow_2_tokens[sequence_flow.local_index] += 1;
             }
             Token::MessageFlow(message_flow_global_index) => {
                 let message_flow = bpmn
                     .global_index_2_message_flow(*message_flow_global_index)
-                    .if_not("Message flow not found.")?;
+                    .and_if_not("Message flow not found.")?;
                 self.root_marking.message_flow_2_tokens[message_flow.local_index] += 1;
             }
             Token::RootStart => {
@@ -126,10 +126,10 @@ impl BPMNMarking {
             Token::Element(global_index) => {
                 let element = bpmn
                     .global_index_2_element(*global_index)
-                    .if_not("Element not found.")?;
+                    .and_if_not("Element not found.")?;
                 let parent = bpmn
                     .parent_of(element.global_index())
-                    .if_not("Parent not found.")?;
+                    .and_if_not("Parent not found.")?;
 
                 if parent.is_sub_process() {
                     return Err(anyhow!("Sub-processes are not supported for now."));
@@ -138,12 +138,12 @@ impl BPMNMarking {
                 let sub_marking = self
                     .element_index_2_sub_markings
                     .get_mut(parent.local_index())
-                    .if_not("Sub-marking not found.")?;
+                    .and_if_not("Sub-marking not found.")?;
 
                 *sub_marking
                     .element_index_2_tokens
                     .get_mut(parent.local_index())
-                    .if_not("Element not found.")? += 1;
+                    .and_if_not("Element not found.")? += 1;
             }
         }
         Ok(())

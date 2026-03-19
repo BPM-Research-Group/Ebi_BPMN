@@ -1,13 +1,19 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    if_not::IfNotDefault,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::BPMNObject,
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
             execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
-            transition_2_consumed_tokens_concurrent_split,
+            transition_2_consumed_tokens_xor_join, transition_2_produced_tokens_concurrent_split,
         },
-    }
+    },
 };
 use anyhow::Result;
 use bitvec::{bitvec, vec::BitVec};
@@ -198,27 +204,42 @@ impl Transitionable for BPMNCollapsedSubProcess {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
-        _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+    fn transition_2_consumed_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        Ok(transition_2_consumed_tokens_xor_join!(
+            self,
+            transition_index,
+            parent
+        ))
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(
-            self.outgoing_message_flows
-                .iter()
-                .map(|message_flow_index| bpmn.message_flows[*message_flow_index].global_index())
-                .collect::<Vec<_>>(),
-        )
+    ) -> Result<Vec<Token>> {
+        let mut result = transition_2_produced_tokens_concurrent_split!(self, parent);
+
+        for outgoing_message_flow in &self.outgoing_message_flows {
+            // A collapsed sub-process can produce arbitrarily many messages; we set one that should never be removed.
+            if root_marking.message_flow_2_tokens[*outgoing_message_flow] == 0 {
+                let message_flow = bpmn
+                    .message_flows
+                    .get(*outgoing_message_flow)
+                    .and_if_not_error_default()?;
+                result.push(Token::MessageFlow(message_flow.global_index));
+            }
+        }
+
+        Ok(result)
     }
 }

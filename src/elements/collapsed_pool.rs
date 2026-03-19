@@ -1,9 +1,14 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
-        transitionable::{Transitionable, transition_2_consumed_tokens_concurrent_split},
-    }
+        transitionable::Transitionable,
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -172,22 +177,25 @@ impl Transitionable for BPMNCollapsedPool {
         None
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        Err(anyhow!("A collapsed pool has no transitions."))
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Err(anyhow!("A collapsed pool has no transitions."))
     }
 }

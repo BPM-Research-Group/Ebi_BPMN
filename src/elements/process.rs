@@ -2,7 +2,7 @@ use crate::{
     BusinessProcessModelAndNotation,
     element::{BPMNElement, BPMNElementTrait},
     elements::expanded_sub_process::to_sub_marking,
-    marking::{BPMNRootMarking, BPMNSubMarking},
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
     semantics::TransitionIndex,
     sequence_flow::BPMNSequenceFlow,
@@ -299,29 +299,52 @@ impl Transitionable for BPMNProcess {
             .transition_probabilistic_penalty(transition_index, marking, self)
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
-        transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        self.elements
-            .transition_2_produced_sequence_flow_tokens(transition_index, marking, self)
+    fn transition_2_consumed_tokens(
+        &self,
+        mut transition_index: TransitionIndex,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        for element in &self.elements {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_consumed_tokens(
+                    transition_index,
+                    root_marking,
+                    sub_marking,
+                    self,
+                    bpmn,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        Err(anyhow!("Transition does not exist"))
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
-        transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+    fn transition_2_produced_tokens(
+        &self,
+        mut transition_index: TransitionIndex,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
+        _parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        self.elements.transition_2_produced_message_flow_tokens(
-            transition_index,
-            marking,
-            self,
-            bpmn,
-        )
+    ) -> Result<Vec<Token>> {
+        for element in &self.elements {
+            let number_of_transitions = element.number_of_transitions(sub_marking);
+            if transition_index < number_of_transitions {
+                return element.transition_2_produced_tokens(
+                    transition_index,
+                    root_marking,
+                    sub_marking,
+                    self,
+                    bpmn,
+                );
+            }
+            transition_index -= number_of_transitions;
+        }
+        Err(anyhow!("Transition does not exist"))
     }
 }
 

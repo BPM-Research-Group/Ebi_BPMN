@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    marking::{BPMNRootMarking, BPMNSubMarking},
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
     semantics::TransitionIndex,
     traits::{
@@ -9,7 +9,7 @@ use crate::{
         processable::Processable,
         transitionable::{
             Transitionable, execute_transition_parallel_split,
-            transition_2_consumed_tokens_concurrent_split,
+            transition_2_produced_tokens_concurrent_split,
         },
     },
 };
@@ -210,22 +210,41 @@ impl Transitionable for BPMNParallelGateway {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        if self.incoming_sequence_flows.is_empty() {
+            //if there are no sequence flows, then initiation mode 2 applies.
+            //that is, look in the extra virtual sequence flow
+            Ok(vec![Token::Element(self.global_index())])
+        } else {
+            //otherwise, every incoming sequence flow must have a token
+            Ok(self
+                .incoming_sequence_flows
+                .iter()
+                .filter_map(|sequence_flow_local_index| {
+                    let sequence_flow = parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_local_index)?;
+                    Some(Token::SequenceFlow(sequence_flow.global_index()))
+                })
+                .collect())
+        }
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        _marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Ok(transition_2_produced_tokens_concurrent_split!(self, parent))
     }
 }

@@ -1,13 +1,19 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    if_not::IfNotDefault,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
             execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
-            transition_2_consumed_tokens_concurrent_split,
+            transition_2_consumed_tokens_xor_join, transition_2_produced_tokens_concurrent_split,
         },
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -255,22 +261,71 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
-        _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+    fn transition_2_consumed_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        let mut result =
+            if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+                let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+                let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
+                if source.is_event_based_gateway() {
+                    //special case: source is an event-based gateway
+
+                    //remove a token from all outgoing sequence flows of the event-based gateway
+                    let mut result = Vec::with_capacity(source.outgoing_sequence_flows().len());
+                    for sequence_flow_local_index in source.outgoing_sequence_flows() {
+                        let sequence_flow = parent
+                            .sequence_flows_non_recursive()
+                            .get(*sequence_flow_local_index)
+                            .and_if_not_error_default()?;
+                        result.push(Token::SequenceFlow(sequence_flow.global_index));
+                    }
+                    result
+                } else {
+                    //not a special case
+                    transition_2_consumed_tokens_xor_join!(self, transition_index, parent)
+                }
+            } else {
+                //not a special case
+                transition_2_consumed_tokens_xor_join!(self, transition_index, parent)
+            };
+
+        //message
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //there is a connected message flow
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if !source.outgoing_message_flows_always_have_tokens() {
+                //this message must actually be there
+                if !source.outgoing_messages_cannot_be_removed() {
+                    let message_flow = bpmn
+                        .message_flows
+                        .get(message_flow_index)
+                        .and_if_not_error_default()?;
+                    result.push(Token::MessageFlow(message_flow.global_index))
+                }
+            } else {
+                //if the message flow has always tokens, we do not need to check them
+            }
+        } else {
+            //if there is no incoming message flow, we assume there is always a message
+        }
+
+        Ok(result)
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Ok(transition_2_produced_tokens_concurrent_split!(self, parent))
     }
 }

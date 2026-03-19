@@ -2,7 +2,7 @@ use crate::{
     BPMNMarking, StochasticBusinessProcessModelAndNotation, marking::Token,
     semantics::TransitionIndex,
 };
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use ebi_activity_key::Activity;
 use ebi_arithmetic::{ChooseRandomly, Fraction, One};
 
@@ -179,7 +179,7 @@ impl PartiallyOrderedRun {
             let consumed_tokens = sbpmn
                 .bpmn
                 .transition_2_consumed_tokens(transition_index, &marking)
-                .ok_or_else(|| anyhow!("Could not obtain consumed tokens."))?;
+                .with_context(|| anyhow!("Could not obtain consumed tokens."))?;
             let consume_states = self.tokens_to_states(consumed_tokens, &front_states)?;
 
             //add to states
@@ -196,7 +196,7 @@ impl PartiallyOrderedRun {
             let produced_tokens = sbpmn
                 .bpmn
                 .transition_2_produced_tokens(transition_index, &marking)
-                .ok_or_else(|| anyhow!("Could not obtain produced tokens."))?;
+                .with_context(|| anyhow!("Could not obtain produced tokens."))?;
 
             // add states
             let mut new_states = vec![];

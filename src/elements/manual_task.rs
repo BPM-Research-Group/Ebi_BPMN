@@ -1,5 +1,11 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, elements::task::task_consumed_tokens, marking::{BPMNRootMarking, BPMNSubMarking, Token}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    elements::task::task_consumed_tokens,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::BPMNObject,
         processable::Processable,
         transitionable::{
@@ -9,7 +15,7 @@ use crate::{
             transition_2_consumed_tokens_xor_join, transition_2_produced_tokens_concurrent_split,
             transition_2_produced_tokens_message,
         },
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -265,24 +271,26 @@ impl Transitionable for BPMNManualTask {
     fn transition_2_consumed_tokens<'a>(
         &'a self,
         transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
+        _marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         let mut result = task_consumed_tokens!(self, transition_index, parent);
         result.append(&mut transition_2_consumed_tokens_message!(self, bpmn));
-        Some(result)
+        Ok(result)
     }
 
     fn transition_2_produced_tokens(
         &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
+        _marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         let mut result = transition_2_produced_tokens_concurrent_split!(self, parent);
         result.append(&mut transition_2_produced_tokens_message!(self, bpmn));
-        Some(result)
+        Ok(result)
     }
 }

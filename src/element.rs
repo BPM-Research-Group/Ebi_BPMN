@@ -350,15 +350,17 @@ impl Transitionable for BPMNElement {
     fn transition_2_consumed_tokens(
         &self,
         transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         enums!(
             self,
             transition_2_consumed_tokens,
             transition_index,
-            marking,
+            root_marking,
+            sub_marking,
             parent,
             bpmn
         )
@@ -367,15 +369,17 @@ impl Transitionable for BPMNElement {
     fn transition_2_produced_tokens(
         &self,
         transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         enums!(
             self,
             transition_2_produced_tokens,
             transition_index,
-            marking,
+            root_marking,
+            sub_marking,
             parent,
             bpmn
         )

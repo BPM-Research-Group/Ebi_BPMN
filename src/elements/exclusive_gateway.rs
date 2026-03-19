@@ -1,9 +1,15 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    if_not::{IfNot, IfNotDefault},
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::Transitionable,
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -326,14 +332,66 @@ impl Transitionable for BPMNExclusiveGateway {
         }
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        let outgoing = self.outgoing_sequence_flows.len().max(1);
+        match (
+            self.incoming_sequence_flows.len() > 0,
+            self.outgoing_sequence_flows.len() > 0,
+        ) {
+            (true, true) => {
+                //join & split
+                let sequence_flow_local_index = self
+                    .incoming_sequence_flows
+                    .get(transition_index / outgoing)
+                    .and_if_not("Sequence flow not found.")?;
+                let sequence_flow = parent
+                    .sequence_flows_non_recursive()
+                    .get(*sequence_flow_local_index)
+                    .and_if_not_error_default()?;
+                Ok(vec![Token::SequenceFlow(sequence_flow.global_index)])
+            }
+            (true, false) => {
+                //join only
+
+                //consume
+                let sequence_flow_local_index = self
+                    .incoming_sequence_flows
+                    .get(transition_index)
+                    .and_if_not("Sequence flow not found.")?;
+                let sequence_flow = parent
+                    .sequence_flows_non_recursive()
+                    .get(*sequence_flow_local_index)
+                    .and_if_not_error_default()?;
+                Ok(vec![Token::SequenceFlow(sequence_flow.global_index)])
+            }
+            (false, true) => {
+                //split only; we are in initiation mode 2.
+                Ok(vec![Token::Element(self.global_index)])
+            }
+            (false, false) => {
+                //no flows at all; we are in initiation mode 2.
+                Ok(vec![Token::Element(self.global_index)])
+            }
+        }
+    }
+
+    fn transition_2_produced_tokens(
+        &self,
+        transition_index: TransitionIndex,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
         if self.outgoing_sequence_flows.len() == 0 {
-            Some(vec![])
+            Ok(vec![])
         } else {
             let outgoing = self.outgoing_sequence_flows.len().max(1);
             match (
@@ -344,41 +402,33 @@ impl Transitionable for BPMNExclusiveGateway {
                     //join & split
                     let sequence_flow_index =
                         self.outgoing_sequence_flows[transition_index % outgoing];
-                    Some(vec![
+                    Ok(vec![Token::SequenceFlow(
                         parent
                             .sequence_flows_non_recursive()
-                            .get(sequence_flow_index)?
+                            .get(sequence_flow_index)
+                            .and_if_not_error_default()?
                             .global_index,
-                    ])
+                    )])
                 }
                 (true, false) => {
                     //join only
-                    Some(vec![])
+                    Ok(vec![])
                 }
                 (false, true) => {
                     let sequence_flow_index = self.outgoing_sequence_flows[transition_index];
-                    Some(vec![
+                    Ok(vec![Token::SequenceFlow(
                         parent
                             .sequence_flows_non_recursive()
-                            .get(sequence_flow_index)?
+                            .get(sequence_flow_index)
+                            .and_if_not_error_default()?
                             .global_index,
-                    ])
+                    )])
                 }
                 (false, false) => {
                     //no flows at all; we are in initiation mode 2.
-                    Some(vec![])
+                    Ok(vec![])
                 }
             }
         }
-    }
-    
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
-        _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
     }
 }

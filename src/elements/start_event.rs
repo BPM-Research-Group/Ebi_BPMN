@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    marking::{BPMNRootMarking, BPMNSubMarking},
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
     semantics::TransitionIndex,
     traits::{
@@ -9,7 +9,7 @@ use crate::{
         processable::Processable,
         transitionable::{
             Transitionable, execute_transition_parallel_split,
-            transition_2_consumed_tokens_concurrent_split,
+            transition_2_produced_tokens_concurrent_split,
         },
     },
 };
@@ -164,6 +164,28 @@ macro_rules! execute_transition_start_event {
 }
 pub(crate) use execute_transition_start_event;
 
+macro_rules! transition_2_consumed_tokens_start_event {
+    ($self:ident, $root_marking:ident, $sub_marking:ident, $parent:ident) => {
+        //consume
+        if !$parent.is_sub_process() && $root_marking.root_initial_choice_token {
+            //enabled by root initial choice token
+            Ok(vec![Token::RootStart])
+        } else if $parent.is_sub_process() && $sub_marking.initial_choice_token {
+            //enabled by sub-process initial choice token
+            Ok(vec![Token::SubProcessStart {
+                in_process: $parent.global_index(),
+            }])
+        } else if $sub_marking.element_index_2_tokens[$self.local_index] >= 1 {
+            //enabled by element token
+            Ok(vec![Token::Element($self.global_index)])
+        } else {
+            //not enabled
+            Err(anyhow!("Transition is not enabled."))
+        }
+    };
+}
+pub(crate) use transition_2_consumed_tokens_start_event;
+
 impl Transitionable for BPMNStartEvent {
     fn number_of_transitions(&self, _marking: &BPMNSubMarking) -> usize {
         1
@@ -225,22 +247,27 @@ impl Transitionable for BPMNStartEvent {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        _bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        let result =
+            transition_2_consumed_tokens_start_event!(self, root_marking, sub_marking, parent)?;
+        Ok(result)
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Ok(transition_2_produced_tokens_concurrent_split!(self, parent))
     }
 }

@@ -59,23 +59,25 @@ pub trait Transitionable {
         parent: &dyn Processable,
     ) -> Option<Fraction>;
 
-    /// Returns the tokens that are consumed when this transition is fired, or None if the transition does not exist.
+    /// Returns the tokens that are consumed when this transition is fired, or an Err if the transition does not exist.
     fn transition_2_consumed_tokens(
         &self,
         transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>>;
+    ) -> Result<Vec<Token>>;
 
-    /// Returns the tokens that are produced when this transition is fired, or None if the transition does not exist.
+    /// Returns the tokens that are produced when this transition is fired, or an Err if the transition does not exist.
     fn transition_2_produced_tokens(
         &self,
         transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>>;
+    ) -> Result<Vec<Token>>;
 }
 
 impl Transitionable for Vec<BPMNElement> {
@@ -171,45 +173,49 @@ impl Transitionable for Vec<BPMNElement> {
     fn transition_2_consumed_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         for element in self.iter() {
-            let number_of_transitions = element.number_of_transitions(marking);
+            let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
                 return element.transition_2_consumed_tokens(
                     transition_index,
-                    marking,
+                    root_marking,
+                    sub_marking,
                     parent,
                     bpmn,
                 );
             }
             transition_index -= number_of_transitions;
         }
-        None
+        Err(anyhow!("Transition does not exist."))
     }
 
     fn transition_2_produced_tokens<'a>(
         &'a self,
         mut transition_index: TransitionIndex,
-        marking: &BPMNSubMarking,
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
         parent: &'a dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<Token>> {
+    ) -> Result<Vec<Token>> {
         for element in self.iter() {
-            let number_of_transitions = element.number_of_transitions(marking);
+            let number_of_transitions = element.number_of_transitions(sub_marking);
             if transition_index < number_of_transitions {
                 return element.transition_2_consumed_tokens(
                     transition_index,
-                    marking,
+                    root_marking,
+                    sub_marking,
                     parent,
                     bpmn,
                 );
             }
             transition_index -= number_of_transitions;
         }
-        None
+        Err(anyhow!("Transition does not exist."))
     }
 }
 
@@ -322,7 +328,7 @@ macro_rules! transition_2_consumed_tokens_message {
         //check whether a message is present
         if let Some(message_flow_index) = $self.incoming_message_flow {
             //there is a connected message flow
-            let source = $bpmn.message_flow_index_2_source(message_flow_index).ok()?;
+            let source = $bpmn.message_flow_index_2_source(message_flow_index)?;
             if !source.outgoing_message_flows_always_have_tokens() {
                 //this message must actually be there
                 if !source.outgoing_messages_cannot_be_removed() {
@@ -348,7 +354,7 @@ macro_rules! transition_2_produced_tokens_message {
     ($self:ident, $bpmn:ident) => {
         if let Some(message_flow_index) = $self.outgoing_message_flow {
             {
-                let target = $bpmn.message_flow_index_2_target(message_flow_index).ok()?;
+                let target = $bpmn.message_flow_index_2_target(message_flow_index)?;
                 if !target.incoming_messages_are_ignored() {
                     vec![Token::MessageFlow(
                         $bpmn.message_flows[message_flow_index].global_index,

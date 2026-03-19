@@ -1,12 +1,22 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::BPMNElementTrait, elements::start_event::{enabled_transitions_start_event, execute_transition_start_event}, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, traits::{
+    BusinessProcessModelAndNotation,
+    element::BPMNElementTrait,
+    elements::start_event::{
+        enabled_transitions_start_event, execute_transition_start_event,
+        transition_2_consumed_tokens_start_event,
+    },
+    if_not::IfNotDefault,
+    marking::{BPMNRootMarking, BPMNSubMarking, Token},
+    parser::parser_state::GlobalIndex,
+    semantics::TransitionIndex,
+    traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         transitionable::{
             Transitionable, execute_transition_parallel_split,
-            transition_2_consumed_tokens_concurrent_split,
+            transition_2_produced_tokens_concurrent_split,
         },
-    }
+    },
 };
 use anyhow::{Result, anyhow};
 use bitvec::{bitvec, vec::BitVec};
@@ -249,22 +259,50 @@ impl Transitionable for BPMNMessageStartEvent {
         Some(Fraction::one())
     }
 
-    fn transition_2_produced_sequence_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_consumed_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        parent: &'a dyn Processable,
-    ) -> Option<Vec<GlobalIndex>> {
-        transition_2_consumed_tokens_concurrent_split!(self, parent)
+        root_marking: &BPMNRootMarking,
+        sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
+        bpmn: &BusinessProcessModelAndNotation,
+    ) -> Result<Vec<Token>> {
+        if let Some(message_flow_index) = self.incoming_message_flow {
+            //event has a message attached
+
+            //Two cases apply:
+            let source = bpmn.message_flow_index_2_source(message_flow_index)?;
+            if source.outgoing_message_flows_always_have_tokens() {
+                //1) the source of the message always has tokens
+                //we are enabled when specifically enabled by the environment
+                Ok(vec![Token::Element(self.global_index)])
+            } else {
+                //2) the source of the message is normal -> normal enablement
+                // we are enabled if there is a message on the incoming message flow
+                if !source.outgoing_messages_cannot_be_removed() {
+                    let message_flow = bpmn
+                        .message_flows
+                        .get(message_flow_index)
+                        .and_if_not_error_default()?;
+                    Ok(vec![Token::MessageFlow(message_flow.global_index)])
+                } else {
+                    Ok(vec![])
+                }
+            }
+        } else {
+            //model does not have an incoming message flow; treat as a regular start event
+            transition_2_consumed_tokens_start_event!(self, root_marking, sub_marking, parent)
+        }
     }
 
-    fn transition_2_produced_message_flow_tokens<'a>(
-        &'a self,
+    fn transition_2_produced_tokens(
+        &self,
         _transition_index: TransitionIndex,
-        _marking: &BPMNSubMarking,
-        _parent: &'a dyn Processable,
+        _root_marking: &BPMNRootMarking,
+        _sub_marking: &BPMNSubMarking,
+        parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
-    ) -> Option<Vec<GlobalIndex>> {
-        Some(vec![])
+    ) -> Result<Vec<Token>> {
+        Ok(transition_2_produced_tokens_concurrent_split!(self, parent))
     }
 }

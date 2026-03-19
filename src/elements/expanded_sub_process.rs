@@ -1,12 +1,12 @@
 use crate::{
-    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, marking::{BPMNRootMarking, BPMNSubMarking}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, sequence_flow::BPMNSequenceFlow, structure_checker::verify_structural_correctness_initiation_mode, traits::{
+    BusinessProcessModelAndNotation, element::{BPMNElement, BPMNElementTrait}, marking::{BPMNRootMarking, BPMNSubMarking, Token}, parser::parser_state::GlobalIndex, semantics::TransitionIndex, sequence_flow::BPMNSequenceFlow, structure_checker::verify_structural_correctness_initiation_mode, traits::{
         objectable::{BPMNObject, EMPTY_FLOWS},
         processable::Processable,
         searchable::Searchable,
         startable::{InitiationMode, Startable},
         transitionable::{
             Transitionable, enabledness_xor_join_only, execute_transition_parallel_split,
-            execute_transition_xor_join_consume, number_of_transitions_xor_join_only,
+            execute_transition_xor_join_consume, number_of_transitions_xor_join_only, transition_2_consumed_tokens_xor_join,
         },
     }
 };
@@ -352,6 +352,54 @@ impl Transitionable for BPMNExpandedSubProcess {
             transition_index -= sub_number_of_transitions;
         }
         None
+    }
+
+    fn transition_2_consumed_tokens(
+            &self,
+            transition_index: TransitionIndex,
+            root_marking: &BPMNRootMarking,
+            sub_marking: &BPMNSubMarking,
+            parent: &dyn Processable,
+            bpmn: &BusinessProcessModelAndNotation,
+        ) -> Result<Vec<Token>> {
+        if transition_index < number_of_transitions_xor_join_only!(self) {
+            //behaves like an XOR-join to start
+            return Ok(transition_2_consumed_tokens_xor_join!(self, transition_index, parent));
+        }
+        transition_index -= number_of_transitions_xor_join_only!(self);
+
+        //find the sub-marking that contains the transition index
+        let mut result = vec![];
+        for (instantiation_index, sub_sub_marking) in sub_marking.element_index_2_sub_markings
+            [self.local_index]
+            .iter_mut()
+            .enumerate()
+        {
+            // one transition to end the instantiation
+            if transition_index == 0 {
+                //end the process instance
+                remove_instantiation = Some(instantiation_index);
+                break;
+            }
+            transition_index -= 1;
+
+            // and the transitions within us
+            let number_of_sub_transitions = self.elements.number_of_transitions(sub_sub_marking);
+            if transition_index < number_of_sub_transitions {
+                self.elements
+                    .execute_transition(transition_index, root_marking, sub_sub_marking, self, bpmn)
+                    .with_context(|| format!("Execute transition in sub-process `{}`.", self.id))?;
+                return Ok(());
+            }
+            transition_index -= number_of_sub_transitions;
+        }
+
+        if let Some(remove_instantiation_index) = remove_instantiation {
+            sub_marking.element_index_2_sub_markings[self.local_index]
+                .remove(remove_instantiation_index);
+        }
+
+        Ok(())
     }
 
     fn transition_2_produced_sequence_flow_tokens<'a>(
