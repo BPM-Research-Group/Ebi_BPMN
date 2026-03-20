@@ -1,10 +1,18 @@
 use crate::{
-    BPMNMarking, StochasticBusinessProcessModelAndNotation, marking::Token,
+    BPMNMarking, StochasticBusinessProcessModelAndNotation, if_not::IfNot, marking::Token,
     semantics::TransitionIndex,
 };
 use anyhow::{Context, Result, anyhow};
-use ebi_activity_key::Activity;
+use ebi_activity_key::{Activity, ActivityKey};
 use ebi_arithmetic::{ChooseRandomly, Fraction, One};
+use layout::{
+    core::{base::Orientation, color::Color, geometry::Point, style::StyleAttr},
+    std_shapes::{
+        render::get_shape_size,
+        shapes::{Arrow, Element},
+    },
+    topo::layout::VisualGraph,
+};
 use std::fmt::Debug;
 
 /// A hypergraph representing a partially ordered run of an SBPMN model
@@ -224,6 +232,72 @@ impl PartiallyOrderedRun {
     pub fn number_of_edges(&self) -> usize {
         self.edge_2_activity.len()
     }
+
+    pub fn to_dot(&self, activity_key: &ActivityKey) -> Result<VisualGraph> {
+        let mut graph = VisualGraph::new(layout::core::base::Orientation::TopToBottom);
+
+        //states
+        let state_2_node = (0..self.number_of_states())
+            .map(|state| {
+                let shape = layout::std_shapes::shapes::ShapeKind::Box(format!(
+                    "{:?}",
+                    self.state_2_token[state]
+                ));
+                let look = StyleAttr::simple();
+                let orientation = Orientation::LeftToRight;
+                let size = get_shape_size(orientation, &shape, look.font_size, false);
+                let node = Element::create(shape, look, orientation, size);
+                graph.add_node(node)
+            })
+            .collect::<Vec<_>>();
+
+        //edges
+        for edge in 0..self.number_of_edges() {
+            //midpoint
+            let midpoint = {
+                let node = if let Some(activity) = self
+                    .edge_2_activity
+                    .get(edge)
+                    .and_if_not("Edge not found")?
+                {
+                    let shape = layout::std_shapes::shapes::ShapeKind::Box(
+                        activity_key.deprocess_activity(activity).to_string(),
+                    );
+                    let look = StyleAttr::simple();
+                    let orientation = Orientation::LeftToRight;
+                    let size = get_shape_size(orientation, &shape, look.font_size, false);
+                    Element::create(shape, look, orientation, size)
+                } else {
+                    //silent
+                    let shape = layout::std_shapes::shapes::ShapeKind::Box(String::new());
+                    let mut look = StyleAttr::simple();
+                    look.fill_color = Some(Color::fast("grey"));
+                    let orientation = Orientation::LeftToRight;
+                    let size = Point::new(20., 30.);
+                    Element::create(shape, look, orientation, size)
+                };
+                graph.add_node(node)
+            };
+
+            //connections
+            for input in &self.edge_2_inputs[edge] {
+                graph.add_edge(
+                    Arrow::simple(""),
+                    *state_2_node.get(*input).and_if_not("State not found.")?,
+                    midpoint,
+                );
+            }
+            for output in &self.edge_2_outputs[edge] {
+                graph.add_edge(
+                    Arrow::simple(""),
+                    midpoint,
+                    *state_2_node.get(*output).and_if_not("State not found.")?,
+                );
+            }
+        }
+
+        Ok(graph)
+    }
 }
 
 impl Debug for PartiallyOrderedRun {
@@ -268,6 +342,7 @@ pub(crate) mod tests {
         partially_ordered_run::PartiallyOrderedRun,
         stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     };
+    use ebi_activity_key::HasActivityKey;
     use std::fs::{self};
 
     #[test]
@@ -279,5 +354,23 @@ pub(crate) mod tests {
 
         let run = PartiallyOrderedRun::new_random(&sbpmn).unwrap();
         println!("{:?}", run);
+    }
+
+    #[test]
+    fn po_run_graph() {
+        let fin = fs::read_to_string("testfiles/model.sbpmn").unwrap();
+        let sbpmn = fin
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
+
+        let run = PartiallyOrderedRun::new_random(&sbpmn).unwrap();
+
+        let mut _graph = run.to_dot(sbpmn.activity_key()).unwrap();
+
+        // let mut svg = layout::backends::svg::SVGWriter::new();
+        // graph.do_it(false, false, false, &mut svg);
+        // let svg_string = svg.finalize();
+
+        // fs::write("out.svg", svg_string).unwrap();
     }
 }
