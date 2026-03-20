@@ -146,6 +146,7 @@ pub use creator::GatewayType;
 pub use creator::IntermediateEventType;
 pub use creator::StartEventType;
 pub use marking::BPMNMarking;
+pub use marking::Token;
 pub use message_flow::BPMNMessageFlow;
 pub use parser::parser_state::GlobalIndex;
 pub use sequence_flow::BPMNSequenceFlow;
