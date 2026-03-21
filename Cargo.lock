@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "ebi_bpmn"
-version = "0.0.39"
+version = "0.0.41"
 dependencies = [
  "anyhow",
  "bitvec",
@@ -151,6 +151,7 @@ dependencies = [
  "ebi_bpmn",
  "ebi_derive",
  "itertools",
+ "layout-rs",
  "quick-xml",
  "strum",
  "strum_macros",
@@ -368,6 +369,12 @@ checksum = "cb26cec98cce3a3d96cbb7bced3c4b16e3d13f27ec56dbd62cbc8f39cfb9d653"
 dependencies = [
  "cpufeatures",
 ]
+
+[[package]]
+name = "layout-rs"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b8b38bc67665e362eb770c6b6ae88b48d040d94a0a10c4904c37bc79d263b95"
 
 [[package]]
 name = "leb128fmt"
