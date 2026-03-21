@@ -339,7 +339,6 @@ pub(crate) mod tests {
     use crate::{
         BusinessProcessModelAndNotation,
         marking::Token,
-        partially_ordered_run::tests,
         semantics::{BPMNMarking, BPMNRootMarking, BPMNSubMarking},
         stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
     };
