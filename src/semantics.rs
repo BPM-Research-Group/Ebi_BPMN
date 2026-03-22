@@ -1243,6 +1243,9 @@ pub(crate) mod tests {
         let mut marking = bpmn.get_initial_marking().unwrap().unwrap();
         debug_transitions(&bpmn, &marking);
 
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(0, &marking).unwrap(),
@@ -1250,6 +1253,9 @@ pub(crate) mod tests {
         );
         bpmn.execute_transition(&mut marking, 0).unwrap();
 
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![2]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(2, &marking).unwrap(),
@@ -1257,6 +1263,9 @@ pub(crate) mod tests {
         );
         bpmn.execute_transition(&mut marking, 2).unwrap();
 
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 5]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(5, &marking).unwrap(),
@@ -1264,6 +1273,9 @@ pub(crate) mod tests {
         );
         bpmn.execute_transition(&mut marking, 5).unwrap();
 
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(6, &marking).unwrap(),
@@ -1271,11 +1283,38 @@ pub(crate) mod tests {
         );
         bpmn.execute_transition(&mut marking, 6).unwrap();
 
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(3, &marking).unwrap(),
             vec![Token::SequenceFlow((9, ()))]
         );
         bpmn.execute_transition(&mut marking, 3).unwrap();
+
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 5]);
+        assert_eq!(
+            bpmn.transition_2_produced_tokens(4, &marking).unwrap(),
+            vec![Token::SequenceFlow((8, ()))]
+        );
+        bpmn.execute_transition(&mut marking, 4).unwrap();
+
+        println!("marking: {}", marking);
+
+        assert!(!bpmn.is_final_marking(&marking).unwrap());
+        assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![1]);
+        assert_eq!(
+            bpmn.transition_2_produced_tokens(1, &marking).unwrap(),
+            vec![]
+        );
+        bpmn.execute_transition(&mut marking, 1).unwrap();
+
+        println!("marking: {}", marking);
+
+        assert!(bpmn.is_final_marking(&marking).unwrap());
     }
 }
