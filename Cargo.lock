@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "ebi_bpmn"
-version = "0.0.42"
+version = "0.0.43"
 dependencies = [
  "anyhow",
  "bitvec",

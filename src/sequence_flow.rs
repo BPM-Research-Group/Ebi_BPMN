@@ -1,6 +1,6 @@
 use ebi_arithmetic::{Fraction, Signed};
 
-use crate::parser::parser_state::GlobalIndex;
+use crate::{BusinessProcessModelAndNotation, parser::parser_state::GlobalIndex};
 
 /// A struct that represents a sequence flow in a BPMN model.
 #[derive(Clone, Debug)]
@@ -15,7 +15,7 @@ pub struct BPMNSequenceFlow {
 
     /// A non-negative weight attached to the sequence flow.
     /// Meaningless in a [BusinessProcessModelAndNotation] model, but provides semantics in an [StochasticBusinessProcessModelAndNotation] model.
-    /// 
+    ///
     /// [BusinessProcessModelAndNotation]: crate::BusinessProcessModelAndNotation
     /// [StochasticBusinessProcessModelAndNotation]: crate::StochasticBusinessProcessModelAndNotation
     pub weight: Option<Fraction>,
@@ -34,8 +34,10 @@ impl BPMNSequenceFlow {
         self.target_global_index
     }
 
-    pub fn has_fireable_weight(&self) -> bool {
-        if let Some(weight) = &self.weight {
+    pub fn has_fireable_weight(&self, bpmn: &BusinessProcessModelAndNotation) -> bool {
+        if !bpmn.stochastic_namespace {
+            true
+        } else if let Some(weight) = &self.weight {
             weight.is_positive()
         } else {
             true

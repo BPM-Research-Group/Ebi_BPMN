@@ -132,7 +132,7 @@ impl Transitionable for BPMNExclusiveGateway {
         _root_marking: &BPMNRootMarking,
         sub_marking: &BPMNSubMarking,
         parent: &dyn Processable,
-        _bpmn: &BusinessProcessModelAndNotation,
+        bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
         let mut result = bitvec![0;self.number_of_transitions(sub_marking)];
 
@@ -155,7 +155,7 @@ impl Transitionable for BPMNExclusiveGateway {
                                 .sequence_flows_non_recursive()
                                 .get(*outgoing_sequence_flow_local_index)
                                 .ok_or_else(|| anyhow!("sequence flow not found"))?;
-                            if outgoing_sequence_flow.has_fireable_weight() {
+                            if outgoing_sequence_flow.has_fireable_weight(bpmn) {
                                 let transition = incoming_index * outgoing + outgoing_index;
                                 result.set(transition, true);
                             }
@@ -183,7 +183,7 @@ impl Transitionable for BPMNExclusiveGateway {
                             .sequence_flows_non_recursive()
                             .get(*outgoing_sequence_flow_local_index)
                             .ok_or_else(|| anyhow!("sequence flow not found"))?;
-                        if outgoing_sequence_flow.has_fireable_weight() {
+                        if outgoing_sequence_flow.has_fireable_weight(bpmn) {
                             result.set(outgoing_index, true);
                         }
                     }
