@@ -50,7 +50,7 @@ In accordance with the BPMN standard, a process instance can start as follows:
 
 The interpretation of BPMN of this crate differs from the BPMN 2.0.2 standard on the following aspects:
 * There is no difference made between a deadlock and proper termination. That is, a trace is considered finished if and as soon as it reaches a deadlock.
-* The inclusive (OR) gateway uses a slightly different semantics.
+* The inclusive (OR) gateway uses a slightly different semantics: an OR join can fire if there is no sequence-flow path from a token to the OR join, that does not go through an OR gateway that is lower ranked than the OR join itself.
 * A completely empty model is assumed to have no traces (as opposed to the language with the empty trace).
 * A task with an incoming message flow is allowed after an event-based gateway and will be treated as if it were a receive task.
 
@@ -60,3 +60,8 @@ For more information on these elements, see [this Youtube playlist](https://yout
 
 * The crate does not currenly consider or export layouting (bpmndi) information.
 * There is a maximum number of outgoing sequence flows of an inclusive gateway of 64 (on 64-bits system) or 32 (on 32-bit systems).
+
+# Stochastic
+
+The crate supports stochastic BPMN on a subset of its supported elements.
+Most notably, expanded sub-processes are not supported, while support for inter-pool communication is limited.

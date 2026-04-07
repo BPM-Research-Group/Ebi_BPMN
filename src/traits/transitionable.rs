@@ -25,7 +25,7 @@ pub trait Transitionable {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec>;
 
-    /// Execute the transition
+    /// Execute the transition. It is the job of the caller to ensure the transition is enabled; the method may panic.
     fn execute_transition(
         &self,
         transition_index: TransitionIndex,

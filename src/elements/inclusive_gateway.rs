@@ -1,7 +1,7 @@
 use crate::{
     BPMNSequenceFlow, BusinessProcessModelAndNotation,
     element::BPMNElementTrait,
-    if_not::IfNotDefault,
+    if_not::{IfNot, IfNotDefault},
     marking::{BPMNRootMarking, BPMNSubMarking, Token},
     parser::parser_state::GlobalIndex,
     semantics::TransitionIndex,
@@ -181,7 +181,7 @@ impl Transitionable for BPMNInclusiveGateway {
                     >= 1
                 {
                     // we encountered a token on our search
-                    // not enabled, as that token may end up at the OR join
+                    // OR join is not enabled, as that token may end up at the OR join
                     return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
                 }
 
@@ -189,13 +189,13 @@ impl Transitionable for BPMNInclusiveGateway {
                 if !sub_marking.element_index_2_sub_markings[sequence_flow.source_local_index]
                     .is_empty()
                 {
-                    //not enabled: the instantiation may finish and that token may end up at the OR join
+                    // OR join is not enabled: the instantiation may finish and that token may end up at the OR join
                     return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
                 }
 
                 //check whether the source of this sequence flow is enabled by the initiation mode
                 if sub_marking.element_index_2_tokens[sequence_flow.source_local_index] >= 1 {
-                    //not enabled: this virtual token may end up at the OR join
+                    // OR join is not enabled: this virtual token may end up at the OR join
                     return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
                 }
 
@@ -203,14 +203,19 @@ impl Transitionable for BPMNInclusiveGateway {
                 let source = parent
                     .elements_non_recursive()
                     .get(sequence_flow.source_local_index)
-                    .ok_or_else(|| anyhow!("source not found"))?;
+                    .and_if_not("source not found")?;
                 for next_sequence_flow_index in source.incoming_sequence_flows() {
                     let next_sequence_flow = parent
                         .sequence_flows_non_recursive()
                         .get(*next_sequence_flow_index)
-                        .ok_or_else(|| anyhow!("next sequence flow not found"))?;
+                        .and_if_not("next sequence flow not found")?;
                     if seen_sequence_flows.insert(next_sequence_flow.local_index) {
-                        queue.push_back(*&next_sequence_flow.local_index);
+
+                        // Check whether this source is not an OR gateway itself that is "lower" than our OR join.
+                        // If it is, then we do not count a token that may come from it.
+                        if !source.is_inclusive_gateway() || source.local_index() < self.local_index {
+                            queue.push_back(*&next_sequence_flow.local_index);
+                        }
                     }
                 }
             }
