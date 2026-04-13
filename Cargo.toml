@@ -1,6 +1,6 @@
 [package]
 name = "ebi_bpmn"
-version = "0.0.45"
+version = "0.0.46"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = [
@@ -35,7 +35,7 @@ testactivities = ["ebi_activity_key/testactivities"]
 
 [dependencies]
 ebi_derive = "0.2.10"
-ebi_activity_key = "0.0.1"
+ebi_activity_key = "0.0.2"
 ebi_arithmetic = "0.3.11"
 anyhow = "1.0.102"
 strum = "0.28.0"
