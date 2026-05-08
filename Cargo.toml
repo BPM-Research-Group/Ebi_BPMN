@@ -36,12 +36,12 @@ testactivities = ["ebi_activity_key/testactivities"]
 [dependencies]
 ebi_derive = "0.2.10"
 ebi_activity_key = "0.0.2"
-ebi_arithmetic = "0.3.11"
+ebi_arithmetic = { path = "../Ebi_arithmetic" , version = "0.3.11" }
 anyhow = "1.0.102"
 strum = "0.28.0"
 strum_macros = "0.28.0"
 itertools = "0.14.0"
-quick-xml = { version = "0.39.2", features = ["serialize"] }
+quick-xml = { version = "0.39.4", features = ["serialize"] }
 bitvec = "1.0.1"
 layout-rs = "0.1.3"
 

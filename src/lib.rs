@@ -66,7 +66,7 @@ pub mod elements {
     pub mod user_task;
 }
 pub(crate) mod exporter;
-pub(crate) mod if_not;
+pub mod if_not;
 pub(crate) mod importer;
 pub(crate) mod marking;
 pub(crate) mod message_flow;
@@ -151,3 +151,4 @@ pub use message_flow::BPMNMessageFlow;
 pub use parser::parser_state::GlobalIndex;
 pub use sequence_flow::BPMNSequenceFlow;
 pub use stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation;
+pub use ebi_arithmetic;
