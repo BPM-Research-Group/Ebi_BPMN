@@ -9,7 +9,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagUserTask {}
@@ -76,10 +76,10 @@ impl Closeable for TagUserTask {
                     }));
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a user task."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

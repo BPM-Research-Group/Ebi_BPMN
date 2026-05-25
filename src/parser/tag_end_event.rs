@@ -8,7 +8,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub struct TagEndEvent {}
@@ -80,10 +80,10 @@ impl Closeable for TagEndEvent {
                     }
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected an end event."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a subprocess or process.")),
         }
     }
 }

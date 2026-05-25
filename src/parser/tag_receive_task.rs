@@ -9,7 +9,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::BytesStart;
 
 pub(crate) struct TagReceiveTask {}
@@ -79,10 +79,10 @@ impl Closeable for TagReceiveTask {
                     }));
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a receive task."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

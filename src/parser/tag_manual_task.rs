@@ -1,12 +1,15 @@
 use crate::{
-    element::BPMNElement, elements::manual_task::BPMNManualTask, importer::parse_attribute, parser::{
+    element::BPMNElement,
+    elements::manual_task::BPMNManualTask,
+    importer::parse_attribute,
+    parser::{
         parser::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
-    }
+    },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagManualTask {}
@@ -73,10 +76,10 @@ impl Closeable for TagManualTask {
                     }));
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a manual task."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or a subprocess.")),
         }
     }
 }

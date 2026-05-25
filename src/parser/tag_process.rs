@@ -201,10 +201,10 @@ impl Closeable for TagProcess {
                 }));
                 Ok(())
             } else {
-                unreachable!()
+                return Err(anyhow!("Expected definitions."));
             }
         } else {
-            unreachable!()
+            return Err(anyhow!("Expected a process."));
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::parser::{
     parser_traits::{Closeable, Openable, Recognisable},
     tags::{OpenedTag, Tag},
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagTimerEventDefinition {}
@@ -58,10 +58,10 @@ impl Closeable for TagTimerEventDefinition {
                     *timer_id = Some(id);
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a timer event definition."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected an event.")),
         }
     }
 }

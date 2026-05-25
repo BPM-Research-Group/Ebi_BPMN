@@ -89,10 +89,10 @@ impl Closeable for Collaboration {
                 );
                 Ok(())
             } else {
-                unreachable!()
+                return Err(anyhow!("Expected a collaboration."));
             }
         } else {
-            unreachable!()
+            return Err(anyhow!("Expected definitions."));
         }
     }
 }

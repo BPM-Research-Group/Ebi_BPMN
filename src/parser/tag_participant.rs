@@ -9,7 +9,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagParticipant {}
@@ -99,10 +99,10 @@ impl Closeable for TagParticipant {
                         });
                     }
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a participant."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a collaboration.")),
         }
         Ok(())
     }
