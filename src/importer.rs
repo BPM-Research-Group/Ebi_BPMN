@@ -88,7 +88,7 @@ pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<St
     if let Ok(Some(attribute)) = e.try_get_attribute(attribute_name) {
         Some(
             attribute
-                .decode_and_unescape_value(e.decoder())
+                .decoded_and_normalized_value(quick_xml::XmlVersion::Implicit1_0, e.decoder())
                 .ok()?
                 .as_ref()
                 .to_owned(),
@@ -274,10 +274,9 @@ mod tests {
     #[test]
     fn camunda_credit_scoring_3() {
         // Test case kindly provided by Camunda at https://github.com/camunda/bpmn-for-research
-        let fin = fs::read_to_string(
-            "testfiles/schufa_-_english_9036e9ee5ce6477f9e5f77de6a1f71d7.bpmn",
-        )
-        .unwrap();
+        let fin =
+            fs::read_to_string("testfiles/schufa_-_english_9036e9ee5ce6477f9e5f77de6a1f71d7.bpmn")
+                .unwrap();
         let _bpmn = fin.parse::<BusinessProcessModelAndNotation>().unwrap();
     }
 }
