@@ -270,7 +270,7 @@ impl BPMNCreator {
         parent: Container,
         source: GlobalIndex,
         target: GlobalIndex,
-    ) -> Result<()> {
+    ) -> Result<GlobalIndex> {
         let global_index = self.new_global_index();
         match self.bpmn.global_index_2_element_mut(parent.global_index) {
             Some(BPMNElement::Process(BPMNProcess {
@@ -310,7 +310,7 @@ impl BPMNCreator {
                     target_local_index,
                     weight: None,
                 });
-                Ok(())
+                Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
         }
@@ -321,7 +321,7 @@ impl BPMNCreator {
         parent: Container,
         source: GlobalIndex,
         target: GlobalIndex,
-    ) {
+    ) -> GlobalIndex {
         let global_index = self.new_global_index();
         match self.bpmn.global_index_2_element_mut(parent.global_index) {
             Some(BPMNElement::Process(BPMNProcess {
@@ -357,8 +357,32 @@ impl BPMNCreator {
                     target_local_index,
                     weight: None,
                 });
+                global_index
             }
             _ => panic!("parent not found"),
+        }
+    }
+
+    /// Removes a sequence flow with the given index `sequence_flow` from the `parent`.
+    /// Returns an error if the parent cannot be found.
+    pub fn remove_sequence_flow(
+        &mut self,
+        parent: Container,
+        sequence_flow: GlobalIndex,
+    ) -> Result<()> {
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess {
+                sequence_flows,
+                ..
+            }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                sequence_flows,
+                ..
+            })) => {
+                sequence_flows.retain(|f| f.global_index != sequence_flow);
+                Ok(())
+            },
+            _ => Err(anyhow!("parent not found"))
         }
     }
 }
