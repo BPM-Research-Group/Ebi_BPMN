@@ -458,6 +458,20 @@ impl BPMNCreator {
             _ => Err(anyhow!("parent not found")),
         }
     }
+
+    pub fn source_of_sequence_flow(&self, sequence_flow: GlobalIndex) -> Option<GlobalIndex> {
+        let (sequence_flow, _) = self
+            .bpmn
+            .global_index_2_sequence_flow_and_parent(sequence_flow)?;
+        Some(sequence_flow.source_global_index())
+    }
+
+    pub fn target_of_sequence_flow(&self, sequence_flow: GlobalIndex) -> Option<GlobalIndex> {
+        let (sequence_flow, _) = self
+            .bpmn
+            .global_index_2_sequence_flow_and_parent(sequence_flow)?;
+        Some(sequence_flow.target_global_index())
+    }
 }
 
 #[derive(Copy, Clone)]
