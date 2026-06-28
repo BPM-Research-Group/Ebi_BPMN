@@ -42,6 +42,14 @@ impl BPMNElementTrait for BPMNInclusiveGateway {
         Ok(())
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {
+        self.incoming_sequence_flows.clear();
+    }
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        self.outgoing_sequence_flows.clear();
+    }
+
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!("gateways cannot have incoming message flows"))
     }
@@ -210,10 +218,10 @@ impl Transitionable for BPMNInclusiveGateway {
                         .get(*next_sequence_flow_index)
                         .and_if_not("next sequence flow not found")?;
                     if seen_sequence_flows.insert(next_sequence_flow.local_index) {
-
                         // Check whether this source is not an OR gateway itself that is "lower" than our OR join.
                         // If it is, then we do not count a token that may come from it.
-                        if !source.is_inclusive_gateway() || source.local_index() < self.local_index {
+                        if !source.is_inclusive_gateway() || source.local_index() < self.local_index
+                        {
                             queue.push_back(*&next_sequence_flow.local_index);
                         }
                     }

@@ -70,6 +70,12 @@ pub trait BPMNElementTrait {
     ///Add an outgoing sequence flow to the element. Returns whether successful.
     fn add_outgoing_sequence_flow(&mut self, flow_index: usize) -> Result<()>;
 
+    ///Remove all incoming sequence flows
+    fn clear_incoming_sequence_flows(&mut self);
+
+    ///Remove all outgoing sequence flows
+    fn clear_outgoing_sequence_flows(&mut self);
+
     ///Add an incoming message flow to the element. Returns whether successful.
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()>;
 
@@ -117,6 +123,14 @@ impl BPMNElementTrait for BPMNElement {
 
     fn add_outgoing_sequence_flow(&mut self, flow_index: usize) -> Result<()> {
         enums!(self, add_outgoing_sequence_flow, flow_index)
+    }
+
+    fn clear_incoming_sequence_flows(&mut self) {
+        enums!(self, clear_incoming_sequence_flows,)
+    }
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        enums!(self, clear_outgoing_sequence_flows,)
     }
 
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {

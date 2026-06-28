@@ -42,6 +42,10 @@ impl BPMNElementTrait for BPMNCollapsedPool {
         return Err(anyhow!("cannot add sequence flow from collapsed pool"));
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {}
+
+    fn clear_outgoing_sequence_flows(&mut self) {}
+
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {
         self.incoming_message_flows.push(flow_index);
         Ok(())

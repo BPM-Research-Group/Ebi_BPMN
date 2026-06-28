@@ -58,6 +58,14 @@ impl BPMNElementTrait for BPMNExpandedSubProcess {
         Ok(())
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {
+        self.incoming_sequence_flows.clear();
+    }
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        self.outgoing_sequence_flows.clear();
+    }
+
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
             "expanded sub-processes cannot have incoming message flows"
