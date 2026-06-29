@@ -106,6 +106,14 @@ impl BPMNObject for BPMNTimerIntermediateCatchEvent {
         &self.outgoing_sequence_flows
     }
 
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Ok(&mut self.incoming_sequence_flows)
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Ok(&mut self.outgoing_sequence_flows)
+    }
+
     fn incoming_message_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }

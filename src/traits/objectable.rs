@@ -1,5 +1,5 @@
 use crate::{BusinessProcessModelAndNotation, parser::parser_state::GlobalIndex};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use ebi_activity_key::Activity;
 
 pub(crate) static EMPTY_FLOWS: Vec<usize> = vec![];
@@ -29,6 +29,10 @@ pub trait BPMNObject {
 
     /// the flow indices of the outgoing sequence flows of this object
     fn outgoing_sequence_flows(&self) -> &[usize];
+
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>>;
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>>;
 
     /// the flow indices of the incoming message flows of this object
     fn incoming_message_flows(&self) -> &[usize];
@@ -91,6 +95,14 @@ impl BPMNObject for BusinessProcessModelAndNotation {
 
     fn outgoing_sequence_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
+    }
+
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Err(anyhow!("element does not have incoming sequence flows."))
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Err(anyhow!("element does not have outgoing sequence flows."))
     }
 
     fn incoming_message_flows(&self) -> &[usize] {

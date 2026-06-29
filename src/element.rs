@@ -445,6 +445,14 @@ impl BPMNObject for BPMNElement {
         enums!(self, outgoing_sequence_flows,)
     }
 
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        enums!(self, incoming_sequence_flows_mut,)
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        enums!(self, outgoing_sequence_flows_mut,)
+    }
+
     fn incoming_message_flows(&self) -> &[usize] {
         enums!(self, incoming_message_flows,)
     }

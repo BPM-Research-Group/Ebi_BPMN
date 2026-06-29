@@ -119,6 +119,14 @@ impl BPMNObject for BPMNMessageStartEvent {
         &self.outgoing_sequence_flows
     }
 
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Err(anyhow!("element does not have incoming sequence flows."))
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Ok(&mut self.outgoing_sequence_flows)
+    }
+
     fn incoming_message_flows(&self) -> &[usize] {
         &self.incoming_message_flow.as_slice()
     }

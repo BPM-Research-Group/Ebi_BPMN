@@ -202,6 +202,14 @@ impl BPMNObject for BPMNProcess {
         &EMPTY_FLOWS
     }
 
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Err(anyhow!("element does not have incoming sequence flows."))
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Err(anyhow!("element does not have outgoing sequence flows."))
+    }
+
     fn incoming_message_flows(&self) -> &[usize] {
         &EMPTY_FLOWS
     }

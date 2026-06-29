@@ -109,6 +109,14 @@ impl BPMNObject for BPMNMessageIntermediateCatchEvent {
         &self.outgoing_sequence_flows
     }
 
+    fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Ok(&mut self.incoming_sequence_flows)
+    }
+
+    fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
+        Ok(&mut self.outgoing_sequence_flows)
+    }
+
     fn incoming_message_flows(&self) -> &[usize] {
         self.incoming_message_flow.as_slice()
     }
