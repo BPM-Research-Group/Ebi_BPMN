@@ -269,7 +269,7 @@ impl BPMNCreator {
         parent: Container,
         source: GlobalIndex,
         target: GlobalIndex,
-    ) -> Result<()> {
+    ) -> Result<GlobalIndex> {
         let global_index = self.new_global_index();
         match self.bpmn.global_index_2_element_mut(parent.global_index) {
             Some(BPMNElement::Process(BPMNProcess {
@@ -309,7 +309,7 @@ impl BPMNCreator {
                     target_local_index,
                     weight: None,
                 });
-                Ok(())
+                Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
         }
@@ -320,7 +320,7 @@ impl BPMNCreator {
         parent: Container,
         source: GlobalIndex,
         target: GlobalIndex,
-    ) {
+    ) -> GlobalIndex {
         let global_index = self.new_global_index();
         match self.bpmn.global_index_2_element_mut(parent.global_index) {
             Some(BPMNElement::Process(BPMNProcess {
@@ -356,12 +356,121 @@ impl BPMNCreator {
                     target_local_index,
                     weight: None,
                 });
+                global_index
             }
             _ => panic!("parent not found"),
         }
     }
 
-    
+    /// Removes a sequence flow with the given index `sequence_flow` from the `parent`.
+    /// Returns an error if the parent cannot be found.
+    pub fn remove_sequence_flow(
+        &mut self,
+        parent: Container,
+        sequence_flow: GlobalIndex,
+    ) -> Result<()> {
+        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess {
+                elements,
+                sequence_flows,
+                ..
+            }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                elements,
+                sequence_flows,
+                ..
+            })) => {
+                if let Some(local_index) = sequence_flows
+                    .iter()
+                    .position(|f| f.global_index == sequence_flow)
+                {
+                    //we need to update every local index of every sequence flow that is >= local_index
+                    for element in elements.iter_mut() {
+                        let new_incoming_sequence_flows = element
+                            .incoming_sequence_flows()
+                            .iter()
+                            .filter_map(|x| {
+                                if *x < local_index {
+                                    Some(*x)
+                                } else if *x == local_index {
+                                    None
+                                } else {
+                                    Some(x - 1)
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        element.clear_incoming_sequence_flows();
+                        for nosf in new_incoming_sequence_flows {
+                            element.add_incoming_sequence_flow(nosf)?;
+                        }
+
+                        let new_outgoing_sequence_flows = element
+                            .outgoing_sequence_flows()
+                            .iter()
+                            .filter_map(|x| {
+                                if *x < local_index {
+                                    Some(*x)
+                                } else if *x == local_index {
+                                    None
+                                } else {
+                                    Some(x - 1)
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        element.clear_outgoing_sequence_flows();
+                        for nosf in new_outgoing_sequence_flows {
+                            element.add_outgoing_sequence_flow(nosf)?;
+                        }
+                    }
+
+                    sequence_flows.retain(|f| f.global_index != sequence_flow);
+                    Ok(())
+                } else {
+                    Err(anyhow!("Sequence flow not found."))
+                }
+            }
+            _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn outgoing_sequence_flows_of_element(
+        &self,
+        parent: Container,
+        element: GlobalIndex,
+    ) -> Result<impl Iterator<Item = GlobalIndex>> {
+        match self.bpmn.global_index_2_element(parent.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                sequence_flows,
+                ..
+            })) => {
+                let element = self
+                    .bpmn
+                    .global_index_2_element(element)
+                    .ok_or_else(|| anyhow!("Element not found."))?;
+
+                Ok(element
+                    .outgoing_sequence_flows()
+                    .iter()
+                    .map(|local_id| sequence_flows[*local_id].global_index))
+            }
+            _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn source_of_sequence_flow(&self, sequence_flow: GlobalIndex) -> Option<GlobalIndex> {
+        let (sequence_flow, _) = self
+            .bpmn
+            .global_index_2_sequence_flow_and_parent(sequence_flow)?;
+        Some(sequence_flow.source_global_index())
+    }
+
+    pub fn target_of_sequence_flow(&self, sequence_flow: GlobalIndex) -> Option<GlobalIndex> {
+        let (sequence_flow, _) = self
+            .bpmn
+            .global_index_2_sequence_flow_and_parent(sequence_flow)?;
+        Some(sequence_flow.target_global_index())
+    }
 }
 
 #[derive(Copy, Clone)]

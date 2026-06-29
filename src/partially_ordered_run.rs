@@ -62,13 +62,13 @@ impl PartiallyOrderedRun {
     }
 
     /// Front states are states that have no outgoing edge. That is, the token is still there.
-    fn front_states(&self) -> Vec<usize> {
+    pub fn front_states(&self) -> Vec<usize> {
         (0..self.number_of_states())
             .filter(|state| self.state_2_output_edge[*state].is_none())
             .collect()
     }
 
-    fn get_marking(
+    pub fn get_marking(
         &self,
         front_states: &Vec<usize>,
         sbpmn: &StochasticBusinessProcessModelAndNotation,
@@ -84,7 +84,7 @@ impl PartiallyOrderedRun {
         Ok(marking)
     }
 
-    fn tokens_to_states(
+    pub fn tokens_to_states(
         &self,
         tokens: Vec<Token>,
         front_states: &Vec<usize>,
@@ -104,7 +104,7 @@ impl PartiallyOrderedRun {
         }
     }
 
-    fn execute_random_transition(
+    pub fn execute_random_transition(
         &mut self,
         sbpmn: &StochasticBusinessProcessModelAndNotation,
     ) -> Result<()> {
@@ -148,7 +148,7 @@ impl PartiallyOrderedRun {
 
     /// Find an arbitrary transition without weight cost and execute it.
     /// Returns whether a transition was executed.
-    fn execute_a_free_transition(
+    pub fn execute_a_free_transition(
         &mut self,
         sbpmn: &StochasticBusinessProcessModelAndNotation,
     ) -> Result<bool> {

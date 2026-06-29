@@ -8,7 +8,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub struct TagInclusiveGateway {}
@@ -64,10 +64,10 @@ impl Closeable for TagInclusiveGateway {
                     }));
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected an inclusive gateway."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or a subprocess.")),
         }
     }
 }

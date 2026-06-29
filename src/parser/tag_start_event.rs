@@ -105,10 +105,10 @@ impl Closeable for TagStartEvent {
                     }
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a start event."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

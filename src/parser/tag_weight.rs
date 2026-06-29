@@ -60,10 +60,10 @@ impl Closeable for TagWeight {
                     *seq_weight = Some(weight);
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a weight."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a sequence flow.")),
         }
     }
 }

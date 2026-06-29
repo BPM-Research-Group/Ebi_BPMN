@@ -8,7 +8,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub struct TagParallelGateway {}
@@ -64,10 +64,10 @@ impl Closeable for TagParallelGateway {
                     }));
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a parallel gateway."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

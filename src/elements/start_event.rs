@@ -36,6 +36,12 @@ impl BPMNElementTrait for BPMNStartEvent {
         Ok(())
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {}
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        self.outgoing_sequence_flows.clear();
+    }
+
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!("start events cannot have incoming message flows"))
     }

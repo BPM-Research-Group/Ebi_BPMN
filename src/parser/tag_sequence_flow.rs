@@ -87,10 +87,10 @@ impl Closeable for TagSequenceFlow {
                     });
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected a sequence flow."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

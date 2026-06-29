@@ -43,6 +43,14 @@ impl BPMNElementTrait for BPMNReceiveTask {
         Ok(())
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {
+        self.incoming_sequence_flows.clear();
+    }
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        self.outgoing_sequence_flows.clear();
+    }
+
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {
         if self.incoming_message_flow.is_some() {
             return Err(anyhow!(

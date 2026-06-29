@@ -43,6 +43,14 @@ impl BPMNElementTrait for BPMNCollapsedSubProcess {
         Ok(())
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {
+        self.incoming_sequence_flows.clear();
+    }
+
+    fn clear_outgoing_sequence_flows(&mut self) {
+        self.outgoing_sequence_flows.clear();
+    }
+
     fn add_incoming_message_flow(&mut self, flow_index: usize) -> Result<()> {
         self.incoming_message_flows.push(flow_index);
         Ok(())

@@ -32,6 +32,7 @@ pub struct BPMNTimerStartEvent {
 }
 
 impl BPMNElementTrait for BPMNTimerStartEvent {
+    
     fn add_incoming_sequence_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(
             "timer start events cannot have incoming sequence flows"
@@ -42,6 +43,10 @@ impl BPMNElementTrait for BPMNTimerStartEvent {
         self.outgoing_sequence_flows.push(flow_index);
         Ok(())
     }
+
+    fn clear_incoming_sequence_flows(&mut self) {}
+
+    fn clear_outgoing_sequence_flows(&mut self) {self.outgoing_sequence_flows.clear();}
 
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> Result<()> {
         Err(anyhow!(

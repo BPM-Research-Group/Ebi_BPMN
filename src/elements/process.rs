@@ -153,6 +153,10 @@ impl BPMNElementTrait for BPMNProcess {
         Err(anyhow!("processes cannot have outgoing sequence flows"))
     }
 
+    fn clear_incoming_sequence_flows(&mut self) {}
+
+    fn clear_outgoing_sequence_flows(&mut self) {}
+
     fn add_incoming_message_flow(&mut self, _flow_index: usize) -> anyhow::Result<()> {
         Err(anyhow!("processes cannot have incoming message flows"))
     }

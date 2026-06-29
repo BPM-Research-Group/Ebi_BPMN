@@ -11,7 +11,7 @@ use crate::{
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagIntermediateThrowEvent {}
@@ -89,10 +89,10 @@ impl Closeable for TagIntermediateThrowEvent {
                     }
                     Ok(())
                 } else {
-                    unreachable!()
+                    return Err(anyhow!("Expected an intermediate throw event."));
                 }
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

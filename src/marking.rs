@@ -5,6 +5,7 @@ use crate::{
     traits::{objectable::BPMNObject, processable::Processable, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
+use itertools::Itertools;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -150,10 +151,57 @@ impl BPMNMarking {
     }
 }
 
+impl Display for BPMNMarking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{")?;
+        if !self.root_marking.is_empty() {
+            write!(f, "root: {}", self.root_marking)?;
+        }
+        if self
+            .element_index_2_sub_markings
+            .iter()
+            .any(|x| !x.is_empty())
+        {
+            write!(f, "sub-markings: [")?;
+            for (i, x) in self.element_index_2_sub_markings.iter().enumerate() {
+                write!(f, "{}: {}", i, x)?;
+            }
+            write!(f, "]")?;
+        }
+        write!(f, "}}")
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct BPMNRootMarking {
     pub(crate) root_initial_choice_token: bool,
     pub(crate) message_flow_2_tokens: Vec<u64>,
+}
+
+impl BPMNRootMarking {
+    pub fn is_empty(&self) -> bool {
+        !self.root_initial_choice_token && self.message_flow_2_tokens.iter().all(|x| x == &0)
+    }
+}
+
+impl Display for BPMNRootMarking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.is_empty() {
+            write!(f, "empty")
+        } else {
+            if self.root_initial_choice_token {
+                write!(f, "initial choice")?;
+            }
+            if self.message_flow_2_tokens.iter().any(|x| x > &0) {
+                write!(f, "messages: [")?;
+                for message_flow in &self.message_flow_2_tokens {
+                    write!(f, "{}", message_flow)?;
+                }
+                write!(f, "]")?;
+            }
+            write!(f, "")
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -164,12 +212,6 @@ pub struct BPMNSubMarking {
     pub(crate) element_index_2_sub_markings: Vec<Vec<BPMNSubMarking>>,
 }
 
-impl Display for BPMNMarking {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", stringify!(self))
-    }
-}
-
 impl BPMNSubMarking {
     pub(crate) fn new_empty() -> Self {
         Self {
@@ -178,6 +220,94 @@ impl BPMNSubMarking {
             element_index_2_tokens: vec![],
             element_index_2_sub_markings: vec![],
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.sequence_flow_2_tokens.iter().all(|x| *x == 0)
+            && !self.initial_choice_token
+            && self.element_index_2_tokens.iter().all(|x| x == &0)
+            && self
+                .element_index_2_sub_markings
+                .iter()
+                .all(|s| s.is_empty())
+    }
+}
+
+impl Display for BPMNSubMarking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut result = vec![];
+        if self.initial_choice_token {
+            result.push("initial choice".to_string());
+        }
+
+        if self.sequence_flow_2_tokens.iter().any(|x| *x > 0) {
+            result.push(format!(
+                "sequence flows: [{}]",
+                self.sequence_flow_2_tokens
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, x)| {
+                        if x > &1 {
+                            Some(format!("{}^{}", i, x))
+                        } else if *x == 1 {
+                            Some(format!("{}", i))
+                        } else {
+                            None
+                        }
+                    })
+                    .join(", ")
+            ));
+        }
+
+        if self.element_index_2_tokens.iter().any(|x| *x > 0) {
+            result.push(format!(
+                "elements: [{}]",
+                self.element_index_2_tokens
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, x)| {
+                        if x > &1 {
+                            Some(format!("{}^{}", i, x))
+                        } else if *x == 1 {
+                            Some(format!("{}", i))
+                        } else {
+                            None
+                        }
+                    })
+                    .join(", ")
+            ));
+        }
+
+        if self
+            .element_index_2_sub_markings
+            .iter()
+            .any(|x| x.len() > 0)
+        {
+            result.push(format!(
+                "\nsub-markings [{}]",
+                self.element_index_2_sub_markings
+                    .iter()
+                    .enumerate()
+                    .map(|(i, x)| {
+                        if x.len() > 1 {
+                            format!(
+                                "{}: [{}]",
+                                i,
+                                x.iter().map(|submarking| submarking.to_string()).join("\n")
+                            )
+                        } else {
+                            format!(
+                                "{}: {}",
+                                i,
+                                x.iter().map(|submarking| submarking.to_string()).join("")
+                            )
+                        }
+                    })
+                    .join(", ")
+            ));
+        }
+
+        write!(f, "{{{}}}", result.join(", "))
     }
 }
 
