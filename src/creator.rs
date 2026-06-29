@@ -514,114 +514,84 @@ impl BPMNCreator {
             .collect()
     }
 
-    /// Replace a gateway with another.
-    pub fn set_gateway_type(
+    /// Swaps the incoming sequence flows of two elements.
+    /// Returns an error if one of the elements cannot have incoming sequence flows.
+    pub fn swap_incoming_sequence_flows(
         &mut self,
-        element: GlobalIndex,
-        gateway_type: GatewayType,
+        element_a: GlobalIndex,
+        element_b: GlobalIndex,
     ) -> Result<()> {
-        let global_index = element;
-        let mut element = self
-            .bpmn
-            .global_index_2_element_mut(global_index)
-            .ok_or_else(|| anyhow!("Element {:?} not found.", global_index))?;
-        let local_index = element.local_index();
-        let mut new_element = gateway_type.to_element(global_index, local_index);
-
-        match (&mut element, &mut new_element) {
-            (BPMNElement::ExclusiveGateway(_), BPMNElement::ExclusiveGateway(_)) => Ok(()),
-            (BPMNElement::ExclusiveGateway(gateway), BPMNElement::ParallelGateway(new_gateway)) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (
-                BPMNElement::ExclusiveGateway(gateway),
-                BPMNElement::InclusiveGateway(new_gateway),
-            ) => swap!(gateway, new_gateway, element, &mut new_element),
-            (
-                BPMNElement::ExclusiveGateway(gateway),
-                BPMNElement::EventBasedGateway(new_gateway),
-            ) => swap!(gateway, new_gateway, element, &mut new_element),
-            //
-            (BPMNElement::ParallelGateway(gateway), BPMNElement::ExclusiveGateway(new_gateway)) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (BPMNElement::ParallelGateway(_), BPMNElement::ParallelGateway(_)) => Ok(()),
-            (BPMNElement::ParallelGateway(gateway), BPMNElement::InclusiveGateway(new_gateway)) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (
-                BPMNElement::ParallelGateway(gateway),
-                BPMNElement::EventBasedGateway(new_gateway),
-            ) => swap!(gateway, new_gateway, element, &mut new_element),
-            //
-            (
-                BPMNElement::InclusiveGateway(gateway),
-                BPMNElement::ExclusiveGateway(new_gateway),
-            ) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (BPMNElement::InclusiveGateway(gateway), BPMNElement::ParallelGateway(new_gateway)) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (BPMNElement::InclusiveGateway(_), BPMNElement::InclusiveGateway(_)) => Ok(()),
-            (
-                BPMNElement::InclusiveGateway(gateway),
-                BPMNElement::EventBasedGateway(new_gateway),
-            ) => swap!(gateway, new_gateway, element, &mut new_element),
-            //
-            (
-                BPMNElement::EventBasedGateway(gateway),
-                BPMNElement::ExclusiveGateway(new_gateway),
-            ) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (
-                BPMNElement::EventBasedGateway(gateway),
-                BPMNElement::ParallelGateway(new_gateway),
-            ) => {
-                swap!(gateway, new_gateway, element, &mut new_element)
-            }
-            (
-                BPMNElement::EventBasedGateway(gateway),
-                BPMNElement::InclusiveGateway(new_gateway),
-            ) => swap!(gateway, new_gateway, element, &mut new_element),
-            (BPMNElement::EventBasedGateway(_), BPMNElement::EventBasedGateway(_)) => Ok(()),
-            //
-            (element, new_element) => Err(anyhow!(
-                "Cannot replace element {:?} with a gateway {:?}. Is the former a gateway?",
-                element,
-                new_element
-            )),
-        }
-    }
-
-    /// Split a gateway. One gets the incoming sequence flows and the other gets the outgoing sequence flows of the original gateway.
-    /// There'll be a sequence flow between the two new gateways.
-    /// Visually: -> A -> is transformed into -> A -> A2 ->.
-    /// Returns the new gateway.
-    pub fn split_gateway(
-        &mut self,
-        gateway: GlobalIndex,
-        new_gateway_type: GatewayType,
-    ) -> Result<GlobalIndex> {
-        let parent = Container {
+        let parent_a = Container {
             global_index: self
                 .bpmn
-                .parent_of(gateway)
+                .parent_of(element_a)
                 .and_if_not("Parent not found.")?
                 .global_index(),
         };
 
-        //create new gateway
-        let new_gateway_global_index = self.add_gateway(parent, new_gateway_type)?;
+        let parent_b = Container {
+            global_index: self
+                .bpmn
+                .parent_of(element_b)
+                .and_if_not("Parent not found.")?
+                .global_index(),
+        };
 
-        //swap outgoing sequence flows
-        self.swap_outgoing_sequence_flows(gateway, new_gateway_global_index)?;
+        if parent_a != parent_b {
+            return Err(anyhow!("Elements have different parents."));
+        }
 
-        //add sequence flow
-        self.add_sequence_flow(parent, gateway, new_gateway_global_index)?;
+        let element_a_global_index = element_a;
+        let element_b_global_index = element_b;
 
-        Ok(new_gateway_global_index)
+        //first, swap the pointers to the flows within the elements
+        let element_a = self
+            .bpmn
+            .global_index_2_element_mut(element_a_global_index)
+            .and_if_not("Element not found.")?;
+        let element_a_local_index = element_a.local_index();
+        let incoming_a = std::mem::take(element_a.incoming_sequence_flows_mut()?);
+
+        let element_b = self
+            .bpmn
+            .global_index_2_element_mut(element_b_global_index)
+            .and_if_not("Element not found.")?;
+        let element_b_local_index = element_b.local_index();
+        let incoming_b = std::mem::take(element_b.incoming_sequence_flows_mut()?);
+
+        let element_a = self
+            .bpmn
+            .global_index_2_element_mut(element_a_global_index)
+            .and_if_not("Element not found.")?;
+        _ = std::mem::replace(element_a.incoming_sequence_flows_mut()?, incoming_b.clone());
+
+        let element_b = self
+            .bpmn
+            .global_index_2_element_mut(element_b_global_index)
+            .and_if_not("Element not found.")?;
+        _ = std::mem::replace(element_b.incoming_sequence_flows_mut()?, incoming_a.clone());
+
+        //second, update the pointers in the sequence flows of the parent
+        match self.bpmn.global_index_2_element_mut(parent_a.global_index) {
+            Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                sequence_flows,
+                ..
+            })) => {
+                for sequence_flow_local_index in incoming_a {
+                    let sequence_flow = &mut sequence_flows[sequence_flow_local_index];
+                    sequence_flow.target_global_index = element_b_global_index;
+                    sequence_flow.target_local_index = element_b_local_index;
+                }
+                for sequence_flow_local_index in incoming_b {
+                    let sequence_flow = &mut sequence_flows[sequence_flow_local_index];
+                    sequence_flow.target_global_index = element_a_global_index;
+                    sequence_flow.target_local_index = element_a_local_index;
+                }
+            }
+            _ => return Err(anyhow!("Parent not found.")),
+        }
+        Ok(())
     }
 
     /// Swaps the outgoing sequence flows of two elements.
@@ -704,23 +674,6 @@ impl BPMNCreator {
         Ok(())
     }
 }
-
-macro_rules! swap {
-    ($gateway:expr,$new_gateway:expr,$element:expr,$new_element:expr) => {{
-        std::mem::swap(
-            &mut $gateway.incoming_sequence_flows,
-            &mut $new_gateway.incoming_sequence_flows,
-        );
-        std::mem::swap(
-            &mut $gateway.outgoing_sequence_flows,
-            &mut $new_gateway.outgoing_sequence_flows,
-        );
-        std::mem::swap(&mut $gateway.id, &mut $new_gateway.id);
-        std::mem::swap($element, $new_element);
-        Ok(())
-    }};
-}
-pub(self) use swap;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Container {
