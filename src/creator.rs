@@ -384,10 +384,14 @@ impl BPMNCreator {
     /// Returns an error if the parent cannot be found.
     pub fn remove_sequence_flow(
         &mut self,
-        parent: Container,
         sequence_flow: GlobalIndex,
     ) -> Result<()> {
-        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+        let parent = self
+            .bpmn
+            .parent_of(sequence_flow)
+            .and_if_not("Parent not found.")?;
+
+        match self.bpmn.global_index_2_element_mut(parent.global_index()) {
             Some(BPMNElement::Process(BPMNProcess {
                 elements,
                 sequence_flows,
@@ -487,6 +491,7 @@ impl BPMNCreator {
             .bpmn
             .parent_of(element)
             .and_if_not("Parent not found.")?;
+
         match self.bpmn.global_index_2_element(parent.global_index()) {
             Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
