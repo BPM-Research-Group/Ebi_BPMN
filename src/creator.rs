@@ -435,12 +435,43 @@ impl BPMNCreator {
         }
     }
 
-    pub fn outgoing_sequence_flows_of_element(
+    pub fn incoming_sequence_flows_of_element(
         &self,
-        parent: Container,
         element: GlobalIndex,
     ) -> Result<impl Iterator<Item = GlobalIndex>> {
-        match self.bpmn.global_index_2_element(parent.global_index) {
+        let parent = self
+            .bpmn
+            .parent_of(element)
+            .and_if_not("Parent not found.")?;
+        match self.bpmn.global_index_2_element(parent.global_index()) {
+            Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
+            | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+                sequence_flows,
+                ..
+            })) => {
+                let element = self
+                    .bpmn
+                    .global_index_2_element(element)
+                    .ok_or_else(|| anyhow!("Element not found."))?;
+
+                Ok(element
+                    .incoming_sequence_flows()
+                    .iter()
+                    .map(|local_id| sequence_flows[*local_id].global_index))
+            }
+            _ => Err(anyhow!("parent not found")),
+        }
+    }
+
+    pub fn outgoing_sequence_flows_of_element(
+        &self,
+        element: GlobalIndex,
+    ) -> Result<impl Iterator<Item = GlobalIndex>> {
+        let parent = self
+            .bpmn
+            .parent_of(element)
+            .and_if_not("Parent not found.")?;
+        match self.bpmn.global_index_2_element(parent.global_index()) {
             Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
                 sequence_flows,
@@ -496,7 +527,7 @@ impl BPMNCreator {
             .ok_or_else(|| anyhow!("Element {:?} not found.", global_index))?;
         let local_index = element.local_index();
         let mut new_element = gateway_type.to_element(global_index, local_index);
-        
+
         match (&mut element, &mut new_element) {
             (BPMNElement::ExclusiveGateway(_), BPMNElement::ExclusiveGateway(_)) => Ok(()),
             (BPMNElement::ExclusiveGateway(gateway), BPMNElement::ParallelGateway(new_gateway)) => {
