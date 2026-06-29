@@ -268,12 +268,28 @@ impl BPMNCreator {
 
     pub fn add_sequence_flow(
         &mut self,
-        parent: Container,
         source: GlobalIndex,
         target: GlobalIndex,
     ) -> Result<GlobalIndex> {
         let global_index = self.new_global_index();
-        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+        let parent_a = self
+            .bpmn
+            .parent_of(source)
+            .and_if_not("Parent not found.")?;
+
+        let parent_b = self
+            .bpmn
+            .parent_of(target)
+            .and_if_not("Parent not found.")?;
+
+        if parent_a.global_index() != parent_b.global_index() {
+            return Err(anyhow!("Elements have different parents."));
+        }
+
+        match self
+            .bpmn
+            .global_index_2_element_mut(parent_a.global_index())
+        {
             Some(BPMNElement::Process(BPMNProcess {
                 elements,
                 sequence_flows,
@@ -596,7 +612,7 @@ impl BPMNCreator {
 
     /// Swaps the outgoing sequence flows of two elements.
     /// Returns an error if one of the elements cannot have outgoing sequence flows.
-    fn swap_outgoing_sequence_flows(
+    pub fn swap_outgoing_sequence_flows(
         &mut self,
         element_a: GlobalIndex,
         element_b: GlobalIndex,
