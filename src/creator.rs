@@ -21,9 +21,8 @@ use crate::{
 use anyhow::{Result, anyhow};
 use ebi_activity_key::{Activity, ActivityKey};
 
-/**
- * A struct that assists with creating BPMN models programmatically.
- */
+/// A helper struct that assists with creating BPMN models programmatically.
+/// The advantage of a [BPMNCreator] over editing a [BusinessProcessModelAndNotation] struct directly is that the methods of a [BPMNCreator] are guaranteed to leave the model in a valid state.
 pub struct BPMNCreator {
     bpmn: BusinessProcessModelAndNotation,
     max_id: usize,
@@ -361,6 +360,8 @@ impl BPMNCreator {
             _ => panic!("parent not found"),
         }
     }
+
+    
 }
 
 #[derive(Copy, Clone)]

@@ -36,7 +36,7 @@ use std::fmt::{Display, Formatter};
 ///  }
 ///  ```
 ///
-///  To create a BPMN model programmatically, please consider using a [BPMNCreator].
+///  To create or edit a BPMN model programmatically, please consider using a [BPMNCreator].
 ///
 /// [BPMNCreator]: crate::BPMNCreator
 
