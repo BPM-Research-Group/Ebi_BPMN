@@ -601,15 +601,22 @@ impl BPMNCreator {
     /// Returns the new gateway.
     pub fn split_gateway(
         &mut self,
-        parent: Container,
         gateway: GlobalIndex,
         new_gateway_type: GatewayType,
     ) -> Result<GlobalIndex> {
+        let parent = Container {
+            global_index: self
+                .bpmn
+                .parent_of(gateway)
+                .and_if_not("Parent not found.")?
+                .global_index(),
+        };
+
         //create new gateway
         let new_gateway_global_index = self.add_gateway(parent, new_gateway_type)?;
 
         //swap outgoing sequence flows
-        self.swap_outgoing_sequence_flows(parent, gateway, new_gateway_global_index)?;
+        self.swap_outgoing_sequence_flows(gateway, new_gateway_global_index)?;
 
         //add sequence flow
         self.add_sequence_flow(parent, gateway, new_gateway_global_index)?;
@@ -621,10 +628,29 @@ impl BPMNCreator {
     /// Returns an error if one of the elements cannot have outgoing sequence flows.
     fn swap_outgoing_sequence_flows(
         &mut self,
-        parent: Container,
         element_a: GlobalIndex,
         element_b: GlobalIndex,
     ) -> Result<()> {
+        let parent_a = Container {
+            global_index: self
+                .bpmn
+                .parent_of(element_a)
+                .and_if_not("Parent not found.")?
+                .global_index(),
+        };
+
+        let parent_b = Container {
+            global_index: self
+                .bpmn
+                .parent_of(element_b)
+                .and_if_not("Parent not found.")?
+                .global_index(),
+        };
+
+        if parent_a != parent_b {
+            return Err(anyhow!("Elements have different parents."));
+        }
+
         let element_a_global_index = element_a;
         let element_b_global_index = element_b;
 
@@ -656,7 +682,7 @@ impl BPMNCreator {
         _ = std::mem::replace(element_b.outgoing_sequence_flows_mut()?, outgoing_a.clone());
 
         //second, update the pointers in the sequence flows of the parent
-        match self.bpmn.global_index_2_element_mut(parent.global_index) {
+        match self.bpmn.global_index_2_element_mut(parent_a.global_index) {
             Some(BPMNElement::Process(BPMNProcess { sequence_flows, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
                 sequence_flows,
@@ -696,7 +722,7 @@ macro_rules! swap {
 }
 pub(self) use swap;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Container {
     global_index: GlobalIndex,
 }
