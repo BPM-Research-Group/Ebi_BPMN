@@ -21,6 +21,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use ebi_activity_key::{Activity, ActivityKey};
+use std::fmt::{Debug, Display};
 
 /// A helper struct that assists with creating BPMN models programmatically.
 /// The advantage of a [BPMNCreator] over editing a [BusinessProcessModelAndNotation] struct directly is that the methods of a [BPMNCreator] are guaranteed to leave the model in a valid state.
@@ -382,10 +383,7 @@ impl BPMNCreator {
 
     /// Removes a sequence flow with the given index `sequence_flow` from the `parent`.
     /// Returns an error if the parent cannot be found.
-    pub fn remove_sequence_flow(
-        &mut self,
-        sequence_flow: GlobalIndex,
-    ) -> Result<()> {
+    pub fn remove_sequence_flow(&mut self, sequence_flow: GlobalIndex) -> Result<()> {
         let parent = self
             .bpmn
             .parent_of(sequence_flow)
@@ -693,6 +691,18 @@ impl BPMNCreator {
             _ => return Err(anyhow!("Parent not found.")),
         }
         Ok(())
+    }
+}
+
+impl Debug for BPMNCreator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BPMNCreator").field("bpmn", &self.bpmn).finish()
+    }
+}
+
+impl Display for BPMNCreator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.bpmn)
     }
 }
 
