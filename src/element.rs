@@ -156,13 +156,21 @@ impl Searchable for BPMNElement {
             Some((Some(self.local_index()), self.global_index()))
         } else if self.id() == search_id {
             Some((None, self.global_index()))
-        } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
-        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
+        } else if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess {
+            elements,
+            sequence_flows,
+            ..
+        })
+        | BPMNElement::Process(BPMNProcess {
+            elements,
+            sequence_flows,
+            ..
+        }) = self
         {
             if let Some((_, index)) = elements.id_2_pool_and_global_index(search_id) {
                 Some((Some(self.local_index()), index))
             } else {
-                None
+                sequence_flows.id_2_pool_and_global_index(search_id)
             }
         } else {
             None
@@ -170,10 +178,10 @@ impl Searchable for BPMNElement {
     }
 
     fn id_2_local_index(&self, id: &str) -> Option<usize> {
-        if let BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })
-        | BPMNElement::Process(BPMNProcess { elements, .. }) = self
-        {
-            elements.id_2_local_index(id)
+        if let BPMNElement::ExpandedSubProcess(process) = self {
+            process.id_2_local_index(id)
+        } else if let BPMNElement::Process(process) = self {
+            process.id_2_local_index(id)
         } else {
             None
         }
@@ -182,7 +190,7 @@ impl Searchable for BPMNElement {
     fn global_index_2_sequence_flow_and_parent(
         &self,
         sequence_flow_global_index: GlobalIndex,
-    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
+    ) -> Option<(&BPMNSequenceFlow, Option<&dyn Processable>)> {
         if let BPMNElement::Process(process) = self {
             process.global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
         } else if let BPMNElement::ExpandedSubProcess(process) = self {

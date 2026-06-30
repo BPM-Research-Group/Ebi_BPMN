@@ -141,8 +141,14 @@ impl BusinessProcessModelAndNotation {
         &self,
         sequence_flow_global_index: GlobalIndex,
     ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
-        self.elements
+        match self
+            .elements
             .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
+        {
+            Some((flow, Some(parent))) => Some((flow, parent)),
+            Some((_, None)) => None, //every sequence flow has a parent, so this should never happen
+            None => None,
+        }
     }
 
     /// Returns the sequence flow with this index, if it exists (recurses).
