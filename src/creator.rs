@@ -787,13 +787,13 @@ impl EndEventType {
         match self {
             EndEventType::None => BPMNElement::EndEvent(BPMNEndEvent {
                 global_index,
-                id: format!("startevent_{}", global_index.0),
+                id: format!("endevent_{}", global_index.0),
                 local_index,
                 incoming_sequence_flows: vec![],
             }),
             EndEventType::Message => BPMNElement::MessageEndEvent(BPMNMessageEndEvent {
                 global_index,
-                id: format!("startevent_{}", global_index.0),
+                id: format!("endevent_{}", global_index.0),
                 local_index,
                 incoming_sequence_flows: vec![],
                 message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
