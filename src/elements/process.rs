@@ -49,17 +49,27 @@ impl Searchable for BPMNProcess {
     fn global_index_2_sequence_flow_and_parent(
         &self,
         sequence_flow_global_index: GlobalIndex,
-    ) -> Option<(&BPMNSequenceFlow, &dyn Processable)> {
-        for sequence_flow in &self.sequence_flows {
-            if sequence_flow.global_index == sequence_flow_global_index {
-                return Some((sequence_flow, self));
+    ) -> Option<(&BPMNSequenceFlow, Option<&dyn Processable>)> {
+        if let Some((flow, parent)) = self
+            .sequence_flows
+            .global_index_2_sequence_flow_and_parent(sequence_flow_global_index)
+        {
+            if parent.is_some() {
+                Some((flow, parent))
+            } else {
+                Some((flow, Some(self)))
             }
+        } else {
+            None
         }
-        None
     }
 
     fn id_2_local_index(&self, id: &str) -> Option<usize> {
-        self.elements.id_2_local_index(id)
+        if let Some(x) = self.elements.id_2_local_index(id) {
+            Some(x)
+        } else {
+            self.sequence_flows.id_2_local_index(id)
+        }
     }
 
     fn all_elements_ref(&self) -> Vec<&BPMNElement> {
@@ -70,6 +80,13 @@ impl Searchable for BPMNProcess {
         if self.global_index == global_index {
             (None, true)
         } else {
+            let x = self.sequence_flows.parent_of(global_index);
+            if x.1 && x.0.is_none() {
+                return (Some(self), true);
+            } else if x.1 {
+                return x;
+            }
+
             let x = self.elements.parent_of(global_index);
             if x.1 && x.0.is_none() {
                 (Some(self), true)

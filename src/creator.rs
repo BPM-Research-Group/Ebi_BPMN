@@ -21,6 +21,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use ebi_activity_key::{Activity, ActivityKey};
+use std::fmt::{Debug, Display};
 
 /// A helper struct that assists with creating BPMN models programmatically.
 /// The advantage of a [BPMNCreator] over editing a [BusinessProcessModelAndNotation] struct directly is that the methods of a [BPMNCreator] are guaranteed to leave the model in a valid state.
@@ -693,6 +694,18 @@ impl BPMNCreator {
     }
 }
 
+impl Debug for BPMNCreator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BPMNCreator").field("bpmn", &self.bpmn).finish()
+    }
+}
+
+impl Display for BPMNCreator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.bpmn)
+    }
+}
+
 #[derive(Copy, Clone, PartialEq)]
 pub struct Container {
     global_index: GlobalIndex,
@@ -784,13 +797,13 @@ impl EndEventType {
         match self {
             EndEventType::None => BPMNElement::EndEvent(BPMNEndEvent {
                 global_index,
-                id: format!("startevent_{}", global_index.0),
+                id: format!("endevent_{}", global_index.0),
                 local_index,
                 incoming_sequence_flows: vec![],
             }),
             EndEventType::Message => BPMNElement::MessageEndEvent(BPMNMessageEndEvent {
                 global_index,
-                id: format!("startevent_{}", global_index.0),
+                id: format!("endevent_{}", global_index.0),
                 local_index,
                 incoming_sequence_flows: vec![],
                 message_marker_id: Some(format!("messagemarker_{}", global_index.0)),
