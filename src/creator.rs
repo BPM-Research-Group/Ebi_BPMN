@@ -38,7 +38,7 @@ impl BPMNCreator {
             activity_key: ActivityKey::new(),
             collaboration_index: None,
             collaboration_id: None,
-            definitions_index: (0, ()),
+            definitions_index: GlobalIndex(0),
             definitions_id: "definitions".to_string(),
             elements: vec![],
             message_flows: vec![],
@@ -52,7 +52,7 @@ impl BPMNCreator {
             activity_key,
             collaboration_index: None,
             collaboration_id: None,
-            definitions_index: (0, ()),
+            definitions_index: GlobalIndex(0),
             definitions_id: "definitions".to_string(),
             elements: vec![],
             message_flows: vec![],
@@ -68,7 +68,7 @@ impl BPMNCreator {
 
     fn new_global_index(&mut self) -> GlobalIndex {
         self.max_id += 1;
-        (self.max_id, ())
+        GlobalIndex(self.max_id)
     }
 
     pub fn add_process(&mut self, name: Option<String>) -> Container {
