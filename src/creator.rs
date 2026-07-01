@@ -37,7 +37,7 @@ impl BPMNCreator {
             activity_key: ActivityKey::new(),
             collaboration_index: None,
             collaboration_id: None,
-            definitions_index: (0, ()),
+            definitions_index: GlobalIndex(0),
             definitions_id: "definitions".to_string(),
             elements: vec![],
             message_flows: vec![],
@@ -51,7 +51,7 @@ impl BPMNCreator {
             activity_key,
             collaboration_index: None,
             collaboration_id: None,
-            definitions_index: (0, ()),
+            definitions_index: GlobalIndex(0),
             definitions_id: "definitions".to_string(),
             elements: vec![],
             message_flows: vec![],
@@ -67,7 +67,7 @@ impl BPMNCreator {
 
     fn new_global_index(&mut self) -> GlobalIndex {
         self.max_id += 1;
-        (self.max_id, ())
+        GlobalIndex(self.max_id)
     }
 
     pub fn add_process(&mut self, name: Option<String>) -> Container {
@@ -382,10 +382,7 @@ impl BPMNCreator {
 
     /// Removes a sequence flow with the given index `sequence_flow` from the `parent`.
     /// Returns an error if the parent cannot be found.
-    pub fn remove_sequence_flow(
-        &mut self,
-        sequence_flow: GlobalIndex,
-    ) -> Result<()> {
+    pub fn remove_sequence_flow(&mut self, sequence_flow: GlobalIndex) -> Result<()> {
         let parent = self
             .bpmn
             .parent_of(sequence_flow)

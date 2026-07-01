@@ -337,7 +337,7 @@ pub(crate) mod tests {
     use ebi_arithmetic::{Fraction, One, f};
 
     use crate::{
-        BusinessProcessModelAndNotation,
+        BusinessProcessModelAndNotation, GlobalIndex,
         marking::Token,
         semantics::{BPMNMarking, BPMNRootMarking, BPMNSubMarking},
         stochastic_business_process_model_and_notation::StochasticBusinessProcessModelAndNotation,
@@ -1249,7 +1249,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(0, &marking).unwrap(),
-            vec![Token::SequenceFlow((7, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(7))]
         );
         bpmn.execute_transition(&mut marking, 0).unwrap();
 
@@ -1259,7 +1259,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![2]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(2, &marking).unwrap(),
-            vec![Token::SequenceFlow((9, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(9))]
         );
         bpmn.execute_transition(&mut marking, 2).unwrap();
 
@@ -1269,7 +1269,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 5]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(5, &marking).unwrap(),
-            vec![Token::SequenceFlow((10, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(10))]
         );
         bpmn.execute_transition(&mut marking, 5).unwrap();
 
@@ -1279,7 +1279,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(6, &marking).unwrap(),
-            vec![Token::SequenceFlow((11, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(11))]
         );
         bpmn.execute_transition(&mut marking, 6).unwrap();
 
@@ -1289,7 +1289,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(3, &marking).unwrap(),
-            vec![Token::SequenceFlow((9, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(9))]
         );
         bpmn.execute_transition(&mut marking, 3).unwrap();
 
@@ -1299,7 +1299,7 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 5]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(4, &marking).unwrap(),
-            vec![Token::SequenceFlow((8, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(8))]
         );
         bpmn.execute_transition(&mut marking, 4).unwrap();
 
@@ -1329,28 +1329,31 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![0]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(0, &marking).unwrap(),
-            vec![Token::SequenceFlow((3, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(3))]
         );
         bpmn.execute_transition(&mut marking, 0).unwrap();
 
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![1]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(1, &marking).unwrap(),
-            vec![Token::SequenceFlow((5, ())), Token::SequenceFlow((6, ()))]
+            vec![
+                Token::SequenceFlow(GlobalIndex(5)),
+                Token::SequenceFlow(GlobalIndex(6))
+            ]
         );
         bpmn.execute_transition(&mut marking, 1).unwrap();
 
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![2]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(2, &marking).unwrap(),
-            vec![Token::SequenceFlow((10, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(10))]
         );
         bpmn.execute_transition(&mut marking, 2).unwrap();
 
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![4, 5]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(5, &marking).unwrap(),
-            vec![Token::SequenceFlow((18, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(18))]
         );
         bpmn.execute_transition(&mut marking, 5).unwrap();
 
@@ -1364,14 +1367,14 @@ pub(crate) mod tests {
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![3]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(3, &marking).unwrap(),
-            vec![Token::SequenceFlow((12, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(12))]
         );
         bpmn.execute_transition(&mut marking, 3).unwrap();
 
         assert_eq!(bpmn.get_enabled_transitions(&marking).unwrap(), vec![6, 7]);
         assert_eq!(
             bpmn.transition_2_produced_tokens(7, &marking).unwrap(),
-            vec![Token::SequenceFlow((16, ()))]
+            vec![Token::SequenceFlow(GlobalIndex(16))]
         );
         bpmn.execute_transition(&mut marking, 7).unwrap();
 

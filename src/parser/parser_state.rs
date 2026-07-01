@@ -5,8 +5,9 @@ use crate::{
 };
 use anyhow::{Context, Result, anyhow};
 use ebi_activity_key::ActivityKey;
+use intmap::IntKey;
 use quick_xml::events::BytesStart;
-use std::collections::{HashMap, hash_map::Entry};
+use std::{collections::{HashMap, hash_map::Entry}, fmt::Display};
 
 pub(crate) struct ParserState {
     pub(crate) activity_key: ActivityKey,
@@ -19,7 +20,29 @@ pub(crate) struct ParserState {
     pub(crate) not_recognised_id_2_tag: HashMap<String, String>,
 }
 
-pub type GlobalIndex = (usize, ());
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct GlobalIndex(pub usize);
+
+impl IntKey for GlobalIndex {
+    type Int = usize;
+
+    #[cfg(target_pointer_width = "16")]
+    const PRIME: Self::Int = (u16::MAX - 14) as usize;
+    #[cfg(target_pointer_width = "32")]
+    const PRIME: Self::Int = (u32::MAX - 4) as usize;
+    #[cfg(target_pointer_width = "64")]
+    const PRIME: Self::Int = (u64::MAX - 58) as usize;
+
+    fn into_int(self) -> Self::Int {
+        self.0
+    }
+}
+
+impl Display for GlobalIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl ParserState {
     pub(crate) fn new() -> Self {
@@ -98,7 +121,7 @@ impl ParserState {
                 Entry::Occupied(_) => Err(anyhow!("two elements have the id `{}`", id)),
                 Entry::Vacant(vacant_entry) => {
                     vacant_entry.insert(new_index);
-                    Ok(((new_index, ()), id))
+                    Ok((GlobalIndex(new_index), id))
                 }
             }
         } else {
