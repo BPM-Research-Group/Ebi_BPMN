@@ -20,7 +20,7 @@ use crate::{
     traits::{objectable::BPMNObject, searchable::Searchable},
 };
 use anyhow::{Result, anyhow};
-use ebi_activity_key::{Activity, ActivityKey};
+use ebi_activity_key::{Activity, ActivityKey, HasActivityKey, TranslateActivityKey};
 use std::fmt::{Debug, Display};
 
 /// A helper struct that assists with creating BPMN models programmatically.
@@ -696,13 +696,31 @@ impl BPMNCreator {
 
 impl Debug for BPMNCreator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BPMNCreator").field("bpmn", &self.bpmn).finish()
+        f.debug_struct("BPMNCreator")
+            .field("bpmn", &self.bpmn)
+            .finish()
     }
 }
 
 impl Display for BPMNCreator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.bpmn)
+    }
+}
+
+impl HasActivityKey for BPMNCreator {
+    fn activity_key(&self) -> &ActivityKey {
+        self.bpmn.activity_key()
+    }
+
+    fn activity_key_mut(&mut self) -> &mut ActivityKey {
+        self.bpmn.activity_key_mut()
+    }
+}
+
+impl TranslateActivityKey for BPMNCreator {
+    fn translate_using_activity_key(&mut self, to_activity_key: &mut ActivityKey) {
+        self.bpmn.translate_using_activity_key(to_activity_key);
     }
 }
 
