@@ -66,6 +66,11 @@ impl BPMNCreator {
         Ok(self.bpmn)
     }
 
+    /// Returns the model without checking for structural correctness.
+    pub fn to_bpmn_unchecked(self) -> BusinessProcessModelAndNotation {
+        self.bpmn
+    }
+
     fn new_global_index(&mut self) -> GlobalIndex {
         self.max_id += 1;
         GlobalIndex(self.max_id)
