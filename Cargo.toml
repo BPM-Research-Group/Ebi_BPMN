@@ -1,6 +1,6 @@
 [package]
 name = "ebi_bpmn"
-version = "0.0.50"
+version = "0.0.51"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 keywords = [
@@ -36,8 +36,8 @@ testactivities = ["ebi_activity_key/testactivities"]
 [dependencies]
 ebi_derive = "0.2.11"
 ebi_activity_key = "0.0.3"
-ebi_arithmetic = { git = "https://github.com/BPM-Research-Group/Ebi_arithmetic.git" , version = "0.3.13" }
-anyhow = "1.0.102"
+ebi_arithmetic = { git = "https://github.com/BPM-Research-Group/Ebi_arithmetic.git" , version = "0.3.14" }
+anyhow = "1.0.104"
 strum = "0.28.0"
 strum_macros = "0.28.0"
 itertools = "0.15.0"

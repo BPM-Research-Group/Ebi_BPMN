@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "anyhow"
-version = "1.0.102"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "autocfg"
@@ -134,8 +134,8 @@ dependencies = [
 
 [[package]]
 name = "ebi_arithmetic"
-version = "0.3.13"
-source = "git+https://github.com/BPM-Research-Group/Ebi_arithmetic.git#af365bfefaf06487ae550b803c4c1dda8a468072"
+version = "0.3.14"
+source = "git+https://github.com/BPM-Research-Group/Ebi_arithmetic.git#37c8ea607a197716783fb8e8951c9dfdf589d193"
 dependencies = [
  "anyhow",
  "fnv",
@@ -150,7 +150,7 @@ dependencies = [
 
 [[package]]
 name = "ebi_bpmn"
-version = "0.0.50"
+version = "0.0.51"
 dependencies = [
  "anyhow",
  "bitvec",
