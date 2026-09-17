@@ -20,7 +20,7 @@ impl Recognisable for TagWeight {
         if n.is_sbpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::SequenceFlow { .. }) => {
-                    if e.local_name().as_ref() == b"weight" {
+                    if e.local_name().as_ref() == "weight" {
                         return Some(Tag::Weight);
                     }
                 }

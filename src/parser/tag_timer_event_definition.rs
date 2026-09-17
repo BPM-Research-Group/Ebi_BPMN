@@ -18,7 +18,7 @@ impl Recognisable for TagTimerEventDefinition {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::StartEvent { .. })
                 | Some(OpenedTag::IntermediateCatchEvent { .. }) => {
-                    if e.local_name().as_ref() == b"timerEventDefinition" {
+                    if e.local_name().as_ref() == "timerEventDefinition" {
                         return Some(Tag::TimerEventDefinition);
                     }
                 }

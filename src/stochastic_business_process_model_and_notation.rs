@@ -31,7 +31,7 @@ impl StochasticBusinessProcessModelAndNotation {
         if !bpmn.stochastic_namespace {
             return Err(anyhow!(
                 "The SBPMN namespace of `{}` must be declared on the definitions tag.",
-                String::from_utf8_lossy(NAMESPACE_SBPMN)
+                NAMESPACE_SBPMN
             ));
         }
         let sbpmn = Self { bpmn };

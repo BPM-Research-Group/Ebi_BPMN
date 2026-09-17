@@ -15,7 +15,7 @@ use std::{
 
 pub(crate) struct ParserState {
     pub(crate) activity_key: ActivityKey,
-    pub(crate) open_tag_names: Vec<Vec<u8>>,
+    pub(crate) open_tag_names: Vec<String>,
     pub(crate) open_tags: Vec<OpenedTag>,
     pub(crate) ids: HashMap<String, usize>,
 

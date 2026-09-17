@@ -39,7 +39,7 @@ impl BusinessProcessModelAndNotation {
                     open_tag(&mut state, &e, n).with_context(|| {
                         format!(
                             "Tag `{}` at position {}.",
-                            String::from_utf8_lossy(e.local_name().as_ref()),
+                            e.local_name().as_ref(),
                             xml_reader.buffer_position()
                         )
                     })?;
@@ -49,7 +49,7 @@ impl BusinessProcessModelAndNotation {
                 (Some(n), Event::End(e)) => close_tag(&mut state, &e, n).with_context(|| {
                     format!(
                         "Tag `{}` at position {}.",
-                        String::from_utf8_lossy(e.local_name().as_ref()),
+                        e.local_name().as_ref(),
                         xml_reader.buffer_position()
                     )
                 })?,
@@ -58,7 +58,7 @@ impl BusinessProcessModelAndNotation {
                 (Some(n), Event::Empty(e)) => empty_tag(&mut state, &e, n).with_context(|| {
                     format!(
                         "Tag `{}` at position {}.",
-                        String::from_utf8_lossy(e.local_name().as_ref()),
+                        e.local_name().as_ref(),
                         xml_reader.buffer_position()
                     )
                 })?,
@@ -88,7 +88,7 @@ pub(crate) fn parse_attribute(e: &BytesStart, attribute_name: &str) -> Option<St
     if let Ok(Some(attribute)) = e.try_get_attribute(attribute_name) {
         Some(
             attribute
-                .decoded_and_normalized_value(quick_xml::XmlVersion::Implicit1_0, e.decoder())
+                .normalized_value(quick_xml::XmlVersion::Implicit1_0)
                 .ok()?
                 .as_ref()
                 .to_owned(),

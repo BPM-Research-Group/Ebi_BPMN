@@ -24,7 +24,7 @@ impl Recognisable for TagStartEvent {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
-                    if e.local_name().as_ref() == b"startEvent" {
+                    if e.local_name().as_ref() == "startEvent" {
                         return Some(Tag::StartEvent);
                     }
                 }

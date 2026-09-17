@@ -24,7 +24,7 @@ impl Recognisable for Definitions {
     {
         if n.is_bpmn() {
             if state.open_tags.is_empty() {
-                if e.local_name().as_ref() == b"definitions" {
+                if e.local_name().as_ref() == "definitions" {
                     return Some(Tag::Definitions);
                 }
             }

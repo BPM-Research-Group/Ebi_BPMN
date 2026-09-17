@@ -30,7 +30,7 @@ pub(crate) fn open_tag(state: &mut ParserState, e: &BytesStart, n: NameSpace) ->
         if let Some(id) = parse_attribute(e, "id") {
             state
                 .not_recognised_id_2_tag
-                .insert(id, String::from_utf8_lossy(e.name().as_ref()).to_string());
+                .insert(id, e.name().as_ref().to_string());
         }
     }
 
@@ -49,34 +49,28 @@ pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) ->
             //closing tag matches last remaining opening tag
 
             OpenedTag::close_tag(most_recent_open_tag, e, state).with_context(|| {
-                anyhow!(
-                    "At the closing of tag `{}`.",
-                    String::from_utf8_lossy(&most_recent_open_tag_name)
-                )
+                anyhow!("At the closing of tag `{}`.", &most_recent_open_tag_name)
             })?;
 
             Ok(())
         } else {
             Err(anyhow!(
                 "attempted to close tag `{}` but `{}` was open",
-                String::from_utf8_lossy(e.local_name().as_ref()),
-                String::from_utf8_lossy(&most_recent_open_tag_name)
+                e.local_name().as_ref(),
+                &most_recent_open_tag_name
             ))
         }
     } else {
         Err(anyhow!(
             "attempted to close tag `{}` that was not open",
-            String::from_utf8_lossy(e.local_name().as_ref())
+            e.local_name().as_ref()
         ))
     }
 }
 
 pub(crate) fn can_eof(state: &ParserState) -> Result<()> {
     if let Some(tag) = state.open_tag_names.iter().next() {
-        Err(anyhow!(
-            "file ended while tag `{}` was still open",
-            String::from_utf8_lossy(&tag)
-        ))
+        Err(anyhow!("file ended while tag `{}` was still open", &tag))
     } else {
         Ok(())
     }
@@ -88,8 +82,8 @@ pub enum NameSpace {
     SBPMN,
 }
 
-pub const NAMESPACE_SBPMN: &[u8; 39] = b"https://www.ebitools.org/sbpmn/20260305";
-pub const NAMESPACE_BPMN: &[u8; 43] = b"http://www.omg.org/spec/BPMN/20100524/MODEL";
+pub const NAMESPACE_SBPMN: &str = "https://www.ebitools.org/sbpmn/20260305";
+pub const NAMESPACE_BPMN: &str = "http://www.omg.org/spec/BPMN/20100524/MODEL";
 
 pub(crate) fn is_in_namespace(result: ResolveResult) -> Option<NameSpace> {
     match result {

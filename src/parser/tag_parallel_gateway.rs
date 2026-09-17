@@ -21,7 +21,7 @@ impl Recognisable for TagParallelGateway {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
-                    if e.local_name().as_ref() == b"parallelGateway" {
+                    if e.local_name().as_ref() == "parallelGateway" {
                         return Some(Tag::ParallelGateway);
                     }
                 }

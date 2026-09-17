@@ -20,7 +20,7 @@ impl Recognisable for TagMessageEventDefinition {
                 | Some(OpenedTag::EndEvent { .. })
                 | Some(OpenedTag::IntermediateCatchEvent { .. })
                 | Some(OpenedTag::IntermediateThrowEvent { .. }) => {
-                    if e.local_name().as_ref() == b"messageEventDefinition" {
+                    if e.local_name().as_ref() == "messageEventDefinition" {
                         return Some(Tag::MessageEventDefinition);
                     }
                 }
