@@ -1,8 +1,8 @@
 use crate::{
     element::BPMNElement,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -19,9 +19,10 @@ impl Recognisable for Collaboration {
     {
         if n.is_bpmn() {
             if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last()
-                && e.local_name().as_ref() == "collaboration" {
-                    return Some(Tag::Collaboration);
-                }
+                && e.local_name().as_ref() == "collaboration"
+            {
+                return Some(Tag::Collaboration);
+            }
             None
         } else {
             None

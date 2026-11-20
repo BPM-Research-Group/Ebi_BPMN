@@ -1,8 +1,8 @@
 use crate::{
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::{GlobalIndex, ParserState},
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -19,9 +19,10 @@ impl Recognisable for TagMessageFlow {
     {
         if n.is_bpmn() {
             if let Some(OpenedTag::Collaboration { .. }) = state.open_tags.iter().last()
-                && e.local_name().as_ref() == "messageFlow" {
-                    return Some(Tag::MessageFlow);
-                }
+                && e.local_name().as_ref() == "messageFlow"
+            {
+                return Some(Tag::MessageFlow);
+            }
             None
         } else {
             None

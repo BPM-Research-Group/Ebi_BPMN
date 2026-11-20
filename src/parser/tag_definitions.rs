@@ -3,8 +3,8 @@ use crate::{
     elements::collapsed_pool::BPMNCollapsedPool,
     message_flow::BPMNMessageFlow,
     parser::{
-        parser_struct::{NAMESPACE_SBPMN, NameSpace},
         parser_state::{GlobalIndex, ParserState},
+        parser_struct::{NAMESPACE_SBPMN, NameSpace},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_message_flow::DraftMessageFlow,
         tags::{OpenedTag, Tag},
@@ -157,7 +157,7 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
-                        } else if state.ids.get(&source_id).is_some() {
+                        } else if state.ids.contains_key(&source_id) {
                             anyhow!("Could not find source `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps this tag cannot have outgoing messages flows.", source_id, id)
                         } else {
                             anyhow!(

@@ -171,7 +171,7 @@ impl Transitionable for BPMNTimerIntermediateCatchEvent {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.first() {
             let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
             let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
             if source.is_event_based_gateway() {

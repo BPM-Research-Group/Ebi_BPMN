@@ -2,8 +2,8 @@ use crate::{
     element::BPMNElement,
     elements::collapsed_pool::BPMNCollapsedPool,
     parser::{
-        parser_struct::NameSpace,
         parser_state::{GlobalIndex, ParserState},
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_collaboration::Collaboration,
         tag_definitions::Definitions,

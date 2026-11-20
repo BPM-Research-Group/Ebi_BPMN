@@ -1,8 +1,8 @@
 use crate::{
     BusinessProcessModelAndNotation,
     parser::{
-        parser_struct::{can_eof, close_tag, empty_tag, is_in_namespace, open_tag},
         parser_state::ParserState,
+        parser_struct::{can_eof, close_tag, empty_tag, is_in_namespace, open_tag},
     },
 };
 use anyhow::{Context, Error, Result};

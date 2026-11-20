@@ -28,7 +28,7 @@ impl BusinessProcessModelAndNotation {
         ]);
         if self.stochastic_namespace {
             bytes_start = bytes_start
-                .with_attributes([(("xmlns:sbpmn", "https://www.ebitools.org/sbpmn/20260305"))]);
+                .with_attributes([("xmlns:sbpmn", "https://www.ebitools.org/sbpmn/20260305")]);
         }
         x.write_event(Event::Start(bytes_start))?;
 
@@ -120,7 +120,9 @@ mod tests {
         let mut f = vec![];
         sbpmn.export_to_writer(&mut f).unwrap();
         let fout = String::from_utf8_lossy(&f);
-        let _sbpmn2 = fout.parse::<StochasticBusinessProcessModelAndNotation>().unwrap();
+        let _sbpmn2 = fout
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
 
         println!("{}", String::from_utf8_lossy(&f));
     }
@@ -135,7 +137,9 @@ mod tests {
         let mut f = vec![];
         sbpmn.export_to_writer(&mut f).unwrap();
         let fout = String::from_utf8_lossy(&f);
-        let _sbpmn2 = fout.parse::<StochasticBusinessProcessModelAndNotation>().unwrap();
+        let _sbpmn2 = fout
+            .parse::<StochasticBusinessProcessModelAndNotation>()
+            .unwrap();
 
         println!("{}", String::from_utf8_lossy(&f));
     }

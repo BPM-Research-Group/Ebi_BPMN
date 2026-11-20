@@ -1,8 +1,8 @@
 use crate::{
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -19,9 +19,10 @@ impl Recognisable for TagWeight {
     {
         if n.is_sbpmn() {
             if let Some(OpenedTag::SequenceFlow { .. }) = state.open_tags.iter().last()
-                && e.local_name().as_ref() == "weight" {
-                    return Some(Tag::Weight);
-                }
+                && e.local_name().as_ref() == "weight"
+            {
+                return Some(Tag::Weight);
+            }
             None
         } else {
             None

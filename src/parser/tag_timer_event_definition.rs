@@ -1,6 +1,6 @@
 use crate::parser::{
-    parser_struct::NameSpace,
     parser_state::ParserState,
+    parser_struct::NameSpace,
     parser_traits::{Closeable, Openable, Recognisable},
     tags::{OpenedTag, Tag},
 };
@@ -18,9 +18,10 @@ impl Recognisable for TagTimerEventDefinition {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::StartEvent { .. })
                 | Some(OpenedTag::IntermediateCatchEvent { .. })
-                    if e.local_name().as_ref() == "timerEventDefinition" => {
-                        return Some(Tag::TimerEventDefinition);
-                    }
+                    if e.local_name().as_ref() == "timerEventDefinition" =>
+                {
+                    return Some(Tag::TimerEventDefinition);
+                }
                 _ => {}
             }
             None

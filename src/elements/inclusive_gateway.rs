@@ -230,7 +230,7 @@ impl Transitionable for BPMNInclusiveGateway {
                         // If it is, then we do not count a token that may come from it.
                         if !source.is_inclusive_gateway() || source.local_index() < self.local_index
                         {
-                            queue.push_back(*&next_sequence_flow.local_index);
+                            queue.push_back(next_sequence_flow.local_index);
                         }
                     }
                 }
@@ -265,7 +265,7 @@ impl Transitionable for BPMNInclusiveGateway {
 
         //produce
         for sequence_flow_index in &self.outgoing_sequence_flows {
-            if transition_index % 2 == 0 {
+            if transition_index.is_multiple_of(2) {
                 sub_marking.sequence_flow_2_tokens[*sequence_flow_index] += 1;
             }
             transition_index >>= 1;
@@ -395,7 +395,7 @@ fn transition_index_2_sequence_flows<'a>(
 ) -> Result<Vec<&'a BPMNSequenceFlow>> {
     let mut result = vec![];
     for sequence_flow_index in &gateway.outgoing_sequence_flows {
-        if transition_index % 2 == 0 {
+        if transition_index.is_multiple_of(2) {
             result.push(
                 parent
                     .sequence_flows_non_recursive()

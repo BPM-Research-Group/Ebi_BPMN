@@ -1,4 +1,4 @@
-#![allow(warnings)]
+// #![allow(warnings)]
 #![deny(
     clippy::needless_return,
     clippy::map_flatten,
@@ -90,8 +90,8 @@ pub(crate) mod semantics;
 pub(crate) mod sequence_flow;
 pub(crate) mod structure_checker;
 pub(crate) mod parser {
-    pub mod parser_struct;
     pub mod parser_state;
+    pub mod parser_struct;
     pub mod parser_traits;
     pub mod tag_collaboration;
     pub mod tag_definitions;

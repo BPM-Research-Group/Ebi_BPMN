@@ -31,8 +31,8 @@ pub struct BPMNCreator {
     max_id: usize,
 }
 
-impl BPMNCreator {
-    pub fn new() -> Self {
+impl Default for BPMNCreator {
+    fn default() -> Self {
         let bpmn = BusinessProcessModelAndNotation {
             stochastic_namespace: false,
             activity_key: ActivityKey::default(),
@@ -45,7 +45,9 @@ impl BPMNCreator {
         };
         Self { bpmn, max_id: 0 }
     }
+}
 
+impl BPMNCreator {
     pub fn new_with_activity_key(activity_key: ActivityKey) -> Self {
         let bpmn = BusinessProcessModelAndNotation {
             stochastic_namespace: false,
@@ -102,7 +104,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(start_event_type.to_element(global_index, local_index));
+                elements.push(start_event_type.into_element(global_index, local_index));
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
@@ -119,7 +121,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(start_event_type.to_element(global_index, local_index));
+                elements.push(start_event_type.into_element(global_index, local_index));
                 global_index
             }
             _ => panic!("parent not found"),
@@ -136,7 +138,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(intermediate_event_type.to_element(global_index, local_index));
+                elements.push(intermediate_event_type.into_element(global_index, local_index));
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
@@ -153,7 +155,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(intermediate_event_type.to_element(global_index, local_index));
+                elements.push(intermediate_event_type.into_element(global_index, local_index));
                 global_index
             }
             _ => panic!("parent not found"),
@@ -170,7 +172,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(end_event_type.to_element(global_index, local_index));
+                elements.push(end_event_type.into_element(global_index, local_index));
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
@@ -187,7 +189,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(end_event_type.to_element(global_index, local_index));
+                elements.push(end_event_type.into_element(global_index, local_index));
                 global_index
             }
             _ => panic!("parent not found"),
@@ -248,7 +250,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(gateway_type.to_element(global_index, local_index));
+                elements.push(gateway_type.into_element(global_index, local_index));
                 Ok(global_index)
             }
             _ => Err(anyhow!("parent not found")),
@@ -265,7 +267,7 @@ impl BPMNCreator {
             Some(BPMNElement::Process(BPMNProcess { elements, .. }))
             | Some(BPMNElement::ExpandedSubProcess(BPMNExpandedSubProcess { elements, .. })) => {
                 let local_index = elements.len();
-                elements.push(gateway_type.to_element(global_index, local_index));
+                elements.push(gateway_type.into_element(global_index, local_index));
                 global_index
             }
             _ => panic!("parent not found"),
@@ -742,7 +744,7 @@ pub enum GatewayType {
 }
 
 impl GatewayType {
-    fn to_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
+    fn into_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
         match self {
             GatewayType::EventBased => BPMNElement::EventBasedGateway(BPMNEventBasedGateway {
                 global_index,
@@ -783,7 +785,7 @@ pub enum StartEventType {
 }
 
 impl StartEventType {
-    fn to_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
+    fn into_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
         match self {
             StartEventType::None => BPMNElement::StartEvent(BPMNStartEvent {
                 global_index,
@@ -816,7 +818,7 @@ pub enum EndEventType {
 }
 
 impl EndEventType {
-    fn to_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
+    fn into_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
         match self {
             EndEventType::None => BPMNElement::EndEvent(BPMNEndEvent {
                 global_index,
@@ -845,7 +847,7 @@ pub enum IntermediateEventType {
 }
 
 impl IntermediateEventType {
-    fn to_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
+    fn into_element(self, global_index: GlobalIndex, local_index: usize) -> BPMNElement {
         match self {
             IntermediateEventType::NoneCatch => {
                 BPMNElement::IntermediateCatchEvent(BPMNIntermediateCatchEvent {

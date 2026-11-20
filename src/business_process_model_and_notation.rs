@@ -165,11 +165,9 @@ impl Display for BusinessProcessModelAndNotation {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut buf = vec![];
         match self.export_to_writer(&mut buf) {
-            Ok(()) => {
-                match String::from_utf8(buf) {
-                    Ok(s) => write!(f, "{}", s),
-                    Err(_) => std::fmt::Result::Err(core::fmt::Error),
-                }
+            Ok(()) => match String::from_utf8(buf) {
+                Ok(s) => write!(f, "{}", s),
+                Err(_) => std::fmt::Result::Err(core::fmt::Error),
             },
             Err(_) => std::fmt::Result::Err(core::fmt::Error),
         }

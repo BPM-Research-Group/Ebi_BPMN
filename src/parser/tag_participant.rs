@@ -3,8 +3,8 @@ use crate::{
     elements::collapsed_pool::BPMNCollapsedPool,
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -21,9 +21,10 @@ impl Recognisable for TagParticipant {
     {
         if n.is_bpmn() {
             if let Some(OpenedTag::Collaboration { .. }) = state.open_tags.iter().last()
-                && e.local_name().as_ref() == "participant" {
-                    return Some(Tag::Participant);
-                }
+                && e.local_name().as_ref() == "participant"
+            {
+                return Some(Tag::Participant);
+            }
             None
         } else {
             None

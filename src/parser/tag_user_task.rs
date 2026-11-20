@@ -3,13 +3,13 @@ use crate::{
     elements::user_task::BPMNUserTask,
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use quick_xml::events::{BytesEnd, BytesStart};
 
 pub(crate) struct TagUserTask {}
@@ -22,9 +22,10 @@ impl Recognisable for TagUserTask {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. })
-                    if e.local_name().as_ref() == "userTask" => {
-                        return Some(Tag::UserTask);
-                    }
+                    if e.local_name().as_ref() == "userTask" =>
+                {
+                    return Some(Tag::UserTask);
+                }
                 _ => {}
             }
             None

@@ -119,7 +119,7 @@ impl BPMNObject for BPMNReceiveTask {
     fn outgoing_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
         Ok(&mut self.outgoing_sequence_flows)
     }
-    
+
     fn incoming_message_flows(&self) -> &[usize] {
         self.incoming_message_flow.as_slice()
     }
@@ -207,7 +207,7 @@ impl Transitionable for BPMNReceiveTask {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume token
-        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.first() {
             let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
             let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
             if source.is_event_based_gateway() {

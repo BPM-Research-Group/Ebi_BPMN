@@ -3,8 +3,8 @@ use crate::{
     elements::process::BPMNProcess,
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_sequence_flow::DraftSequenceFlow,
         tags::{OpenedTag, Tag},
@@ -24,9 +24,10 @@ impl Recognisable for TagProcess {
     {
         if n.is_bpmn() {
             if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last()
-                && e.local_name().as_ref() == "process" {
-                    return Some(Tag::Process);
-                }
+                && e.local_name().as_ref() == "process"
+            {
+                return Some(Tag::Process);
+            }
             None
         } else {
             None

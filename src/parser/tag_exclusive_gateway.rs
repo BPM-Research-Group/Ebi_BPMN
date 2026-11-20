@@ -2,8 +2,8 @@ use crate::{
     element::BPMNElement,
     elements::exclusive_gateway::BPMNExclusiveGateway,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -21,9 +21,10 @@ impl Recognisable for TagExclusiveGateway {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. })
-                    if e.local_name().as_ref() == "exclusiveGateway" => {
-                        return Some(Tag::ExclusiveGateway);
-                    }
+                    if e.local_name().as_ref() == "exclusiveGateway" =>
+                {
+                    return Some(Tag::ExclusiveGateway);
+                }
                 _ => {}
             }
             None

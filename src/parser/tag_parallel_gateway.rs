@@ -2,8 +2,8 @@ use crate::{
     element::BPMNElement,
     elements::parallel_gateway::BPMNParallelGateway,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},
     },
@@ -21,9 +21,10 @@ impl Recognisable for TagParallelGateway {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. })
-                    if e.local_name().as_ref() == "parallelGateway" => {
-                        return Some(Tag::ParallelGateway);
-                    }
+                    if e.local_name().as_ref() == "parallelGateway" =>
+                {
+                    return Some(Tag::ParallelGateway);
+                }
                 _ => {}
             }
             None

@@ -208,7 +208,7 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume token
-        if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
+        if let Some(sequence_flow_index) = self.incoming_sequence_flows.first() {
             let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
             let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
             if source.is_event_based_gateway() {
@@ -285,31 +285,30 @@ impl Transitionable for BPMNMessageIntermediateCatchEvent {
         parent: &dyn Processable,
         bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<Vec<Token>> {
-        let mut result =
-            if let Some(sequence_flow_index) = self.incoming_sequence_flows.iter().next() {
-                let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
-                let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
-                if source.is_event_based_gateway() {
-                    //special case: source is an event-based gateway
+        let mut result = if let Some(sequence_flow_index) = self.incoming_sequence_flows.first() {
+            let sequence_flow = &parent.sequence_flows_non_recursive()[*sequence_flow_index];
+            let source = &parent.elements_non_recursive()[sequence_flow.source_local_index];
+            if source.is_event_based_gateway() {
+                //special case: source is an event-based gateway
 
-                    //remove a token from all outgoing sequence flows of the event-based gateway
-                    let mut result = Vec::with_capacity(source.outgoing_sequence_flows().len());
-                    for sequence_flow_local_index in source.outgoing_sequence_flows() {
-                        let sequence_flow = parent
-                            .sequence_flows_non_recursive()
-                            .get(*sequence_flow_local_index)
-                            .and_if_not_error_default()?;
-                        result.push(Token::SequenceFlow(sequence_flow.global_index));
-                    }
-                    result
-                } else {
-                    //not a special case
-                    transition_2_consumed_tokens_xor_join!(self, transition_index, parent)
+                //remove a token from all outgoing sequence flows of the event-based gateway
+                let mut result = Vec::with_capacity(source.outgoing_sequence_flows().len());
+                for sequence_flow_local_index in source.outgoing_sequence_flows() {
+                    let sequence_flow = parent
+                        .sequence_flows_non_recursive()
+                        .get(*sequence_flow_local_index)
+                        .and_if_not_error_default()?;
+                    result.push(Token::SequenceFlow(sequence_flow.global_index));
                 }
+                result
             } else {
                 //not a special case
                 transition_2_consumed_tokens_xor_join!(self, transition_index, parent)
-            };
+            }
+        } else {
+            //not a special case
+            transition_2_consumed_tokens_xor_join!(self, transition_index, parent)
+        };
 
         //message
         if let Some(message_flow_index) = self.incoming_message_flow {

@@ -6,8 +6,8 @@ use crate::{
     },
     importer::parse_attribute,
     parser::{
-        parser_struct::NameSpace,
         parser_state::ParserState,
+        parser_struct::NameSpace,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_process::process_internal_sequence_flows,
         tag_sequence_flow::DraftSequenceFlow,
@@ -29,9 +29,10 @@ impl Recognisable for TagSubProcess {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
                 Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. })
-                    if e.local_name().as_ref() == "subProcess" => {
-                        return Some(Tag::SubProcess);
-                    }
+                    if e.local_name().as_ref() == "subProcess" =>
+                {
+                    return Some(Tag::SubProcess);
+                }
                 _ => {}
             }
             None
