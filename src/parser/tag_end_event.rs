@@ -80,10 +80,10 @@ impl Closeable for TagEndEvent {
                     }
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected an end event."));
+                    Err(anyhow!("Expected an end event."))
                 }
             }
-            _ => return Err(anyhow!("Expected a subprocess or process.")),
+            _ => Err(anyhow!("Expected a subprocess or process.")),
         }
     }
 }

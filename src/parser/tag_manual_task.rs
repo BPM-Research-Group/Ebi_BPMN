@@ -76,10 +76,10 @@ impl Closeable for TagManualTask {
                     }));
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected a manual task."));
+                    Err(anyhow!("Expected a manual task."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or a subprocess.")),
+            _ => Err(anyhow!("Expected a process or a subprocess.")),
         }
     }
 }

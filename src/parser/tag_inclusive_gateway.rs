@@ -64,10 +64,10 @@ impl Closeable for TagInclusiveGateway {
                     }));
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected an inclusive gateway."));
+                    Err(anyhow!("Expected an inclusive gateway."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or a subprocess.")),
+            _ => Err(anyhow!("Expected a process or a subprocess.")),
         }
     }
 }

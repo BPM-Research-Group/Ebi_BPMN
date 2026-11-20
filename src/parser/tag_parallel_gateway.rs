@@ -64,10 +64,10 @@ impl Closeable for TagParallelGateway {
                     }));
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected a parallel gateway."));
+                    Err(anyhow!("Expected a parallel gateway."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or subprocess.")),
+            _ => Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

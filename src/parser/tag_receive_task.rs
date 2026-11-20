@@ -79,10 +79,10 @@ impl Closeable for TagReceiveTask {
                     }));
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected a receive task."));
+                    Err(anyhow!("Expected a receive task."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or subprocess.")),
+            _ => Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

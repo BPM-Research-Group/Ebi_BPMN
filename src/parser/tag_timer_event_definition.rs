@@ -58,10 +58,10 @@ impl Closeable for TagTimerEventDefinition {
                     *timer_id = Some(id);
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected a timer event definition."));
+                    Err(anyhow!("Expected a timer event definition."))
                 }
             }
-            _ => return Err(anyhow!("Expected an event.")),
+            _ => Err(anyhow!("Expected an event.")),
         }
     }
 }

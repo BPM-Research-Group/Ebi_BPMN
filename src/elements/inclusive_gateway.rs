@@ -161,10 +161,10 @@ impl Transitionable for BPMNInclusiveGateway {
             //that is, look in the extra virtual sequence flow
             if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
                 //enabled
-                return Ok(bitvec![1;self.number_of_transitions(sub_marking)]);
+                Ok(bitvec![1;self.number_of_transitions(sub_marking)])
             } else {
                 //not enabled
-                return Ok(bitvec![0;self.number_of_transitions(sub_marking)]);
+                Ok(bitvec![0;self.number_of_transitions(sub_marking)])
             }
         } else {
             //gather a list of incoming sequence flows that do not have a token
@@ -237,7 +237,7 @@ impl Transitionable for BPMNInclusiveGateway {
             }
 
             //enabled
-            return Ok(bitvec![1;self.number_of_transitions(sub_marking)]);
+            Ok(bitvec![1;self.number_of_transitions(sub_marking)])
         }
     }
 

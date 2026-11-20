@@ -118,10 +118,10 @@ impl Closeable for TagSubProcess {
                     }
                     Ok(())
                 }
-                _ => return Err(anyhow!("Expected a process or subprocess.")),
+                _ => Err(anyhow!("Expected a process or subprocess.")),
             }
         } else {
-            return Err(anyhow!("Expected a subprocess."));
+            Err(anyhow!("Expected a subprocess."))
         }
     }
 }

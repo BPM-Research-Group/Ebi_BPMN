@@ -78,10 +78,10 @@ impl Closeable for TagMessageFlow {
                 });
                 Ok(())
             } else {
-                return Err(anyhow!("Expected a message flow."));
+                Err(anyhow!("Expected a message flow."))
             }
         } else {
-            return Err(anyhow!("Expected a collaboration."));
+            Err(anyhow!("Expected a collaboration."))
         }
     }
 }

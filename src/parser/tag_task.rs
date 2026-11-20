@@ -76,10 +76,10 @@ impl Closeable for TagTask {
                     }));
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected a task."));
+                    Err(anyhow!("Expected a task."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or subprocess.")),
+            _ => Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

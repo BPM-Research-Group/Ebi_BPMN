@@ -31,9 +31,9 @@ pub trait Startable {
             .is_empty()
         {
             let parallel_elements = self.start_elements_without_recursing(bpmn)?;
-            return Ok(InitiationMode::ParallelElements(parallel_elements));
+            Ok(InitiationMode::ParallelElements(parallel_elements))
         } else {
-            return Ok(InitiationMode::ChoiceBetweenStartEvents());
+            Ok(InitiationMode::ChoiceBetweenStartEvents())
         }
     }
 }

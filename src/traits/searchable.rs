@@ -81,8 +81,7 @@ impl Searchable for Vec<BPMNElement> {
 
     fn all_elements_ref(&self) -> Vec<&BPMNElement> {
         self.iter()
-            .map(|element| element.all_elements_ref())
-            .flatten()
+            .flat_map(|element| element.all_elements_ref())
             .collect()
     }
 
@@ -98,8 +97,7 @@ impl Searchable for Vec<BPMNElement> {
 
     fn all_sequence_flows_ref(&self) -> Vec<&BPMNSequenceFlow> {
         self.iter()
-            .map(|element| element.all_sequence_flows_ref())
-            .flatten()
+            .flat_map(|element| element.all_sequence_flows_ref())
             .collect()
     }
 

@@ -89,10 +89,10 @@ impl Closeable for TagIntermediateThrowEvent {
                     }
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected an intermediate throw event."));
+                    Err(anyhow!("Expected an intermediate throw event."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or subprocess.")),
+            _ => Err(anyhow!("Expected a process or subprocess.")),
         }
     }
 }

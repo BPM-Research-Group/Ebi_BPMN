@@ -253,7 +253,7 @@ impl Closeable for Definitions {
 
             Ok(())
         } else {
-            return Err(anyhow!("Expected definitions."));
+            Err(anyhow!("Expected definitions."))
         }
     }
 }

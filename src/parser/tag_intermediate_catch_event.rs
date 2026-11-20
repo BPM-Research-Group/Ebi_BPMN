@@ -111,10 +111,10 @@ impl Closeable for TagIntermediateCatchEvent {
                     }
                     Ok(())
                 } else {
-                    return Err(anyhow!("Expected an intermediate catch event."));
+                    Err(anyhow!("Expected an intermediate catch event."))
                 }
             }
-            _ => return Err(anyhow!("Expected a process or a subprocess.")),
+            _ => Err(anyhow!("Expected a process or a subprocess.")),
         }
     }
 }
