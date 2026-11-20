@@ -124,10 +124,11 @@ dependencies = [
 
 [[package]]
 name = "ebi_activity_key"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6707d47b66cf177c4e2c11624c08fd2b08d6dd54f6593f784e8566133f3d16df"
+checksum = "dd47f7a97cdb279658c3020f3b1a7bdec32eb596f1911cbf1529dc8e3d480dfd"
 dependencies = [
+ "fnv",
  "intmap",
  "uuid",
 ]
@@ -150,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "ebi_bpmn"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "anyhow",
  "bitvec",
@@ -870,9 +871,9 @@ checksum = "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954"
 
 [[package]]
 name = "uuid"
-version = "1.26.1"
+version = "1.29.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ef6dac1e96601b4fb3acccccff2139741fcb757cb9a36089bf5be91cfb285ce"
+checksum = "3c14b15dffa2f4bd712103e857140aa04a4f2ff6e955c77d7eb8e53ee02a3b64"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",

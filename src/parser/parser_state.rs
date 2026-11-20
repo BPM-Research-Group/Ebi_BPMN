@@ -27,7 +27,7 @@ pub(crate) struct ParserState {
 impl ParserState {
     pub(crate) fn new() -> Self {
         Self {
-            activity_key: ActivityKey::new(),
+            activity_key: ActivityKey::default(),
             open_tag_names: vec![],
             ids: HashMap::new(),
             open_tags: vec![],
