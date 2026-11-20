@@ -18,13 +18,10 @@ impl Recognisable for TagWeight {
         Self: Sized,
     {
         if n.is_sbpmn() {
-            match state.open_tags.iter().last() {
-                Some(OpenedTag::SequenceFlow { .. }) => {
-                    if e.local_name().as_ref() == "weight" {
-                        return Some(Tag::Weight);
-                    }
+            if let Some(OpenedTag::SequenceFlow { .. }) = state.open_tags.iter().last() {
+                if e.local_name().as_ref() == "weight" {
+                    return Some(Tag::Weight);
                 }
-                _ => {}
             }
             None
         } else {

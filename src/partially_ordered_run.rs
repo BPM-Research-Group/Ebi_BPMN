@@ -70,7 +70,7 @@ impl PartiallyOrderedRun {
 
     pub fn get_marking(
         &self,
-        front_states: &Vec<usize>,
+        front_states: &[usize],
         sbpmn: &StochasticBusinessProcessModelAndNotation,
     ) -> Result<BPMNMarking> {
         //create empty marking

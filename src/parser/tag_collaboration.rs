@@ -18,13 +18,10 @@ impl Recognisable for Collaboration {
         Self: Sized,
     {
         if n.is_bpmn() {
-            match state.open_tags.iter().last() {
-                Some(OpenedTag::Definitions { .. }) => {
-                    if e.local_name().as_ref() == "collaboration" {
-                        return Some(Tag::Collaboration);
-                    }
+            if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last() {
+                if e.local_name().as_ref() == "collaboration" {
+                    return Some(Tag::Collaboration);
                 }
-                _ => (),
             }
             None
         } else {

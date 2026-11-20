@@ -118,30 +118,27 @@ impl Closeable for Definitions {
 
             //leniency: transform empty expanded pools (process) into collapsed pools
             for element in elements.iter_mut() {
-                match element {
-                    BPMNElement::Process(process) => {
-                        if process.elements.is_empty() {
-                            if let (Some(global_index), Some(id)) = (
-                                process.participant_global_index,
-                                process.participant_id.clone(),
-                            ) {
-                                let local_index = process.local_index;
-                                let name = process.name.clone();
-                                std::mem::swap(
-                                    element,
-                                    &mut BPMNElement::CollapsedPool(BPMNCollapsedPool {
-                                        global_index,
-                                        id,
-                                        local_index,
-                                        name,
-                                        incoming_message_flows: vec![],
-                                        outgoing_message_flows: vec![],
-                                    }),
-                                );
-                            }
+                if let BPMNElement::Process(process) = element {
+                    if process.elements.is_empty() {
+                        if let (Some(global_index), Some(id)) = (
+                            process.participant_global_index,
+                            process.participant_id.clone(),
+                        ) {
+                            let local_index = process.local_index;
+                            let name = process.name.clone();
+                            std::mem::swap(
+                                element,
+                                &mut BPMNElement::CollapsedPool(BPMNCollapsedPool {
+                                    global_index,
+                                    id,
+                                    local_index,
+                                    name,
+                                    incoming_message_flows: vec![],
+                                    outgoing_message_flows: vec![],
+                                }),
+                            );
                         }
                     }
-                    _ => {}
                 }
             }
 

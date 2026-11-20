@@ -20,13 +20,10 @@ impl Recognisable for TagParticipant {
         Self: Sized,
     {
         if n.is_bpmn() {
-            match state.open_tags.iter().last() {
-                Some(OpenedTag::Collaboration { .. }) => {
-                    if e.local_name().as_ref() == "participant" {
-                        return Some(Tag::Participant);
-                    }
+            if let Some(OpenedTag::Collaboration { .. }) = state.open_tags.iter().last() {
+                if e.local_name().as_ref() == "participant" {
+                    return Some(Tag::Participant);
                 }
-                _ => {}
             }
             None
         } else {
