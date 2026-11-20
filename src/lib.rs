@@ -6,7 +6,8 @@
     clippy::single_match,
     clippy::collapsible_if,
     clippy::redundant_closure,
-    clippy::collapsible_match
+    clippy::collapsible_match,
+    clippy::unwrap_or_default
 )]
 
 //! A BPMN crate written in pure Rust

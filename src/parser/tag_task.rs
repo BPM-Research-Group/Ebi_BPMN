@@ -21,11 +21,10 @@ impl Recognisable for TagTask {
     {
         if n.is_bpmn() {
             match state.open_tags.iter().last() {
-                Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. }) => {
-                    if e.local_name().as_ref() == "task" {
+                Some(OpenedTag::Process { .. }) | Some(OpenedTag::SubProcess { .. })
+                    if e.local_name().as_ref() == "task" => {
                         return Some(Tag::Task);
                     }
-                }
                 _ => {}
             }
             None
