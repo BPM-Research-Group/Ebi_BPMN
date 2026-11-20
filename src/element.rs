@@ -206,8 +206,7 @@ impl Searchable for BPMNElement {
         {
             let mut result = elements
                 .iter()
-                .map(|element| element.all_elements_ref())
-                .flatten()
+                .flat_map(|element| element.all_elements_ref())
                 .collect::<Vec<_>>();
             result.push(self);
             result

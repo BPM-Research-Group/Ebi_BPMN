@@ -1,5 +1,5 @@
-#![allow(warnings)]
-#![deny(clippy::needless_return, clippy::map_flatten)]
+// #![allow(warnings)]
+#![deny(clippy::needless_return, clippy::map_flatten, clippy::needless_borrow)]
 
 //! A BPMN crate written in pure Rust
 //!
