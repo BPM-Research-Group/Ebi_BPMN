@@ -1,5 +1,5 @@
 use crate::parser::{
-    parser::NameSpace, parser_state::ParserState, tags::{OpenedTag, Tag}
+    parser_struct::NameSpace, parser_state::ParserState, tags::{OpenedTag, Tag}
 };
 use anyhow::Result;
 use quick_xml::events::{BytesEnd, BytesStart};

@@ -126,7 +126,7 @@ impl BPMNObject for BPMNMessageIntermediateCatchEvent {
     }
 
     fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        if self.incoming_sequence_flows.len() >= 1 {
+        if !self.incoming_sequence_flows.is_empty() {
             //if it has an incoming sequence flow, it cannot start a process instance
             Ok(false)
         } else if let Some(message_flow_index) = self.incoming_message_flow {

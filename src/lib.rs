@@ -10,6 +10,8 @@
     clippy::unwrap_or_default,
     clippy::redundant_pattern_matching,
     clippy::len_zero,
+    clippy::unnecessary_get_then_check,
+    clippy::iter_next_slice
 )]
 
 //! A BPMN crate written in pure Rust
@@ -88,7 +90,7 @@ pub(crate) mod semantics;
 pub(crate) mod sequence_flow;
 pub(crate) mod structure_checker;
 pub(crate) mod parser {
-    pub mod parser;
+    pub mod parser_struct;
     pub mod parser_state;
     pub mod parser_traits;
     pub mod tag_collaboration;

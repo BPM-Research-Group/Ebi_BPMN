@@ -5,7 +5,7 @@ use crate::{
         message_intermediate_throw_event::BPMNMessageIntermediateThrowEvent,
     },
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},

@@ -6,7 +6,7 @@ use crate::{
     },
     importer::parse_attribute,
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_process::process_internal_sequence_flows,

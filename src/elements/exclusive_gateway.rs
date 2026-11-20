@@ -114,7 +114,7 @@ impl BPMNObject for BPMNExclusiveGateway {
     }
 
     fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        Ok(self.incoming_sequence_flows().len() == 0)
+        Ok(self.incoming_sequence_flows().is_empty())
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
@@ -155,8 +155,8 @@ impl Transitionable for BPMNExclusiveGateway {
         let outgoing = self.outgoing_sequence_flows.len().max(1);
 
         match (
-            self.incoming_sequence_flows.len() > 0,
-            self.outgoing_sequence_flows.len() > 0,
+            !self.incoming_sequence_flows.is_empty(),
+            !self.outgoing_sequence_flows.is_empty(),
         ) {
             (true, true) => {
                 //join & split
@@ -226,8 +226,8 @@ impl Transitionable for BPMNExclusiveGateway {
     ) -> Result<()> {
         let outgoing = self.outgoing_sequence_flows.len().max(1);
         match (
-            self.incoming_sequence_flows.len() > 0,
-            self.outgoing_sequence_flows.len() > 0,
+            !self.incoming_sequence_flows.is_empty(),
+            !self.outgoing_sequence_flows.is_empty(),
         ) {
             (true, true) => {
                 //join & split
@@ -293,7 +293,7 @@ impl Transitionable for BPMNExclusiveGateway {
         _marking: &BPMNSubMarking,
         parent: &dyn Processable,
     ) -> Option<Fraction> {
-        if self.outgoing_sequence_flows.len() == 0 {
+        if self.outgoing_sequence_flows.is_empty() {
             Some(Fraction::one())
         } else {
             let sum_weight = self
@@ -309,8 +309,8 @@ impl Transitionable for BPMNExclusiveGateway {
                 .sum();
             let outgoing = self.outgoing_sequence_flows.len().max(1);
             match (
-                self.incoming_sequence_flows.len() > 0,
-                self.outgoing_sequence_flows.len() > 0,
+                !self.incoming_sequence_flows.is_empty(),
+                !self.outgoing_sequence_flows.is_empty(),
             ) {
                 (true, true) => {
                     //join & split
@@ -358,8 +358,8 @@ impl Transitionable for BPMNExclusiveGateway {
     ) -> Result<Vec<Token>> {
         let outgoing = self.outgoing_sequence_flows.len().max(1);
         match (
-            self.incoming_sequence_flows.len() > 0,
-            self.outgoing_sequence_flows.len() > 0,
+            !self.incoming_sequence_flows.is_empty(),
+            !self.outgoing_sequence_flows.is_empty(),
         ) {
             (true, true) => {
                 //join & split
@@ -406,13 +406,13 @@ impl Transitionable for BPMNExclusiveGateway {
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<Vec<Token>> {
-        if self.outgoing_sequence_flows.len() == 0 {
+        if self.outgoing_sequence_flows.is_empty() {
             Ok(vec![])
         } else {
             let outgoing = self.outgoing_sequence_flows.len().max(1);
             match (
-                self.incoming_sequence_flows.len() > 0,
-                self.outgoing_sequence_flows.len() > 0,
+                !self.incoming_sequence_flows.is_empty(),
+                !self.outgoing_sequence_flows.is_empty(),
             ) {
                 (true, true) => {
                     //join & split

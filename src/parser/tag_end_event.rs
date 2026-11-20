@@ -2,7 +2,7 @@ use crate::{
     element::BPMNElement,
     elements::{end_event::BPMNEndEvent, message_end_event::BPMNMessageEndEvent},
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},

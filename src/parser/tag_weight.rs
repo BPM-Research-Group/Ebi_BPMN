@@ -1,7 +1,7 @@
 use crate::{
     importer::parse_attribute,
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},

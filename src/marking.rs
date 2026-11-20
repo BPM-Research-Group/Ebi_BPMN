@@ -281,7 +281,7 @@ impl Display for BPMNSubMarking {
         if self
             .element_index_2_sub_markings
             .iter()
-            .any(|x| x.len() > 0)
+            .any(|x| !x.is_empty())
         {
             result.push(format!(
                 "\nsub-markings [{}]",

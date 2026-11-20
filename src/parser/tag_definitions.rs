@@ -3,7 +3,7 @@ use crate::{
     elements::collapsed_pool::BPMNCollapsedPool,
     message_flow::BPMNMessageFlow,
     parser::{
-        parser::{NAMESPACE_SBPMN, NameSpace},
+        parser_struct::{NAMESPACE_SBPMN, NameSpace},
         parser_state::{GlobalIndex, ParserState},
         parser_traits::{Closeable, Openable, Recognisable},
         tag_message_flow::DraftMessageFlow,
@@ -157,7 +157,7 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
-                        } else if let Some(_) = state.ids.get(&source_id) {
+                        } else if state.ids.get(&source_id).is_some() {
                             anyhow!("Could not find source `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps this tag cannot have outgoing messages flows.", source_id, id)
                         } else {
                             anyhow!(

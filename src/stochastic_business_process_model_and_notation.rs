@@ -1,7 +1,7 @@
 use crate::{
     BPMNMarking, BusinessProcessModelAndNotation,
     element::BPMNElement,
-    parser::{parser::NAMESPACE_SBPMN, parser_state::GlobalIndex},
+    parser::{parser_struct::NAMESPACE_SBPMN, parser_state::GlobalIndex},
     semantics::TransitionIndex,
     sequence_flow::BPMNSequenceFlow,
     traits::processable::Processable,

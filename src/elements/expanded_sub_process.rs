@@ -148,7 +148,7 @@ impl BPMNObject for BPMNExpandedSubProcess {
     }
 
     fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        Ok(self.incoming_sequence_flows().len() == 0)
+        Ok(self.incoming_sequence_flows().is_empty())
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {

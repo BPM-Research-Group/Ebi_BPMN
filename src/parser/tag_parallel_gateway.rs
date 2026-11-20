@@ -2,7 +2,7 @@ use crate::{
     element::BPMNElement,
     elements::parallel_gateway::BPMNParallelGateway,
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tags::{OpenedTag, Tag},

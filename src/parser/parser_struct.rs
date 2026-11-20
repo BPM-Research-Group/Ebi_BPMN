@@ -49,7 +49,7 @@ pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) ->
             //closing tag matches last remaining opening tag
 
             OpenedTag::close_tag(most_recent_open_tag, e, state).with_context(|| {
-                anyhow!("At the closing of tag `{}`.", &most_recent_open_tag_name)
+                anyhow!("At the closing of tag `{}`.", most_recent_open_tag_name)
             })?;
 
             Ok(())
@@ -57,7 +57,7 @@ pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) ->
             Err(anyhow!(
                 "attempted to close tag `{}` but `{}` was open",
                 e.local_name().as_ref(),
-                &most_recent_open_tag_name
+                most_recent_open_tag_name
             ))
         }
     } else {
@@ -69,8 +69,8 @@ pub(crate) fn close_tag(state: &mut ParserState, e: &BytesEnd, _n: NameSpace) ->
 }
 
 pub(crate) fn can_eof(state: &ParserState) -> Result<()> {
-    if let Some(tag) = state.open_tag_names.iter().next() {
-        Err(anyhow!("file ended while tag `{}` was still open", &tag))
+    if let Some(tag) = state.open_tag_names.first() {
+        Err(anyhow!("file ended while tag `{}` was still open", tag))
     } else {
         Ok(())
     }
@@ -78,8 +78,8 @@ pub(crate) fn can_eof(state: &ParserState) -> Result<()> {
 
 #[derive(Clone, Copy, EnumIs)]
 pub enum NameSpace {
-    BPMN,
-    SBPMN,
+    Bpmn,
+    Sbpmn,
 }
 
 pub const NAMESPACE_SBPMN: &str = "https://www.ebitools.org/sbpmn/20260305";
@@ -87,9 +87,9 @@ pub const NAMESPACE_BPMN: &str = "http://www.omg.org/spec/BPMN/20100524/MODEL";
 
 pub(crate) fn is_in_namespace(result: ResolveResult) -> Option<NameSpace> {
     match result {
-        ResolveResult::Unbound => Some(NameSpace::BPMN),
-        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_BPMN => Some(NameSpace::BPMN),
-        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_SBPMN => Some(NameSpace::SBPMN),
+        ResolveResult::Unbound => Some(NameSpace::Bpmn),
+        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_BPMN => Some(NameSpace::Bpmn),
+        ResolveResult::Bound(Namespace(n)) if n == NAMESPACE_SBPMN => Some(NameSpace::Sbpmn),
         _ => None,
     }
 }

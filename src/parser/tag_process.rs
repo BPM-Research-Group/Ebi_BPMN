@@ -3,7 +3,7 @@ use crate::{
     elements::process::BPMNProcess,
     importer::parse_attribute,
     parser::{
-        parser::NameSpace,
+        parser_struct::NameSpace,
         parser_state::ParserState,
         parser_traits::{Closeable, Openable, Recognisable},
         tag_sequence_flow::DraftSequenceFlow,

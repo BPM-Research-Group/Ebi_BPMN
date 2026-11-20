@@ -36,7 +36,7 @@ impl ParserState {
         }
     }
 
-    pub(crate) fn to_model(
+    pub(crate) fn into_model(
         self,
         disallow_sequence_flow_weights: bool,
     ) -> Result<BusinessProcessModelAndNotation> {
@@ -86,7 +86,7 @@ impl ParserState {
                 .with_context(|| "The model is not structurally correct.")?;
             Ok(result)
         } else {
-            if draft_definitionss.len() == 0 {
+            if draft_definitionss.is_empty() {
                 Err(anyhow!("no process found"))
             } else {
                 Err(anyhow!("multiple processes found"))
@@ -110,10 +110,7 @@ impl ParserState {
     }
 
     pub(crate) fn read_and_add_id_optional(&mut self, e: &BytesStart) -> Option<String> {
-        match self.read_and_add_id(e).ok() {
-            Some((_, s)) => Some(s),
-            None => None,
-        }
+        self.read_and_add_id(e).ok().map(|(_, s)| s)
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::{
     BusinessProcessModelAndNotation,
     parser::{
-        parser::{can_eof, close_tag, empty_tag, is_in_namespace, open_tag},
+        parser_struct::{can_eof, close_tag, empty_tag, is_in_namespace, open_tag},
         parser_state::ParserState,
     },
 };
@@ -66,7 +66,7 @@ impl BusinessProcessModelAndNotation {
                 //end of file: check whether we can finish
                 (_, Event::Eof) => {
                     can_eof(&state).with_context(|| "Unexpected end of file.")?;
-                    return Ok(state.to_model(disallow_sequence_flow_weights)?);
+                    return state.into_model(disallow_sequence_flow_weights);
                 }
 
                 _ => (),

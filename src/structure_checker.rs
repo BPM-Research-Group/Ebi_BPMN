@@ -108,7 +108,7 @@ impl StochasticBusinessProcessModelAndNotation {
 
                     for sequence_flow_index in element.outgoing_sequence_flows() {
                         let target = parent.sequence_flow_index_2_target(*sequence_flow_index)?;
-                        if let Some(message_flow_index) = element.incoming_message_flows().get(0) {
+                        if let Some(message_flow_index) = element.incoming_message_flows().first() {
                             let message_source =
                                 self.bpmn.message_flow_index_2_source(*message_flow_index)?;
                             if message_source.outgoing_message_flows_always_have_tokens() {

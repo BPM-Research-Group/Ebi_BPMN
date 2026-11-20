@@ -120,7 +120,7 @@ impl BPMNObject for BPMNInclusiveGateway {
     }
 
     fn can_start_process_instance(&self, _bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {
-        Ok(self.incoming_sequence_flows().len() == 0)
+        Ok(self.incoming_sequence_flows().is_empty())
     }
 
     fn outgoing_message_flows_always_have_tokens(&self) -> bool {
@@ -156,7 +156,7 @@ impl Transitionable for BPMNInclusiveGateway {
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<BitVec> {
-        if self.incoming_sequence_flows.len() == 0 {
+        if self.incoming_sequence_flows.is_empty() {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
             if sub_marking.element_index_2_tokens[self.local_index] >= 1 {
@@ -250,7 +250,7 @@ impl Transitionable for BPMNInclusiveGateway {
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<()> {
         //consume
-        if self.incoming_sequence_flows.len() == 0 {
+        if self.incoming_sequence_flows.is_empty() {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
             sub_marking.element_index_2_tokens[self.local_index] -= 1;
@@ -351,7 +351,7 @@ impl Transitionable for BPMNInclusiveGateway {
         parent: &dyn Processable,
         _bpmn: &BusinessProcessModelAndNotation,
     ) -> Result<Vec<Token>> {
-        if self.incoming_sequence_flows.len() == 0 {
+        if self.incoming_sequence_flows.is_empty() {
             //if there are no sequence flows, then initiation mode 2 applies.
             //that is, look in the extra virtual sequence flow
             Ok(vec![Token::Element(self.global_index)])
