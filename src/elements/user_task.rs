@@ -123,11 +123,11 @@ fn incoming_sequence_flows_mut(&mut self) -> Result<&mut Vec<usize>> {
     }
 
     fn incoming_message_flows(&self) -> &[usize] {
-        &self.incoming_message_flow.as_slice()
+        self.incoming_message_flow.as_slice()
     }
 
     fn outgoing_message_flows(&self) -> &[usize] {
-        &self.outgoing_message_flow.as_slice()
+        self.outgoing_message_flow.as_slice()
     }
 
     fn can_start_process_instance(&self, bpmn: &BusinessProcessModelAndNotation) -> Result<bool> {

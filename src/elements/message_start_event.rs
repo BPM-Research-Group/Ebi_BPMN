@@ -128,7 +128,7 @@ impl BPMNObject for BPMNMessageStartEvent {
     }
 
     fn incoming_message_flows(&self) -> &[usize] {
-        &self.incoming_message_flow.as_slice()
+        self.incoming_message_flow.as_slice()
     }
 
     fn outgoing_message_flows(&self) -> &[usize] {

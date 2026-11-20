@@ -293,11 +293,11 @@ impl Transitionable for BPMNExpandedSubProcess {
             transition_index -= 1;
 
             //own transitions
-            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            let sub_number_of_transitions = self.elements.number_of_transitions(sub_marking);
             if transition_index < sub_number_of_transitions {
                 return self
                     .elements
-                    .transition_activity(transition_index, &sub_marking);
+                    .transition_activity(transition_index, sub_marking);
             }
             transition_index -= sub_number_of_transitions;
         }
@@ -334,11 +334,11 @@ impl Transitionable for BPMNExpandedSubProcess {
             transition_index -= 1;
 
             //own transitions
-            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            let sub_number_of_transitions = self.elements.number_of_transitions(sub_marking);
             if transition_index < sub_number_of_transitions {
                 return self
                     .elements
-                    .transition_debug(transition_index, &sub_marking, bpmn);
+                    .transition_debug(transition_index, sub_marking, bpmn);
             }
             transition_index -= sub_number_of_transitions;
         }
@@ -366,11 +366,11 @@ impl Transitionable for BPMNExpandedSubProcess {
             transition_index -= 1;
 
             //own transitions
-            let sub_number_of_transitions = self.elements.number_of_transitions(&sub_marking);
+            let sub_number_of_transitions = self.elements.number_of_transitions(sub_marking);
             if transition_index < sub_number_of_transitions {
                 return self.elements.transition_probabilistic_penalty(
                     transition_index,
-                    &sub_marking,
+                    sub_marking,
                     self,
                 );
             }

@@ -196,7 +196,7 @@ impl TranslateActivityKey for BusinessProcessModelAndNotation {
                     activity,
                     ..
                 })) => {
-                    *activity = translator.translate_activity(&activity);
+                    *activity = translator.translate_activity(activity);
                 }
                 element => {
                     panic!("Cannot translate {:?}", element);

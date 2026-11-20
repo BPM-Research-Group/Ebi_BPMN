@@ -181,16 +181,16 @@ impl PartiallyOrderedRun {
         //get the activity
         let activity = sbpmn
             .bpmn
-            .get_transition_activity(transition_index, &marking);
+            .get_transition_activity(transition_index, marking);
         self.edge_2_activity.push(activity);
 
         //consume tokens
         {
             let consumed_tokens = sbpmn
                 .bpmn
-                .transition_2_consumed_tokens(transition_index, &marking)
+                .transition_2_consumed_tokens(transition_index, marking)
                 .with_context(|| anyhow!("Could not obtain consumed tokens."))?;
-            let consume_states = self.tokens_to_states(consumed_tokens, &front_states)?;
+            let consume_states = self.tokens_to_states(consumed_tokens, front_states)?;
 
             //add to states
             for state in &consume_states {
@@ -205,7 +205,7 @@ impl PartiallyOrderedRun {
         {
             let produced_tokens = sbpmn
                 .bpmn
-                .transition_2_produced_tokens(transition_index, &marking)
+                .transition_2_produced_tokens(transition_index, marking)
                 .with_context(|| anyhow!("Could not obtain produced tokens."))?;
 
             // add states
