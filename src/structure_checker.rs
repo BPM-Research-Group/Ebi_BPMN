@@ -71,11 +71,10 @@ impl StochasticBusinessProcessModelAndNotation {
         //choice-based sequence flows must have weights
         {
             for element in self.bpmn.elements() {
-                if element.is_event_based_gateway()
+                if (element.is_event_based_gateway()
                     || element.is_exclusive_gateway()
-                    || element.is_inclusive_gateway()
-                {
-                    if element.outgoing_sequence_flows().len() > 1 {
+                    || element.is_inclusive_gateway())
+                    && element.outgoing_sequence_flows().len() > 1 {
                         for sequence_flow_index in element.outgoing_sequence_flows() {
                             let parent = self
                                 .bpmn
@@ -95,7 +94,6 @@ impl StochasticBusinessProcessModelAndNotation {
                             }
                         }
                     }
-                }
             }
         }
 

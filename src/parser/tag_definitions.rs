@@ -23,11 +23,10 @@ impl Recognisable for Definitions {
         Self: Sized,
     {
         if n.is_bpmn() {
-            if state.open_tags.is_empty() {
-                if e.local_name().as_ref() == "definitions" {
+            if state.open_tags.is_empty()
+                && e.local_name().as_ref() == "definitions" {
                     return Some(Tag::Definitions);
                 }
-            }
             None
         } else {
             None
@@ -37,13 +36,11 @@ impl Recognisable for Definitions {
 
 fn find_stochastic_namespace_declaration(e: &BytesStart) -> bool {
     for attribute in e.attributes() {
-        if let Ok(attribute) = attribute {
-            if let Some(_) = attribute.key.as_namespace_binding() {
-                if *attribute.value == *NAMESPACE_SBPMN {
+        if let Ok(attribute) = attribute
+            && let Some(_) = attribute.key.as_namespace_binding()
+                && *attribute.value == *NAMESPACE_SBPMN {
                     return true;
                 }
-            }
-        }
     }
     false
 }
@@ -118,9 +115,9 @@ impl Closeable for Definitions {
 
             //leniency: transform empty expanded pools (process) into collapsed pools
             for element in elements.iter_mut() {
-                if let BPMNElement::Process(process) = element {
-                    if process.elements.is_empty() {
-                        if let (Some(global_index), Some(id)) = (
+                if let BPMNElement::Process(process) = element
+                    && process.elements.is_empty()
+                        && let (Some(global_index), Some(id)) = (
                             process.participant_global_index,
                             process.participant_id.clone(),
                         ) {
@@ -138,8 +135,6 @@ impl Closeable for Definitions {
                                 }),
                             );
                         }
-                    }
-                }
             }
 
             //finalise the message flows

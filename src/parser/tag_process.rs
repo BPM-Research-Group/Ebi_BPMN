@@ -23,11 +23,10 @@ impl Recognisable for TagProcess {
         Self: Sized,
     {
         if n.is_bpmn() {
-            if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last() {
-                if e.local_name().as_ref() == "process" {
+            if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last()
+                && e.local_name().as_ref() == "process" {
                     return Some(Tag::Process);
                 }
-            }
             None
         } else {
             None

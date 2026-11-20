@@ -18,11 +18,10 @@ impl Recognisable for Collaboration {
         Self: Sized,
     {
         if n.is_bpmn() {
-            if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last() {
-                if e.local_name().as_ref() == "collaboration" {
+            if let Some(OpenedTag::Definitions { .. }) = state.open_tags.iter().last()
+                && e.local_name().as_ref() == "collaboration" {
                     return Some(Tag::Collaboration);
                 }
-            }
             None
         } else {
             None
@@ -82,7 +81,7 @@ impl Closeable for Collaboration {
                 elements.extend(
                     sub_collapsed_pools
                         .into_iter()
-                        .map(|pool| BPMNElement::CollapsedPool(pool)),
+                        .map(BPMNElement::CollapsedPool),
                 );
                 Ok(())
             } else {

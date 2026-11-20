@@ -1,5 +1,13 @@
 #![allow(warnings)]
-#![deny(clippy::needless_return, clippy::map_flatten, clippy::needless_borrow, clippy::single_match, clippy::collapsible_if, clippy::redundant_closure)]
+#![deny(
+    clippy::needless_return,
+    clippy::map_flatten,
+    clippy::needless_borrow,
+    clippy::single_match,
+    clippy::collapsible_if,
+    clippy::redundant_closure,
+    clippy::collapsible_match
+)]
 
 //! A BPMN crate written in pure Rust
 //!
