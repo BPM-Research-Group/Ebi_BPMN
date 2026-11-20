@@ -23,10 +23,9 @@ impl Recognisable for Definitions {
         Self: Sized,
     {
         if n.is_bpmn() {
-            if state.open_tags.is_empty()
-                && e.local_name().as_ref() == "definitions" {
-                    return Some(Tag::Definitions);
-                }
+            if state.open_tags.is_empty() && e.local_name().as_ref() == "definitions" {
+                return Some(Tag::Definitions);
+            }
             None
         } else {
             None
@@ -38,9 +37,10 @@ fn find_stochastic_namespace_declaration(e: &BytesStart) -> bool {
     for attribute in e.attributes() {
         if let Ok(attribute) = attribute
             && let Some(_) = attribute.key.as_namespace_binding()
-                && *attribute.value == *NAMESPACE_SBPMN {
-                    return true;
-                }
+            && *attribute.value == *NAMESPACE_SBPMN
+        {
+            return true;
+        }
     }
     false
 }
@@ -117,24 +117,22 @@ impl Closeable for Definitions {
             for element in elements.iter_mut() {
                 if let BPMNElement::Process(process) = element
                     && process.elements.is_empty()
-                        && let (Some(global_index), Some(id)) = (
-                            process.participant_global_index,
-                            process.participant_id.clone(),
-                        ) {
-                            let local_index = process.local_index;
-                            let name = process.name.clone();
-                            std::mem::swap(
-                                element,
-                                &mut BPMNElement::CollapsedPool(BPMNCollapsedPool {
-                                    global_index,
-                                    id,
-                                    local_index,
-                                    name,
-                                    incoming_message_flows: vec![],
-                                    outgoing_message_flows: vec![],
-                                }),
-                            );
-                        }
+                    && let (Some(global_index), Some(id)) = (
+                        process.participant_global_index,
+                        process.participant_id.clone(),
+                    )
+                {
+                    let local_index = process.local_index;
+                    let name = process.name.clone();
+                    *element = BPMNElement::CollapsedPool(BPMNCollapsedPool {
+                        global_index,
+                        id,
+                        local_index,
+                        name,
+                        incoming_message_flows: vec![],
+                        outgoing_message_flows: vec![],
+                    });
+                }
             }
 
             //finalise the message flows
@@ -194,7 +192,7 @@ impl Closeable for Definitions {
                                 id,
                                 tag
                             )
-                        } else if let Some(_) = state.ids.get(&target_id) {
+                        } else if state.ids.contains_key(&target_id) {
                             anyhow!("Could not find target `{}` of message flow `{}`. However, a tag with this id was recognised elsewhere in the model. Perhaps this tag cannot have incoming messages flows.", target_id, id)
                         } else {
                             anyhow!(

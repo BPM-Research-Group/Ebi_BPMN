@@ -41,7 +41,7 @@ impl Openable for TagReceiveTask {
     {
         let (index, id) = state.read_and_add_id(e)?;
 
-        let label = parse_attribute(e, "name").unwrap_or_else(String::new);
+        let label = parse_attribute(e, "name").unwrap_or_default();
         let activity = state.activity_key.process_activity(&label);
         Ok(OpenedTag::ReceiveTask {
             global_index: index,

@@ -7,7 +7,9 @@
     clippy::collapsible_if,
     clippy::redundant_closure,
     clippy::collapsible_match,
-    clippy::unwrap_or_default
+    clippy::unwrap_or_default,
+    clippy::redundant_pattern_matching,
+    clippy::len_zero,
 )]
 
 //! A BPMN crate written in pure Rust
